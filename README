@@ -1,0 +1,49 @@
+#################################################
+## Cube
+#################################################
+
+The aim of project Cube is to provide a secure
+platform to access several environments in a 
+secure manner from the same physical machine.
+
+It relies on the use of virtualization in order
+to provide contained environment. These virtual
+machines are connected to a target infrastructure
+though network tunnels.
+
+Virtual machines are contained in encrypted 
+containers on the client with their configuration
+and network keys. Each containers is kept closed
+until it is actually used. Virtual machine are
+run locally.
+
+Administartor could prepare several virtual 
+machine templates. User may eventually 'stage' 
+one or several environement on a client in order 
+to start them.
+
+User has a simple 'kiosk' like interface where he
+only could stage, start and stop its virtual 
+machines.
+
+
+## Developper environment #######################
+
+## Checkout code from GITHUB
+  git config --global user.name "Your Name"
+  git config --global user.email Your@Email
+
+  mkdir cube
+  cd cube
+  git init
+
+## Commit your changes
+  git commit -m 'excplicit comments'
+  git remote add origin git@github.com:<Username>/cube.git
+  git push -u origin master
+
+
+
+
+
+
