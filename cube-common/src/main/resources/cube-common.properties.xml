@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2011 / manhattan <https://cube.forge.osor.eu>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+
+<properties>
+	<!-- container Factory -->
+	<entry key="cube.containerFactoryImpl">ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory</entry>
+	<!--
+		Scripts should be in a system directory with appropriate access rights
+		(root,xrwxr-xr-), since they need to be allowed by sudo. 
+		
+		Tip: Sym-link them to you workspace during development.
+	-->
+	<entry key="cube.scripts.dir">/opt/cube/client/scripts/</entry>
+	
+	<!-- Regular expression used to extract user name from smartcard CN name -->
+	<entry key="regex.userInCommonNameUrl">CN=(.+?),</entry>
+
+	<!-- Keyring -->
+	<entry key="keyring.keyringImpl">ch.admin.vbs.cube.common.keyring.impl.CubeKeyring</entry>
+	<entry key="keyring.defaultSize">10485760</entry>
+	<entry key="keyring.defaultKeyBitSize">4096</entry>
+	
+	<!-- directories -->	
+	<entry key="cube.mountpoints.dir">/opt/cube/var/mount-points</entry>
+	<entry key="cube.keys.dir">/opt/cube/var/keys</entry>
+	<entry key="cube.containers.dir">/opt/cube/var/containers</entry>
+	
+	<!-- used to identify machine -->
+	<entry key="machineUuid.file">/opt/cube/var/hostid</entry>
+</properties>

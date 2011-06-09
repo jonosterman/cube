@@ -1,0 +1,69 @@
+/**
+ * Copyright (C) 2011 / manhattan <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ch.admin.vbs.cube.common.keyring;
+
+import java.io.File;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import ch.admin.vbs.cube.common.shell.ShellUtil;
+
+/**
+ * Safe file is a file with a shred method in order to be able to erase it
+ * safely. SafeFile should be located in the safe directory.
+ */
+public class SafeFile extends File {
+	private static final long serialVersionUID = 1L;
+	private static final Logger LOG = LoggerFactory.getLogger(SafeFile.class);
+	private static Executor exec = Executors.newCachedThreadPool();
+	private boolean shredded;
+
+	public SafeFile(String filename) {
+		super(filename);
+	}
+
+	public SafeFile(File parent, String child) {
+		super(parent, child);
+	}
+
+	public void shred() {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					if (exists()) {
+						ShellUtil su = new ShellUtil();
+						setWritable(true);
+						su.run(null, ShellUtil.NO_TIMEOUT, "shred", "-u", getAbsolutePath());
+						shredded = true;
+					} else {
+						LOG.debug("File does not exists and could not be shreded.");
+					}
+				} catch (Exception e) {
+					LOG.error("failed to shred file", e);
+				}
+			}
+		});
+	}
+
+	public boolean isShredded() {
+		return shredded;
+	}
+}

@@ -1,0 +1,9 @@
+target
+.project
+.classpath
+.settings/
+.svn/
+hs_err_pid*.log
+src/package/debian/usr/local/lib/*
+src/package/debian/usr/local/etc/*
+
