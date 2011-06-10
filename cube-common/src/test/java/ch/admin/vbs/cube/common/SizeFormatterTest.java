@@ -24,7 +24,7 @@ import ch.admin.vbs.cube.common.container.SizeFormatUtil;
  * Test keyring creation and usage. Use CubeKeyring with DmCrypt encryption and
  * a test P12 file.
  * 
- * @author dreier
+ * 
  * 
  */
 public class SizeFormatterTest {

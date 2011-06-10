@@ -18,6 +18,9 @@ package ch.admin.vbs.cube.common.container;
 
 import java.io.File;
 
+import ch.admin.vbs.cube.common.CubeCommonProperties;
+import ch.admin.vbs.cube.common.keyring.impl.KeyringException;
+
 /**
  * A Container holds files (configurations, keys, disk images, etc) on the disk.
  * It could be mounted to access data contained in it and then unmounted. The
@@ -25,6 +28,9 @@ import java.io.File;
  * encrypted is delegate to ContainerFactory implementations.
  */
 public class Container {
+	private static final File CONTAINERS_DIR = new File(CubeCommonProperties.getProperty("cube.containers.dir"));
+	private static final String EXTENSION = ".data";
+	private static final File MOUNTPOINTS_DIR = new File(CubeCommonProperties.getProperty("cube.mountpoints.dir"));
 	/** a unique ID (used to generated file and mount-point names) */
 	private String id;
 	/** Container file */
@@ -71,5 +77,25 @@ public class Container {
 
 	public boolean exists() {
 		return containerFile != null && containerFile.exists();
+	}
+
+	/**
+	 * Create a container object with default path and extension. Do not create
+	 * it on the disk!!
+	 * 
+	 * @param uuid
+	 * @param keyring
+	 * @return
+	 * @throws KeyringException
+	 */
+	public static Container initContainerObject(String uuid) {
+		Container c = new Container();
+		c.setId(uuid);
+		c.setContainerFile(new File(CONTAINERS_DIR, uuid + EXTENSION));
+		if (c.exists()) {
+			c.setSize(c.getContainerFile().length());
+		}
+		c.setMountpoint(new File(MOUNTPOINTS_DIR, uuid));
+		return c;
 	}
 }
