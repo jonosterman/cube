@@ -23,7 +23,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.CubeCommonException;
+import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
 import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.container.Container;
@@ -274,7 +274,7 @@ public class CubeKeyring implements IKeyring {
 		// }
 	}
 
-	private final void decryptKey(File srcFile, SafeFile dstFile, IIdentityToken id) throws IOException, CubeCommonException {
+	private final void decryptKey(File srcFile, SafeFile dstFile, IIdentityToken id) throws IOException, CubeException {
 		// decrypt key
 		// (@TODO if key was encrypted with an older key (not valid
 		// anymore), we MUST re-encrypt it with the new one)

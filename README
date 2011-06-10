@@ -35,17 +35,40 @@ machines.
 
   git clone git@github.com:<Username>/cube.git
 
+## update system
+#  install packages: 
+apt-get install openvpn bridge-utils virtualbox-4.0
+#  link script in /opt/cube/client/scripts:
+ln -s /home/xxxx/xxxx/cube/cube-common/src/main/resources/scripts/container-cleanup /opt/cube/client/scripts/container-cleanup
+...
+#  update /etc/sudo.d/cube:
+###############
+## CUBE
+###############
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-mount-container.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-create-container.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-unmount-container.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-delete-container.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/cube-shutdown.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vpn-open.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
+%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
+
+
+
+
+
 ## Commit your changes
   git commit -m 'excplicit comments'
   git remote add origin git@github.com:<Username>/cube.git
   git push -u origin master
 
 ## build cube, update eclipse project and check file headers
- mvn  -Dmaven.test.skip=true  clean install eclipse:eclipse license:format
+ mvn -Dmaven.test.skip=true  clean install eclipse:eclipse license:format
 
 ## build + test 
- mvn  -Dmaven.test.skip=false clean install eclipse:eclipse license:check
-
+ mvn clean install eclipse:eclipse license:check
 
 ## Configure eclipse
  add classpath variale: M2_REPO=/home/XXXX/.m2/repository

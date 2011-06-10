@@ -1,0 +1,163 @@
+<?xml version='1.0' encoding='UTF-8'?><wsdl:definitions name="CubeManagerService" targetNamespace="http://services.cubemanager.cube/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:tns="http://services.cubemanager.cube/" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+<!--
+
+    Copyright (C) 2011 / manhattan <https://cube.forge.osor.eu>
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+  <wsdl:types>
+<xs:schema attributeFormDefault="unqualified" elementFormDefault="unqualified" targetNamespace="http://services.cubemanager.cube/" xmlns:tns="http://services.cubemanager.cube/" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+  <xs:complexType name="machineDTO">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="machineUid" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:complexType name="instanceDescriptorDTO">
+    <xs:sequence>
+
+      <xs:element minOccurs="0" name="uuid" type="xs:string"/>
+      <xs:element minOccurs="0" name="name" type="xs:string"/>
+      <xs:element minOccurs="0" name="description" type="xs:string"/>
+      <xs:element minOccurs="0" name="securityDomain" type="xs:string"/>
+      <xs:element minOccurs="0" name="classification" type="xs:string"/>
+      <xs:element minOccurs="0" name="type" type="xs:string"/>
+      <xs:element minOccurs="0" name="templateVersion" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="instanceConfigurationDTO">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="uuid" type="xs:string"/>
+      <xs:element name="parameters">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element maxOccurs="unbounded" minOccurs="0" name="entry">
+              <xs:complexType>
+                <xs:sequence>
+
+                  <xs:element minOccurs="0" name="key" type="xs:string"/>
+                  <xs:element minOccurs="0" name="value" type="xs:string"/>
+                </xs:sequence>
+              </xs:complexType>
+            </xs:element>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+
+  </xs:complexType>
+  <xs:complexType abstract="true" name="abstractMap">
+    <xs:sequence/>
+  </xs:complexType>
+  <xs:complexType name="hashMap">
+    <xs:complexContent>
+      <xs:extension base="tns:abstractMap">
+        <xs:sequence/>
+      </xs:extension>
+
+    </xs:complexContent>
+  </xs:complexType>
+  <xs:element name="listUserVm" type="tns:listUserVm"/>
+  <xs:complexType name="listUserVm">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="machine" type="tns:machineDTO"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="listUserVmResponse" type="tns:listUserVmResponse"/>
+
+  <xs:complexType name="listUserVmResponse">
+    <xs:sequence>
+      <xs:element maxOccurs="unbounded" minOccurs="0" name="return" type="tns:instanceDescriptorDTO"/>
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="getInstanceConfiguration" type="tns:getInstanceConfiguration"/>
+  <xs:complexType name="getInstanceConfiguration">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="instanceUid" type="xs:string"/>
+
+    </xs:sequence>
+  </xs:complexType>
+  <xs:element name="getInstanceConfigurationResponse" type="tns:getInstanceConfigurationResponse"/>
+  <xs:complexType name="getInstanceConfigurationResponse">
+    <xs:sequence>
+      <xs:element minOccurs="0" name="return" type="tns:instanceConfigurationDTO"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:schema>
+
+  </wsdl:types>
+  <wsdl:message name="listUserVmResponse">
+    <wsdl:part element="tns:listUserVmResponse" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getInstanceConfiguration">
+    <wsdl:part element="tns:getInstanceConfiguration" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+
+  <wsdl:message name="listUserVm">
+    <wsdl:part element="tns:listUserVm" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:message name="getInstanceConfigurationResponse">
+    <wsdl:part element="tns:getInstanceConfigurationResponse" name="parameters">
+    </wsdl:part>
+  </wsdl:message>
+  <wsdl:portType name="CubeManagerServicePortType">
+
+    <wsdl:operation name="listUserVm">
+      <wsdl:input message="tns:listUserVm" name="listUserVm">
+    </wsdl:input>
+      <wsdl:output message="tns:listUserVmResponse" name="listUserVmResponse">
+    </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getInstanceConfiguration">
+      <wsdl:input message="tns:getInstanceConfiguration" name="getInstanceConfiguration">
+    </wsdl:input>
+
+      <wsdl:output message="tns:getInstanceConfigurationResponse" name="getInstanceConfigurationResponse">
+    </wsdl:output>
+    </wsdl:operation>
+  </wsdl:portType>
+  <wsdl:binding name="CubeManagerServiceSoapBinding" type="tns:CubeManagerServicePortType">
+    <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <wsdl:operation name="listUserVm">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="listUserVm">
+
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="listUserVmResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+    <wsdl:operation name="getInstanceConfiguration">
+      <soap:operation soapAction="" style="document"/>
+      <wsdl:input name="getInstanceConfiguration">
+
+        <soap:body use="literal"/>
+      </wsdl:input>
+      <wsdl:output name="getInstanceConfigurationResponse">
+        <soap:body use="literal"/>
+      </wsdl:output>
+    </wsdl:operation>
+  </wsdl:binding>
+  <wsdl:service name="CubeManagerService">
+    <wsdl:port binding="tns:CubeManagerServiceSoapBinding" name="CubeManagerServicePort">
+
+      <soap:address location="http://localhost:8080/CubeManager2/services/cubeManager"/>
+    </wsdl:port>
+  </wsdl:service>
+</wsdl:definitions>
