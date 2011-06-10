@@ -83,10 +83,8 @@ sub deleteContainer {
 	  	
 	## check if container file realy exists 
 	if (! -e $encFile) {
-		## exit without an error (avoid DmcryptContainerFactory to throw an exception if
-		## we try to delete an already deleted container)
-		info "file [$encFile] does not exists.";
-		exit 0
+		## exit with an error
+		die "[ERROR] file [$encFile] does not exists.";
 	}
 	
 	## check if lock file exists

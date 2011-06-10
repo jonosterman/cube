@@ -19,7 +19,7 @@ package ch.admin.vbs.cube.common.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.CubeException;
+import ch.admin.vbs.cube.common.CubeCommonException;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
 
 /**
@@ -30,7 +30,7 @@ public class ContainerFactoryProvider {
 	private static final Logger LOG = LoggerFactory.getLogger(ContainerFactoryProvider.class);
 	private static IContainerFactory factory = null;
 
-	public static IContainerFactory getFactory() throws CubeException {
+	public static IContainerFactory getFactory() throws CubeCommonException {
 		String classname = CubeCommonProperties.getProperty("cube.containerFactoryImpl");
 		synchronized (ContainerFactoryProvider.class) {
 			if (factory == null) {
@@ -39,7 +39,7 @@ public class ContainerFactoryProvider {
 					factory = (IContainerFactory) Class.forName(classname).newInstance();
 					LOG.debug("Use container factory [{}].", factory.getClass());
 				} catch (Exception e) {
-					throw new CubeException("Failed to init container factory [" + classname + "]", e);
+					throw new CubeCommonException("Failed to init container factory [" + classname + "]", e);
 				}
 			}
 			return factory;

@@ -29,7 +29,7 @@ import ch.admin.vbs.cube.common.shell.ShellUtil;
  * (dmcrypt). You can get a key through the IKeyring class. Since this key is
  * decrypted on the disk, you HAVE TO shred it as soon as possible!
  * 
- * 
+ * @author dreier
  * 
  */
 public class EncryptionKey {

@@ -27,7 +27,7 @@ import javax.crypto.Cipher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.CubeException;
+import ch.admin.vbs.cube.common.CubeCommonException;
 
 /**
  * Utility class that helps encrypt and decrypt strings using RSA algorithm.<br>
@@ -35,10 +35,13 @@ import ch.admin.vbs.cube.common.CubeException;
  * http://www.aviransplace.com/2004/10/12/using-rsa-encryption-with-java/ which
  * explains in a very concise way how RSA works.
  * 
- * 27.4.2010: add a loop in order to encode larger data blocks. RSA
+ * 27.4.2010/dreier: add a loop in order to encode larger data blocks. RSA
  * should not be used to encrypt large data (very slow) but 117 bytes (936 bits)
  * is way not enough (for example to encrypt a 4096 bits rsa key). <br>
  * 
+ * 30.4.2010/dreier: There is some differences between test (p12 files) and
+ * production (smart cards) certificate. Production certificate use longer keys,
+ * and therefore the block size should be configurable.
  */
 public final class RSAEncryptUtil {
 	// used to configure key length via system properties
@@ -60,10 +63,10 @@ public final class RSAEncryptUtil {
 	 * @param key
 	 *            The public key.
 	 * @return Encrypted text as a byte-array.
-	 * @throws CubeException
+	 * @throws CubeCommonException
 	 *             if a problem arises during encryption.
 	 */
-	public static byte[] encrypt(byte[] text, PublicKey key) throws CubeException {
+	public static byte[] encrypt(byte[] text, PublicKey key) throws CubeCommonException {
 		try {
 			// the maximal size of the block we are able to encrypt/decrypt at
 			// once with the key, depends of the size of this key. Therefore we
@@ -87,7 +90,7 @@ public final class RSAEncryptUtil {
 			}
 			return baos.toByteArray();
 		} catch (Exception e) {
-			throw new CubeException("Problem during encryption.", e);
+			throw new CubeCommonException("Problem during encryption.", e);
 		}
 	}
 
@@ -99,10 +102,10 @@ public final class RSAEncryptUtil {
 	 * @param key
 	 *            The private key.
 	 * @return The unencrypted text.
-	 * @throws CubeException
+	 * @throws CubeCommonException
 	 *             if a problem arises during decryption.
 	 */
-	public static byte[] decrypt(byte[] encryptedText, PrivateKey key) throws CubeException {
+	public static byte[] decrypt(byte[] encryptedText, PrivateKey key) throws CubeCommonException {
 		try {
 			// the maximal size of the block we are able to encrypt/decrypt at
 			// once with the key, depends of the size of this key. Therefore we
@@ -126,18 +129,18 @@ public final class RSAEncryptUtil {
 			}
 			return baos.toByteArray();
 		} catch (Exception e) {
-			throw new CubeException("Problem during decryption.", e);
+			throw new CubeCommonException("Problem during decryption.", e);
 		}
 	}
 
-	public static KeyPair generateKeyPair(int sizeInBits) throws CubeException {
+	public static KeyPair generateKeyPair(int sizeInBits) throws CubeCommonException {
 		try {
 			KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
 			keyGen.initialize(sizeInBits);
 			KeyPair key = keyGen.generateKeyPair();
 			return key;
 		} catch (Exception e) {
-			throw new CubeException("Problem generating key pair.", e);
+			throw new CubeCommonException("Problem generating key pair.", e);
 		}
 	}
 }

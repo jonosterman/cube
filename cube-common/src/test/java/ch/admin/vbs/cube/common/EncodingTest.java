@@ -26,7 +26,7 @@ import ch.admin.vbs.cube.common.crypto.Sha4J;
 /**
  * Test url encoding.
  * 
- * 
+ * @author dreier
  * 
  */
 public class EncodingTest {
