@@ -28,7 +28,7 @@
      inkscape:pageshadow="2"
      inkscape:zoom="1.979899"
      inkscape:cx="325.55942"
-     inkscape:cy="362.21748"
+     inkscape:cy="463.23273"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -481,18 +481,6 @@
          stdDeviation="0.54687198"
          id="feGaussianBlur3971" />
     </filter>
-    <filter
-       inkscape:collect="always"
-       id="filter3973"
-       x="-0.076919143"
-       width="1.1538383"
-       y="-0.27277673"
-       height="1.5455535">
-      <feGaussianBlur
-         inkscape:collect="always"
-         stdDeviation="2.068999"
-         id="feGaussianBlur3975" />
-    </filter>
     <linearGradient
        inkscape:collect="always"
        xlink:href="#linearGradient3854"
@@ -599,11 +587,11 @@
        xlink:href="#linearGradient3853"
        id="radialGradient2963"
        gradientUnits="userSpaceOnUse"
-       gradientTransform="matrix(0.30835084,-0.08165519,0.04559133,0.17216456,-241.40281,312.27482)"
-       cx="1267.8097"
-       cy="2107.7229"
-       fx="1267.8097"
-       fy="2107.7229"
+       gradientTransform="matrix(0.30835081,0,-1.5018899e-8,0.17809886,-145.30884,196.24371)"
+       cx="1229.0913"
+       cy="2172.9492"
+       fx="1229.0913"
+       fy="2172.9492"
        r="549.5639" />
     <linearGradient
        inkscape:collect="always"
@@ -951,16 +939,6 @@
            inkscape:export-ydpi="30.264618" />
       </g>
     </g>
-    <rect
-       inkscape:export-ydpi="111.43852"
-       inkscape:export-xdpi="111.43852"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
-       style="fill:url(#radialGradient2963);fill-opacity:1;stroke:none"
-       id="rect3851"
-       width="398.15674"
-       height="237.27782"
-       x="34.604057"
-       y="452.98785" />
     <text
        xml:space="preserve"
        style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
@@ -1016,5 +994,15 @@
          x="165.71506"
          y="595.53516"
          id="tspan3761">I will not mess with my data anymore</tspan></text>
+    <rect
+       inkscape:export-ydpi="111.43852"
+       inkscape:export-xdpi="111.43852"
+       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       style="fill:url(#radialGradient2963);fill-opacity:1;stroke:none"
+       id="rect3851"
+       width="398.15674"
+       height="237.27782"
+       x="34.604057"
+       y="452.98785" />
   </g>
 </svg>
