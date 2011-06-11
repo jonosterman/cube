@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
 import java.io.File;
@@ -27,6 +26,7 @@ import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.EncryptionKey;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
+import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
@@ -39,8 +39,8 @@ public class Start extends AbstractCtrlTask {
 	private static final Logger LOG = LoggerFactory.getLogger(Start.class);
 
 	public Start(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel);
+			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
+		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override
@@ -81,6 +81,10 @@ public class Start extends AbstractCtrlTask {
 				vmKey.shred(); // just in case..
 			// remove temporary status
 			tempStatus.remove(vm.getId());
+			// force vm status to be error. because if VM is left 'STOPPED',
+			// VmController will not update its state (because it does not know
+			// if it was starting or stopping)
+			vm.setVmStatus(VmStatus.ERROR);
 			ctrl.refreshVmStatus(vm);
 		}
 	}

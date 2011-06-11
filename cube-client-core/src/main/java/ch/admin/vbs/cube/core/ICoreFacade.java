@@ -13,13 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core;
 
 import java.net.URL;
+import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 
 /**
  * The core facade is the interface between the window manager and the core
@@ -127,13 +128,13 @@ public interface ICoreFacade {
 	 */
 	void installGuestAdditions(String vmId);
 
-	/**
-	 * Experimental.
-	 * 
-	 * @param vmId
-	 *            VM
-	 * @param usbDevice
-	 *            usb device to bind
-	 */
-	void connectUsbDevice(String vmId, UsbDevice usbDevice);
+	// ==========================================
+	// USB stuff
+	// ==========================================
+	void attachUsbDevice(String vmId, UsbDevice usbDevice);
+
+	void detachUsbDevice(String vmId, UsbDevice usbDevice);
+
+	List<UsbDeviceEntry> getUsbDevices(String vmId);
+
 }

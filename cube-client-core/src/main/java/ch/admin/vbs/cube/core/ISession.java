@@ -36,7 +36,7 @@ public interface ISession {
 	 * ICoreFacad and IClientFacad (if we have time to do and test it).
 	 */
 	public enum VmCommand {
-		START, POWER_OFF, SAVE, STAGE, DELETE, TRANSFER_FILE, INSTALL_GUESTADDITIONS
+		START, POWER_OFF, SAVE, STAGE, DELETE, TRANSFER_FILE, INSTALL_GUESTADDITIONS, ATTACH_USB, DETACH_USB, LIST_USB
 	}
 
 	IIdentityToken getId();
@@ -53,5 +53,9 @@ public interface ISession {
 
 	VmModel getModel();
 
-	void controlVm(String vmId, VmCommand cmd);
+	void controlVm(String vmId, VmCommand cmd, IOption option);
+	
+	public static interface IOption {
+		
+	}
 }

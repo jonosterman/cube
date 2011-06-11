@@ -268,13 +268,13 @@ public class Session implements Runnable, ISession {
 	}
 
 	@Override
-	public void controlVm(String vmId, VmCommand cmd) {
+	public void controlVm(String vmId, VmCommand cmd, IOption option) {
 		if (state == State.idle && keyring != null) {
 			Vm vm = vmModel.findByInstanceUid(vmId);
 			if (vm == null) {
 				LOG.debug("VM not found [" + vmId + "] in this session.");
 			} else {
-				vmController.controlVm(vm, vmModel, cmd, id, keyring, transfer);
+				vmController.controlVm(vm, vmModel, cmd, id, keyring, transfer, option);
 			}
 		} else {
 			LOG.debug("Ignore command [" + cmd + "] because session is not ready [" + state + " / " + keyring + "].");

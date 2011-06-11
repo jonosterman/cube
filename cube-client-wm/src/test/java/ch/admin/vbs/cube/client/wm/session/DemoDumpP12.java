@@ -38,7 +38,6 @@ public class DemoDumpP12 {
 			@Override
 			public void notifyAuthModuleEvent(AuthModuleEvent event) {
 				try {
-					System.out.println(">>> "+event.getType());
 					KeyStore keystore = event.getKeystore();
 					// dump :::
 					System.out.println("Dump token:");

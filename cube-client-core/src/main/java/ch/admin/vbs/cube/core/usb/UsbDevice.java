@@ -13,15 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.usb;
 
-public class UsbDevice {
+import ch.admin.vbs.cube.core.ISession.IOption;
+
+public class UsbDevice implements IOption {
 	private final String productId;
 	private final String vendorId;
 	private final String description;
+	private final String id;
 
-	public UsbDevice(String vendorId, String productId, String Description) {
+	/**
+	 */
+	public UsbDevice(String id, String vendorId, String productId, String Description) {
+		this.id = id;
 		this.vendorId = vendorId;
 		this.productId = productId;
 		this.description = Description;
@@ -39,8 +44,16 @@ public class UsbDevice {
 		return description;
 	}
 
+	public String getBothId() {
+		return vendorId + ":" + productId;
+	}
+
 	@Override
 	public String toString() {
 		return String.format("[%s:%s] %s", vendorId, productId, description);
+	}
+
+	public String getId() {
+		return id;
 	}
 }

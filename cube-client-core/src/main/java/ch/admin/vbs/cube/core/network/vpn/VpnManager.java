@@ -128,7 +128,7 @@ public class VpnManager {
 					"--tap", cfg.getOption(VpnOption.Tap)//
 			);
 		} catch (Exception e) {
-			throw new VmException("Failed to stage VirtualBox VM.", e);
+			throw new VmException("Failed to close VPN.", e);
 		}
 	}
 }

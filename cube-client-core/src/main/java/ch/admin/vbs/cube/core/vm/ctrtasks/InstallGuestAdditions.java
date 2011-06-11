@@ -13,34 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
 import java.util.ArrayList;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.container.Container;
-import ch.admin.vbs.cube.common.container.IContainerFactory;
-import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
-import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmController;
-import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
-import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
-public class InstallGuestAdditions extends AbstractCtrlTask {
-	/** Logger */
+public class InstallGuestAdditions implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(InstallGuestAdditions.class);
+	private final Vm vm;
 
-	public InstallGuestAdditions(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel);
+	public InstallGuestAdditions(Vm vm) {
+		this.vm = vm;
 	}
 
 	@Override

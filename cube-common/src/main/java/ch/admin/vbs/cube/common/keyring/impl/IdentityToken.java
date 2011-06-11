@@ -140,8 +140,6 @@ public class IdentityToken implements IIdentityToken {
 
 	@Override
 	public PrivateKey getPrivatekey(KeyType type) {
-		LOG.debug("trace id [{}]", this.toString());
-		LOG.debug("trace keystore [{}]", keystore.toString());
 		LinkedList<X509Certificate> list = certificates.get(type);
 		try {
 			return list == null || list.size() == 0 ? null : ((KeyStore.PrivateKeyEntry) keystore.getEntry(keystore.getCertificateAlias(list.peek()),

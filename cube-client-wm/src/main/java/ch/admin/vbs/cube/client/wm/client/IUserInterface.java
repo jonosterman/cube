@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.client.wm.client;
 
 import ch.admin.vbs.cube.common.RelativeFile;
+import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 /**
@@ -66,9 +67,6 @@ public interface IUserInterface {
 	 *            target VM.
 	 */
 	UsbDevice showUsbDeviceDialog(VmHandle h, String messageKey);
-
-	/** Dependencies injection */
-	void setup(ICubeClient client, ICubeActionListener cubeActionListener, IVmMonitor vmMon, IXWindowManager xwm);
 
 	/** close current dialog. */
 	void closeDialog();

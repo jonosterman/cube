@@ -18,31 +18,29 @@ package ch.admin.vbs.cube.core.vm.ctrtasks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.container.IContainerFactory;
+import ch.admin.vbs.cube.core.ISession.IOption;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmModel;
+import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
-public class Delete implements Runnable {
-	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(Delete.class);
-	private final IContainerFactory containerFactory;
+public class UsbDetach implements Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger(UsbDetach.class);
+	private final VBoxProduct product;
+	private final IOption option;
 	private final Vm vm;
-	private final VmModel vmModel;
 
-	public Delete(IContainerFactory containerFactory, Vm vm, VmModel vmModel) {
-		this.containerFactory = containerFactory;
+	public UsbDetach(Vm vm, VBoxProduct product, IOption option) {
 		this.vm = vm;
-		this.vmModel = vmModel;
+		this.product = product;
+		this.option = option;
 	}
 
 	@Override
 	public void run() {
 		try {
-			containerFactory.deleteContainer(vm.getVmContainer());
-			containerFactory.deleteContainer(vm.getRuntimeContainer());
-			vmModel.fireVmUpdatedEvent(vm);
+			product.detachUsb(vm, (UsbDevice) option);
 		} catch (Exception e) {
-			LOG.error("Failed to delete VM", e);
+			LOG.error("Failed to connect USB device", e);
 		}
 	}
 }

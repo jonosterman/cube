@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.vbox;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.security.KeyStore.Builder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.logging.Level;
 
@@ -34,6 +34,8 @@ import org.virtualbox_4_0.CleanupMode;
 import org.virtualbox_4_0.ClipboardMode;
 import org.virtualbox_4_0.DeviceType;
 import org.virtualbox_4_0.HWVirtExPropertyType;
+import org.virtualbox_4_0.IConsole;
+import org.virtualbox_4_0.IHostUSBDevice;
 import org.virtualbox_4_0.IMachine;
 import org.virtualbox_4_0.IMedium;
 import org.virtualbox_4_0.IMediumAttachment;
@@ -41,6 +43,7 @@ import org.virtualbox_4_0.INetworkAdapter;
 import org.virtualbox_4_0.IProgress;
 import org.virtualbox_4_0.ISession;
 import org.virtualbox_4_0.IStorageController;
+import org.virtualbox_4_0.IUSBDevice;
 import org.virtualbox_4_0.IVirtualBox;
 import org.virtualbox_4_0.LockType;
 import org.virtualbox_4_0.MachineState;
@@ -56,6 +59,10 @@ import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry.DeviceEntryState;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.IVmProductListener;
 import ch.admin.vbs.cube.core.vm.Vm;
@@ -475,6 +482,10 @@ public class VBoxProduct implements VBoxCacheListener {
 			try {
 				// get IMachine reference
 				IMachine machine = getIMachineReference(vm.getId());
+				if (machine.getState() == MachineState.PoweredOff) {
+					// already power-off
+					return;
+				}
 				ISession session = mgr.getSessionObject();
 				// lock IMachine
 				machine.lockMachine(session, LockType.Shared);
@@ -666,5 +677,83 @@ public class VBoxProduct implements VBoxCacheListener {
 				}
 			}
 		}, "WebService Connector").start();
+	}
+
+	public void listUsb(Vm vm, UsbDeviceEntryList list) throws VmException {
+		try {
+			// get IMachine reference
+			IMachine machine = getIMachineReference(vm.getId());
+			ISession session = mgr.getSessionObject();
+			// lock IMachine
+			machine.lockMachine(session, LockType.Shared);
+			machine = session.getMachine();
+			try {
+				IConsole console = session.getConsole();
+				// get list of usb from host
+				List<IHostUSBDevice> hostDevices = vbox.getHost().getUSBDevices();
+				// get list of attached usb devices
+				HashSet<String> attachedIds = new HashSet<String>();
+				for (IUSBDevice dev : console.getUSBDevices()) {
+					attachedIds.add(dev.getAddress());
+				}
+				// populate result list
+				for (IHostUSBDevice dev : hostDevices) {
+					if (attachedIds.contains(dev.getAddress())) {
+						list.add(new UsbDeviceEntry(vm.getId(),//
+								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), dev
+										.getProduct() + " (" + dev.getManufacturer() + ")"),//
+								DeviceEntryState.ALREADY_ATTACHED));
+					} else {
+						list.add(new UsbDeviceEntry(vm.getId(),//
+								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), dev
+										.getProduct() + " (" + dev.getManufacturer() + ")"),//
+								DeviceEntryState.AVAILABLE));
+					}
+				}
+			} finally {
+				// ensure that session is unlocked
+				unlockSession(session);
+			}
+		} catch (Exception e) {
+			throw new VmException("Failed to list USB devices", e);
+		}
+	}
+
+	public void attachUsb(Vm vm, UsbDevice dev) throws VmException {
+		try {
+			// get IMachine reference
+			IMachine machine = getIMachineReference(vm.getId());
+			ISession session = mgr.getSessionObject();
+			// lock IMachine
+			machine.lockMachine(session, LockType.Shared);
+			machine = session.getMachine();
+			try {
+				session.getConsole().attachUSBDevice(dev.getId());
+			} finally {
+				// ensure that session is unlocked
+				unlockSession(session);
+			}
+		} catch (Exception e) {
+			throw new VmException("Failed to attach USB device [" + dev.getId() + "]", e);
+		}
+	}
+
+	public void detachUsb(Vm vm, UsbDevice dev) throws VmException {
+		try {
+			// get IMachine reference
+			IMachine machine = getIMachineReference(vm.getId());
+			ISession session = mgr.getSessionObject();
+			// lock IMachine
+			machine.lockMachine(session, LockType.Shared);
+			machine = session.getMachine();
+			try {
+				session.getConsole().detachUSBDevice(dev.getId());
+			} finally {
+				// ensure that session is unlocked
+				unlockSession(session);
+			}
+		} catch (Exception e) {
+			throw new VmException("Failed to detach USB device [" + dev.getId() + "]", e);
+		}
 	}
 }

@@ -40,6 +40,7 @@ import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmConnectUsbDevice;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDeleteAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmInstallAdditionsAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmPoweroffAction;
@@ -211,10 +212,10 @@ public class NavigationTabs extends JideTabbedPane {
 			return;
 		}
 		// add USB menu
-		// if (state == VmStatus.RUNNING) {
-		// vmPopupMenu.addSeparator();
-		// vmPopupMenu.add(new VmConnectUsbDevice(h));
-		// }
+		if (state == VmStatus.RUNNING) {
+			vmPopupMenu.addSeparator();
+			vmPopupMenu.add(new VmConnectUsbDevice(h));
+		}
 		// add Monitor move menu
 		if (monitorCount > 1) {
 			vmPopupMenu.addSeparator();

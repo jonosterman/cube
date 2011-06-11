@@ -53,6 +53,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
+import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.vm.VmStatus;
 
@@ -87,6 +88,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private IVmMonitor vmMon;
 	private ICubeActionListener cubeActionListener;
 	private ICubeClient client;
+	private ICoreFacade core;
 
 	public WindowManager() {
 	}
@@ -559,7 +561,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				LOG.debug("Vm is not running. We could not bind US devices to non-running VMs.");
 				return null;
 			}
-			UsbChooserDialog dial = new UsbChooserDialog(getDefaultParentFrame(), messageKey, vmMon);
+			UsbChooserDialog dial = new UsbChooserDialog(getDefaultParentFrame(), messageKey, vmMon, core.getUsbDevices(h.getVmId()));
 			dialog = dial;
 			swingOpen(dial);
 			// wait until dialog closed
@@ -624,9 +626,10 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	// ###############################################
 	// Injections
 	// ###############################################
-	public void setup(ICubeClient client, ICubeActionListener cubeActionListener, IVmMonitor vmMon, IXWindowManager xwm) {
+	public void setup(ICubeClient client, ICubeActionListener cubeActionListener, IVmMonitor vmMon, IXWindowManager xwm, ICoreFacade core) {
 		this.client = client;
 		this.xwm = xwm;
+		this.core = core;
 		xwm.setWindowManagerCallBack(this);
 		this.vmMon = vmMon;
 		if (osdMgmt != null) {

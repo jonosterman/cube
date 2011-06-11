@@ -104,6 +104,9 @@ sub deleteContainer {
 	}
 	## check if looped
 	my $result = trim(`losetup -j $encFile | awk '{ print \$1 }'`);
+	
+	## TODO: try to remove loop if still there
+	
 	if ( $result ne "" ) {
 		## container is still looped and should NOT be deleted.
 		die "Container is looped ($result) and should NOT be deleted.";

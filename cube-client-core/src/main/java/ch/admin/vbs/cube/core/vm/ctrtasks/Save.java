@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
 import java.util.Map;
@@ -25,6 +24,7 @@ import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
+import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
@@ -37,8 +37,8 @@ public class Save extends AbstractCtrlTask {
 	private static final Logger LOG = LoggerFactory.getLogger(Save.class);
 
 	public Save(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel);
+			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
+		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override

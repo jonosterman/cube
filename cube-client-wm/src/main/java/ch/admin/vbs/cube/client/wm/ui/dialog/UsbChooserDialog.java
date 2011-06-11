@@ -18,6 +18,7 @@ package ch.admin.vbs.cube.client.wm.ui.dialog;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.util.List;
 import java.util.ResourceBundle;
 
 import javax.swing.AbstractAction;
@@ -36,7 +37,8 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
-import ch.admin.vbs.cube.core.usb.UsbManager;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry.DeviceEntryState;
 
 import com.jidesoft.dialog.ButtonPanel;
 
@@ -56,20 +58,24 @@ public class UsbChooserDialog extends CubeWizard {
 	private DefaultComboBoxModel deviceModel;
 	private final IVmMonitor monitor;
 	private JComboBox deviceFld;
+	private final List<UsbDeviceEntry> list;
 
 	/**
+	 * @param list 
 	 * 
 	 */
-	public UsbChooserDialog(JFrame owner, String messageKey, IVmMonitor monitor) {
+	public UsbChooserDialog(JFrame owner, String messageKey, IVmMonitor monitor, List<UsbDeviceEntry> list) {
 		super(owner, "");
 		this.messageKey = messageKey;
 		this.monitor = monitor;
+		this.list = list;
 		//
 		deviceModel = new DefaultComboBoxModel();
 		try {
-			UsbManager um = new UsbManager();
-			for (UsbDevice d : um.listDevices()) {
-				deviceModel.addElement(d);
+			for (UsbDeviceEntry d : list) {
+				if (d.getState() == DeviceEntryState.AVAILABLE) {
+					deviceModel.addElement(d.getDevice());
+				}
 			}
 		} catch (Exception e) {
 			LOG.error("Failed to list usb devices", e);

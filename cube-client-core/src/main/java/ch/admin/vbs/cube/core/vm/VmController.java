@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm;
 
 import java.util.Collections;
@@ -31,14 +30,18 @@ import ch.admin.vbs.cube.common.container.ContainerFactoryProvider;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
+import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.ctrtasks.Delete;
 import ch.admin.vbs.cube.core.vm.ctrtasks.InstallGuestAdditions;
 import ch.admin.vbs.cube.core.vm.ctrtasks.PowerOff;
 import ch.admin.vbs.cube.core.vm.ctrtasks.Save;
 import ch.admin.vbs.cube.core.vm.ctrtasks.Start;
+import ch.admin.vbs.cube.core.vm.ctrtasks.UsbAttach;
+import ch.admin.vbs.cube.core.vm.ctrtasks.UsbDetach;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
@@ -59,7 +62,8 @@ public class VmController implements Runnable, IVmProductListener {
 		product = new VBoxProduct();
 	}
 
-	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer) {
+	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
+			IOption option) {
 		switch (cmd) {
 		case STAGE:
 			stagger.startStaging(vm, model, id, keyring);
@@ -67,22 +71,35 @@ public class VmController implements Runnable, IVmProductListener {
 			break;
 		case START:
 			if (vm.getVmStatus() == VmStatus.STOPPED) {
-				exec.execute(new Start(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model));
+				exec.execute(new Start(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			} else {
 				LOG.warn("Vm MUST be stopped to be started.");
 			}
 			break;
 		case POWER_OFF:
-			exec.execute(new PowerOff(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model));
+			exec.execute(new PowerOff(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			break;
 		case SAVE:
-			exec.execute(new Save(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model));
+			exec.execute(new Save(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			break;
 		case INSTALL_GUESTADDITIONS:
-			exec.execute(new InstallGuestAdditions(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model));
+			exec.execute(new InstallGuestAdditions(vm));
 			break;
 		case DELETE:
-			exec.execute(new Delete(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model));
+			exec.execute(new Delete(containerFactory, vm, model));
+			break;
+		case ATTACH_USB:
+			exec.execute(new UsbAttach(vm, product, option));
+			break;
+		case DETACH_USB:
+			exec.execute(new UsbDetach(vm, product, option));
+			break;
+		case LIST_USB:
+			try {
+				product.listUsb(vm, (UsbDeviceEntryList) option);
+			} catch (VmException e) {
+				LOG.error("Failed to list usb devices",e);
+			}
 			break;
 		default:
 			LOG.warn("Command not implemented [{}]", cmd);
@@ -270,7 +287,7 @@ public class VmController implements Runnable, IVmProductListener {
 			} else {
 				LOG.error("Unexpected STOPPED status. Power off VM.");
 				// unexpected STOPPED status (VM's OS shutdown). power off VM.
-				controlVm(vm, null, VmCommand.POWER_OFF, null, null, null);
+				controlVm(vm, null, VmCommand.POWER_OFF, null, null, null, null);
 			}
 			break;
 		default:

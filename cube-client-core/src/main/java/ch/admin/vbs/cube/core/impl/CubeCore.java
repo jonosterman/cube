@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.impl;
 
 import java.net.URL;
@@ -32,11 +31,14 @@ import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.ILoginUI;
 import ch.admin.vbs.cube.core.ISession;
+import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
 import ch.admin.vbs.cube.core.vm.IVmStateChangeListener;
 import ch.admin.vbs.cube.core.vm.Vm;
@@ -148,6 +150,10 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	}
 
 	private void controlVm(String vmId, VmCommand cmd) {
+		controlVm(vmId, cmd, null);
+	}
+
+	private void controlVm(String vmId, VmCommand cmd, IOption option) {
 		// thread safe not-null test
 		ISession ses = actSession;
 		if (ses != null) {
@@ -158,7 +164,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 					return;
 				}
 			}
-			ses.controlVm(vmId, cmd);
+			ses.controlVm(vmId, cmd, option);
 		}
 	}
 
@@ -231,7 +237,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 					@Override
 					public void run() {
 						LOG.debug("Save VM [{}]", vm.getDescriptor().getRemoteCfg().getName());
-						session.controlVm(vm.getId(), VmCommand.SAVE);
+						session.controlVm(vm.getId(), VmCommand.SAVE, null);
 					}
 				});
 			}
@@ -253,8 +259,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				if (remindBkp != remind) {
 					remindBkp = remind;
-					clientFacade.showMessage(I18nBundleProvider.getBundle().getString("login.waitstopped") + " (" + remind + " VMs)",
-							IClientFacade.OPTION_NONE);
+					clientFacade
+							.showMessage(I18nBundleProvider.getBundle().getString("login.waitstopped") + " (" + remind + " VMs)", IClientFacade.OPTION_NONE);
 				}
 				LOG.debug("Wait on [{}] VMs", remind);
 				try {
@@ -284,7 +290,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 					exec.execute(new Runnable() {
 						@Override
 						public void run() {
-							s.controlVm(vm.getId(), VmCommand.SAVE);
+							s.controlVm(vm.getId(), VmCommand.SAVE, null);
 						}
 					});
 				}
@@ -307,8 +313,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				if (remindBkp != remind) {
 					remindBkp = remind;
-					clientFacade.showMessage(I18nBundleProvider.getBundle().getString("login.waitstopped") + " (" + remind + ")",
-							IClientFacade.OPTION_NONE);
+					clientFacade.showMessage(I18nBundleProvider.getBundle().getString("login.waitstopped") + " (" + remind + ")", IClientFacade.OPTION_NONE);
 				}
 				LOG.debug("Wait on [{}] VMs", remind);
 				try {
@@ -331,9 +336,18 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		}
 	}
 
-	@Override
-	public void connectUsbDevice(String vmId, UsbDevice usbDevice) {
-		LOG.error("connect usb not implemented");
+	public void attachUsbDevice(String vmId, UsbDevice usbDevice) {
+		controlVm(vmId, VmCommand.ATTACH_USB, usbDevice);
+	}
+
+	public void detachUsbDevice(String vmId, UsbDevice usbDevice) {
+		controlVm(vmId, VmCommand.DETACH_USB, usbDevice);
+	}
+
+	public List<UsbDeviceEntry> getUsbDevices(String vmId) {
+		UsbDeviceEntryList list = new UsbDeviceEntryList();
+		controlVm(vmId, VmCommand.LIST_USB, list);
+		return list;
 	}
 
 	public void setup(IClientFacade clientFacade, ISessionManager smanager) {

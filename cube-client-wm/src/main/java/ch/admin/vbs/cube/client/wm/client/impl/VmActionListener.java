@@ -104,7 +104,7 @@ public class VmActionListener implements IVmActionListener {
 				if (device == null) {
 					// nothing to bind (canceled by user or no USB device found)
 				} else {
-					coreFacade.connectUsbDevice(h.getVmId(), device);
+					coreFacade.attachUsbDevice(h.getVmId(), device);
 				}
 			}
 		});
