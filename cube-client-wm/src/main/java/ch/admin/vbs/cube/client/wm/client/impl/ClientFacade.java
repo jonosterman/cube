@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.client.impl;
 
 import java.util.HashSet;
@@ -27,6 +26,7 @@ import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -42,10 +42,8 @@ public class ClientFacade implements IClientFacade {
 	private HashSet<String> cachedVmIds = new HashSet<String>();
 
 	@Override
-	public int askConfirmation(String messageKey) {
-		int confirmation = userIface.showConfirmationDialog(messageKey);
-		userIface.showVms();
-		return confirmation;
+	public void askConfirmation(String messageKey, String requestId) {
+		userIface.showConfirmationDialog(messageKey, requestId);
 	}
 
 	@Override
@@ -74,8 +72,8 @@ public class ClientFacade implements IClientFacade {
 	}
 
 	@Override
-	public void showGetPIN(String additionalMessage) {
-		userIface.showPinDialog(additionalMessage);
+	public void showGetPIN(String additionalMessage, String requestId) {
+		userIface.showPinDialog(additionalMessage, requestId);
 	}
 
 	@Override
@@ -94,10 +92,14 @@ public class ClientFacade implements IClientFacade {
 	}
 
 	@Override
-	public void closeDialog() {
-		userIface.closeDialog();
+	public void showUsbDeviceChooser(UsbDeviceEntryList list, String requestId) {
+		userIface.showUsbDeviceDialog("usbdialog.choosedestinationvm.message", list, requestId);
 	}
 
+	// @Override
+	// public void closeDialog() {
+	// userIface.closeDialog();
+	// }
 	// #######################################################
 	// Injections
 	// #######################################################

@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core;
 
 import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
-import ch.admin.vbs.cube.core.impl.CubeCore;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -27,6 +26,10 @@ import ch.admin.vbs.cube.core.vm.Vm;
  * 
  * IClientFacade describe a simple UI that may display user's VMs or a dialog.
  * Always only one dialog is visible and this dialog hide the VMs content.
+ * 
+ * All methods are not-blocking. Blocking method would problematic, in case the
+ * user removes its token (we must break the method call). Therefore methods
+ * that should return a value must use ICoreFacade.
  * 
  * @see bridge pattern
  */
@@ -55,14 +58,15 @@ public interface IClientFacade {
 
 	/**
 	 * The implementor of this method has to make sure that a password is
-	 * retrieved and {@link CubeCore#enteredPassword(String)} MUST be called
+	 * retrieved and {@link ICubeCore#enteredPassword(String)} MUST be called
 	 * afterwards! EVEN IF NO PASSWORD HAS BEEN RETRIEVED!
 	 * 
 	 * @param additionalMessage
 	 *            message shown in the password dialog along with the standard
 	 *            message.
+	 * @param string 
 	 */
-	void showGetPIN(String additionalMessage);
+	void showGetPIN(String additionalMessage, String requestId);
 
 	/**
 	 * Shows a message dialog with the given message.
@@ -91,12 +95,10 @@ public interface IClientFacade {
 	 * Request a user confirmation
 	 * 
 	 * @param messageKey
+	 * @param string 
 	 * @return 1 = confirmed, 0 = cancel
 	 */
-	int askConfirmation(String messageKey);
+	void askConfirmation(String messageKey, String requestId);
 
-	/**
-	 * Close actually opened dilaog.
-	 */
-	void closeDialog();
+	void showUsbDeviceChooser(UsbDeviceEntryList list, String requestId);
 }

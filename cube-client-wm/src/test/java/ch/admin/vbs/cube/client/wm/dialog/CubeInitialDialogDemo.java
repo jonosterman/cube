@@ -24,6 +24,7 @@ import org.junit.Test;
 import ch.admin.vbs.cube.client.wm.client.ICubeActionListener;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeInitialDialog;
 import ch.admin.vbs.cube.client.wm.utils.CubeUIDefaults;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 public class CubeInitialDialogDemo {
 	public static void main(String[] args) {
@@ -49,9 +50,21 @@ public class CubeInitialDialogDemo {
 			public void lockCube() {
 			}
 			
+			
 			@Override
-			public void enteredPassword(char[] password) {
+			public void enteredConfirmation(int result, String requestId) {
 				// TODO Auto-generated method stub
+				
+			}
+			@Override
+			public void enteredPassword(char[] password, String requestId) {
+				// TODO Auto-generated method stub
+				
+			}
+			@Override
+			public void enteredUsbDevice(UsbDevice object, String requestId) {
+				// TODO Auto-generated method stub
+				
 			}
 		});
 		SwingUtilities.invokeLater(new Runnable() {

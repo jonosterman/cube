@@ -16,6 +16,8 @@
 
 package ch.admin.vbs.cube.core;
 
+import ch.admin.vbs.cube.core.impl.CallbackPin;
+
 /**
  * ILogin UI is used to display login related dialogs. It has priority over all
  * other UI elements (lock screen)
@@ -25,27 +27,18 @@ package ch.admin.vbs.cube.core;
 public interface ILoginUI {
 	/** Dialogs types */
 	public enum LoginDialogType {
-		NOOPTION, SHUTDOW_OPTION
+		NO_OPTION, SHUTDOW_OPTION
 	}
 
 	/**
 	 * Display a 'Enter PIN' dialog with a user message (example:
-	 * "Login failed, try again")
+	 * "Login failed, try again"). And hide VMs.
 	 */
-	void showPinDialog(String message, ILoginUICallback callback);
+	void showPinDialog(String message, CallbackPin callback);
 
-	/** Display message dialog. */
+	/** Display message dialog and hide VMs. */
 	void showDialog(String message, LoginDialogType type);
 
-	/** Callback used to receive PIN from UI. */
-	static interface ILoginUICallback {
-		/** user entered its password. */
-		void passwordEntered(char[] pwd);
-
-		/** cancel this login. */
-		void abort();
-	}
-
-	/** close curently opened dialog */
+	/** close any opened dialog and show current session VMs */
 	void closeDialog();
 }

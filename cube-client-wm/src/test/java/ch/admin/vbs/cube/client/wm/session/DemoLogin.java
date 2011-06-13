@@ -16,8 +16,6 @@
 
 package ch.admin.vbs.cube.client.wm.session;
 
-import ch.admin.vbs.cube.common.container.IContainerFactory;
-import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
 import ch.admin.vbs.cube.core.IAuthModule;
 import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
@@ -35,7 +33,7 @@ public class DemoLogin {
 		
 		IAuthModule authModule = new ScAuthModule();
 		ITokenDevice tokenDevice = new ScTokenDevice();
-		IContainerFactory containerFactory = new DmcryptContainerFactory();
+		// IContainerFactory containerFactory = new DmcryptContainerFactory();
 		//
 //		ITerminal terminal = new JMockTerminal();
 //		//ISessionUI sessionUI = new JMockSessionUI();

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.client.impl;
 
 import java.util.concurrent.ExecutorService;
@@ -21,6 +20,7 @@ import java.util.concurrent.Executors;
 
 import ch.admin.vbs.cube.client.wm.client.ICubeActionListener;
 import ch.admin.vbs.cube.core.ICoreFacade;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 public class CubeActionListener implements ICubeActionListener {
 	private ICoreFacade coreFacade;
@@ -57,11 +57,31 @@ public class CubeActionListener implements ICubeActionListener {
 	}
 
 	@Override
-	public void enteredPassword(final char[] password) {
+	public void enteredPassword(final char[] password, final String requestId) {
 		exec.execute(new Runnable() {
 			@Override
 			public void run() {
-				coreFacade.enteredPassword(password);
+				coreFacade.enteredPassword(password, requestId);
+			}
+		});
+	}
+
+	@Override
+	public void enteredConfirmation(final int result, final String requestId) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.enteredConfirmation(result, requestId);
+			}
+		});
+	}
+
+	@Override
+	public void enteredUsbDevice(final UsbDevice device, final String requestId) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.enteredUsbDevice(device, requestId);
 			}
 		});
 	}

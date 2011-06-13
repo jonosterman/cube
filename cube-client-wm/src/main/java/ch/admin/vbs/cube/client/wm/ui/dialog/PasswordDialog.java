@@ -39,8 +39,8 @@ import javax.swing.SpringLayout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
+import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 
 import com.jidesoft.dialog.ButtonPanel;

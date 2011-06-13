@@ -13,22 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.client.impl;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.IVmActionListener;
 import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 public class VmActionListener implements IVmActionListener {
 	private ICoreFacade coreFacade;
 	private ExecutorService exec = Executors.newCachedThreadPool();
-	private IUserInterface userIface;
 
 	public VmActionListener() {
 	}
@@ -99,19 +95,12 @@ public class VmActionListener implements IVmActionListener {
 		exec.execute(new Runnable() {
 			@Override
 			public void run() {
-				UsbDevice device = userIface.showUsbDeviceDialog(h, "usbdialog.choosedestinationvm.message");
-				userIface.showVms();
-				if (device == null) {
-					// nothing to bind (canceled by user or no USB device found)
-				} else {
-					coreFacade.attachUsbDevice(h.getVmId(), device);
-				}
+				coreFacade.attachUsbDeviceRequest(h.getVmId());
 			}
 		});
 	}
 
-	public void setupDependencies(ICoreFacade coreFacade, IUserInterface userIface) {
+	public void setupDependencies(ICoreFacade coreFacade) {
 		this.coreFacade = coreFacade;
-		this.userIface = userIface;
 	}
 }

@@ -77,5 +77,8 @@ public class PowerOff extends AbstractCtrlTask {
 		} catch (Exception e) {
 			LOG.error("Failed to unmount VM's containers", e);
 		}
+		tempStatus.remove(vm.getId());
+		ctrl.refreshVmStatus(vm);
+		
 	}
 }

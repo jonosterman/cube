@@ -16,6 +16,8 @@
 
 package ch.admin.vbs.cube.client.wm.client;
 
+import ch.admin.vbs.cube.core.usb.UsbDevice;
+
 /**
  * The listener interface for receiving cube action events. The class that is
  * interested in processing a cube action event implements this interface.
@@ -38,9 +40,15 @@ public interface ICubeActionListener {
 
 	/**
 	 * User enter its password
-	 * 
-	 * @param password
-	 *            password
+	 * @param requestId 
 	 */
-	void enteredPassword(char[] password);
+	void enteredPassword(char[] password, String requestId);
+
+	/**
+	 * User entered a confirmation
+	 * @param requestId 
+	 */
+	void enteredConfirmation(int result, String requestId);
+
+	void enteredUsbDevice(UsbDevice device, String requestId);
 }

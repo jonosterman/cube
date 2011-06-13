@@ -41,6 +41,6 @@ public interface ISessionManager {
 
 		void sessionClosed(ISession session);
 
-		void sessionUpdated(ISession session);
+		void sessionLocked(ISession session);
 	}
 }

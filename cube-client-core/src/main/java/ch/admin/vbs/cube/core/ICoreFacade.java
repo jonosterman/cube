@@ -16,11 +16,9 @@
 package ch.admin.vbs.cube.core;
 
 import java.net.URL;
-import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 
 /**
  * The core facade is the interface between the window manager and the core
@@ -37,7 +35,9 @@ public interface ICoreFacade {
 	 * @param password
 	 *            the password for the key store
 	 */
-	void enteredPassword(char[] password);
+	void enteredPassword(char[] password, String requestId);
+
+	void enteredConfirmation(int result, String requestId);
 
 	/**
 	 * Starts the virtual machine with the given id, if the user is allowed to.
@@ -135,6 +135,8 @@ public interface ICoreFacade {
 
 	void detachUsbDevice(String vmId, UsbDevice usbDevice);
 
-	List<UsbDeviceEntry> getUsbDevices(String vmId);
+	void enteredUsbDevice(UsbDevice device, String requestId);
+
+	void attachUsbDeviceRequest(String vmId);
 
 }

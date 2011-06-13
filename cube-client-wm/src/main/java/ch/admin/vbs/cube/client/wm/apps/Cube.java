@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.apps;
 
 import java.awt.GraphicsDevice;
@@ -202,13 +201,13 @@ public final class Cube {
 		// dependencies (UI / Client)
 		((VmControl) vmControl).setupDependencies(cubeClient, windowsControl);
 		((VmMonitor) vmMonitor).setupDependencies(cubeClient);
-		((VmActionListener) vmActionListener).setupDependencies(coreFacade, windowManager);
+		((VmActionListener) vmActionListener).setupDependencies(coreFacade);
 		((CubeActionListener) cubeActionListener).setupDependencies(coreFacade);
 		for (NavigationBar n : navBars) {
 			n.setupDependencies(cubeClient, vmControl, vmMonitor);
 			cubeClient.addListener(n);
 		}
-		((WindowManager)windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager, coreFacade);
+		((WindowManager) windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager);
 		// listeners
 		VmAbstractAction.addVmActionListener(vmActionListener);
 		CubeAbstractAction.addCubeActionListener(cubeActionListener);

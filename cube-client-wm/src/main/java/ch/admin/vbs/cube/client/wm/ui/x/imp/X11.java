@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 /* 
@@ -39,6 +38,7 @@ import com.sun.jna.ptr.PointerByReference;
 /** Definition (incomplete) of the X library. */
 public interface X11 extends Library {
 	/** Logger */
+	@SuppressWarnings("serial")
 	public class VisualID extends NativeLong {
 		public VisualID() {
 		}
@@ -48,6 +48,7 @@ public interface X11 extends Library {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	public class XID extends NativeLong {
 		public static final XID None = null;
 
@@ -75,6 +76,7 @@ public interface X11 extends Library {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	public class Atom extends XID {
 		public static final Atom None = null;
 
@@ -254,6 +256,7 @@ public interface X11 extends Library {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	public class Colormap extends XID {
 		public static final Colormap None = null;
 
@@ -292,6 +295,7 @@ public interface X11 extends Library {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	public class Cursor extends XID {
 		public static final Cursor None = null;
 
@@ -385,6 +389,7 @@ public interface X11 extends Library {
 		}
 	}
 
+	@SuppressWarnings("serial")
 	public class Pixmap extends Drawable {
 		public static final Pixmap None = null;
 
@@ -456,6 +461,7 @@ public interface X11 extends Library {
 			public short alpha, alphaMask;
 		}
 
+		@SuppressWarnings("serial")
 		public class PictFormat extends NativeLong {
 			public PictFormat(final long value) {
 				super(value);

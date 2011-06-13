@@ -45,7 +45,7 @@ import ch.admin.vbs.cube.core.vm.ctrtasks.UsbDetach;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
-public class VmController implements Runnable, IVmProductListener {
+public class VmController implements IVmProductListener {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VmController.class);
 	private HashMap<VmModel, ModelListener> lIndex = new HashMap<VmModel, VmController.ModelListener>();
@@ -64,6 +64,7 @@ public class VmController implements Runnable, IVmProductListener {
 
 	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
 			IOption option) {
+		LOG.debug("controlVm [{}]", cmd);
 		switch (cmd) {
 		case STAGE:
 			stagger.startStaging(vm, model, id, keyring);
@@ -98,7 +99,7 @@ public class VmController implements Runnable, IVmProductListener {
 			try {
 				product.listUsb(vm, (UsbDeviceEntryList) option);
 			} catch (VmException e) {
-				LOG.error("Failed to list usb devices",e);
+				LOG.error("Failed to list usb devices", e);
 			}
 			break;
 		default:
@@ -134,9 +135,7 @@ public class VmController implements Runnable, IVmProductListener {
 		}
 	}
 
-	@Override
-	public void run() {
-	}
+	
 
 	private class ModelListener implements IVmModelChangeListener {
 		private final VmModel src;
@@ -164,6 +163,7 @@ public class VmController implements Runnable, IVmProductListener {
 		}
 	}
 
+
 	/** update vm state due to a change in model. */
 	public void refreshVmStatus(Vm vm) {
 		try {
@@ -184,10 +184,17 @@ public class VmController implements Runnable, IVmProductListener {
 					LOG.debug("already stagged");
 					VmStatus tmp = tempStatus.get(vm.getId());
 					if (tmp != null) {
-						LOG.debug("Rely on temporary status [{}]", tmp);
-						// when starting or stopping, rely on the temporary
-						// status that we set in controlVm() method.
-						vm.setVmStatus(tmp);
+						VmProductState pstate = product.getProductState(vm);
+						if (pstate == VmProductState.ERROR) {
+							// cancel temporary status
+							tempStatus.remove(vm.getId());
+							vm.setVmStatus(VmStatus.ERROR);
+						} else {
+							LOG.debug("Rely on temporary status [{}] instead of product state [{}]", tmp, pstate);
+							// when starting or stopping, rely on the temporary
+							// status that we set in controlVm() method.
+							vm.setVmStatus(tmp);
+						}
 					} else {
 						// container are present on the disk. ask product in
 						// order to determine VM state

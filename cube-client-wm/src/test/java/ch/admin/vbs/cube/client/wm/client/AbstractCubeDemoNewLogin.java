@@ -170,14 +170,14 @@ public class AbstractCubeDemoNewLogin {
 		// dependencies (UI / Client)
 		((VmControl)vmControl).setupDependencies(cubeClient, windowsControl);
 		((VmMonitor)vmMonitor).setupDependencies(cubeClient);
-		((VmActionListener)vmActionListener).setupDependencies(coreFacade, windowManager);
+		((VmActionListener)vmActionListener).setupDependencies(coreFacade);
 		((CubeActionListener)cubeActionListener).setupDependencies(coreFacade);
 		
 		for (NavigationBar n : navBars) {
 			n.setupDependencies(cubeClient, vmControl, vmMonitor);
 			cubeClient.addListener(n);
 		}
-		((WindowManager)windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager, coreFacade);
+		((WindowManager)windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager);
 		// listeners
 		VmAbstractAction.addVmActionListener(vmActionListener);
 		CubeAbstractAction.addCubeActionListener(cubeActionListener);

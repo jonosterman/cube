@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.impl;
 
+import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +34,7 @@ import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
+import ch.admin.vbs.cube.core.vm.VmStatus;
 import ch.admin.vbs.cube.core.vm.list.DescriptorModelCache;
 import ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater;
 
@@ -72,6 +75,7 @@ public class Session implements Runnable, ISession {
 	private VmModel vmModel;
 	private WSDescriptorUpdater descWs;
 	private final VmController vmController;
+	private Executor exec = Executors.newCachedThreadPool();
 
 	public Session(IIdentityToken id, ISessionUI clientUI, VmController vmController) {
 		this.id = id;
@@ -111,17 +115,18 @@ public class Session implements Runnable, ISession {
 	@Override
 	public void run() {
 		while (true) {
+			State s = state;
 			timestamp = System.currentTimeMillis();
 			int flag = stateCnt;
-			LOG.debug("Proceed state [{}]", state);
-			switch (state) {
+			LOG.debug("Proceed state [{}]", s);
+			switch (s) {
 			case idle:
 			case error:
 				synchronized (lock) {
 					try {
 						// it may have changed since switch statement (->
 						// deadlock);
-						if (state == State.idle || state == State.error)
+						if (state == s)
 							lock.wait();
 					} catch (InterruptedException e) {
 						LOG.error("Failure", e);
@@ -161,7 +166,7 @@ public class Session implements Runnable, ISession {
 					state = State.error;
 					break;
 				}
-				sessionUI.closeDialog(this);
+				sessionUI.showWorkspace(this);
 				// start web service
 				try {
 					if (descWs == null) {
@@ -182,14 +187,8 @@ public class Session implements Runnable, ISession {
 				}
 				break;
 			case lock:
-				// lock session
-				// ...
-				LOG.error("LOCKING NOT IMPLEMENTED");
-				try {
-					Thread.sleep(2000);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
+				// lock session (actually do nothing)
+				LOG.error("session locked");
 				// and wait
 				synchronized (lock) {
 					if (flag == stateCnt) {
@@ -199,7 +198,7 @@ public class Session implements Runnable, ISession {
 				break;
 			case close:
 				// standby all VMs
-				// ..todo
+				closeAllVms();
 				// stop web service
 				if (descWs != null) {
 					descWs.stop();
@@ -227,7 +226,7 @@ public class Session implements Runnable, ISession {
 			default:
 				break;
 			}
-			LOG.debug("State completed in [{} sec]", String.format("%.3f", (System.currentTimeMillis() - timestamp) / 1000f));
+			LOG.debug("State [{}] completed in [{} sec]", s, String.format("%.3f", (System.currentTimeMillis() - timestamp) / 1000f));
 		}
 	}
 
@@ -244,6 +243,7 @@ public class Session implements Runnable, ISession {
 	@Override
 	public void lock() {
 		LOG.debug("Trigger 'lock'");
+		new Exception().printStackTrace();
 		synchronized (lock) {
 			state = State.lock;
 			stateCnt++;
@@ -268,16 +268,66 @@ public class Session implements Runnable, ISession {
 	}
 
 	@Override
-	public void controlVm(String vmId, VmCommand cmd, IOption option) {
-		if (state == State.idle && keyring != null) {
-			Vm vm = vmModel.findByInstanceUid(vmId);
+	public void controlVm(String vmId, final VmCommand cmd, final IOption option) {
+		if ((state == State.idle || state == State.close) && keyring != null) {
+			final Vm vm = vmModel.findByInstanceUid(vmId);
 			if (vm == null) {
 				LOG.debug("VM not found [" + vmId + "] in this session.");
 			} else {
-				vmController.controlVm(vm, vmModel, cmd, id, keyring, transfer, option);
+				exec.execute(new Runnable() {
+					@Override
+					public void run() {
+						vmController.controlVm(vm, vmModel, cmd, id, keyring, transfer, option);
+					}
+				});
 			}
 		} else {
 			LOG.debug("Ignore command [" + cmd + "] because session is not ready [" + state + " / " + keyring + "].");
 		}
+	}
+
+	private void closeAllVms() {
+		// Index running VMs
+		ArrayList<Vm> vmIndex = new ArrayList<Vm>();
+		// Start 'SAVE' for all running VMs
+		for (final Vm vm : vmModel.getVmList()) {
+			if (vm.getVmStatus() == VmStatus.RUNNING) {
+				vmIndex.add(vm);
+				LOG.debug("Save VM [{}]", vm.getDescriptor().getRemoteCfg().getName());
+				controlVm(vm.getId(), VmCommand.SAVE, null);
+			}
+		}
+		LOG.debug("VM to be saved before closing the session [" + vmIndex.size() + "]");
+		// Wait that all VMs have been saved
+		long timeout = System.currentTimeMillis() + 30000;
+		int remindBkp = -1;
+		while (System.currentTimeMillis() < timeout) {
+			int remind = 0;
+			for (Vm vm : vmIndex) {
+				if (vm.getVmStatus() == VmStatus.STOPPING || vm.getVmStatus() == VmStatus.RUNNING) {
+					LOG.debug("Wait on VM [{}][{}]", vm.getDescriptor().getRemoteCfg().getName(), vm.getVmStatus());
+					remind++;
+				}
+			}
+			if (remind == 0) {
+				LOG.debug("All VMs [{}] are stopped [{} secs]", vmIndex.size(), (timeout - System.currentTimeMillis()) / 1000);
+				return;
+			} else {
+				if (remindBkp != remind) {
+					remindBkp = remind;
+					sessionUI.showDialog(I18nBundleProvider.getBundle().getString("login.waitstopped") + " (" + remind + " VMs)", this);
+					LOG.debug("Wait on [{}] VMs", remind);
+					try {
+						Thread.sleep(1000);
+					} catch (Exception e) {
+					}
+				}
+			}
+			try {
+				Thread.sleep(500);
+			} catch (Exception e) {
+			}
+		}
+		LOG.error("Not all VMs have been saved during logout");
 	}
 }

@@ -571,7 +571,9 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void save(Vm vm, VmModel model) throws VmException {
+		System.out.println("1");
 		synchronized (wsLock) {
+			System.out.println("2");
 			try {
 				// get IMachine reference
 				IMachine machine = getIMachineReference(vm.getId());
@@ -698,15 +700,29 @@ public class VBoxProduct implements VBoxCacheListener {
 				}
 				// populate result list
 				for (IHostUSBDevice dev : hostDevices) {
+					// exclude GemPlus product from the list in order to avoid attaching the main smart-card reader to a guest
+					if (dev.getVendorId() == 0x08e6) {
+						continue;
+					}
+					// exclude product without description
+					String p = dev.getProduct();
+					String m = dev.getManufacturer();
+					if (p == null || p.trim().length()==0) {
+						continue;
+					}
+					// format description : use product description and include manufacturer if available
+					String fmt = p;
+					if (m != null && m.trim().length()>0) {
+						fmt += " ("+m+")";
+					}
+					// add to list
 					if (attachedIds.contains(dev.getAddress())) {
 						list.add(new UsbDeviceEntry(vm.getId(),//
-								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), dev
-										.getProduct() + " (" + dev.getManufacturer() + ")"),//
+								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
 								DeviceEntryState.ALREADY_ATTACHED));
 					} else {
 						list.add(new UsbDeviceEntry(vm.getId(),//
-								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), dev
-										.getProduct() + " (" + dev.getManufacturer() + ")"),//
+								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
 								DeviceEntryState.AVAILABLE));
 					}
 				}

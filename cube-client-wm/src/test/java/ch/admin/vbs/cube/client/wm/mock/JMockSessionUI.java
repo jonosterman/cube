@@ -61,22 +61,7 @@ public class JMockSessionUI implements ISessionUI {
 		});
 	}
 
-	@Override
-	public void closeDialog(final ISession session) {
-		SwingUtilities.invokeLater(new Runnable() {
-			@Override
-			public void run() {
-				synchronized (sessionDialog) {
-					// hide current session dialog if present
-					CubeWizard dial = sessionDialog.get(session);
-					if (dial != null) {
-						dial.setVisible(false);
-						dial.dispose();
-					}
-				}
-			}
-		});
-	}
+	
 	
 	@Override
 	public void showWorkspace(ISession session) {

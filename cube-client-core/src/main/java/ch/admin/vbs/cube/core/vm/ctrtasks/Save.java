@@ -44,11 +44,15 @@ public class Save extends AbstractCtrlTask {
 	@Override
 	public void run() {
 		// set temporary status
+		LOG.debug("Start saving...");
 		tempStatus.put(vm.getId(), VmStatus.STOPPING);
 		vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.saving"));
+		LOG.debug("refresh");
 		ctrl.refreshVmStatus(vm);
+		LOG.debug("refresh done");
 		// stop VM
 		try {
+			LOG.debug("Product.save()...");
 			product.save(vm, vmModel);
 			LOG.debug("VM state saved.");
 		} catch (Exception e) {

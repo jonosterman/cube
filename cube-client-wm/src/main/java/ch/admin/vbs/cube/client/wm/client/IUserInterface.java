@@ -17,8 +17,7 @@
 package ch.admin.vbs.cube.client.wm.client;
 
 import ch.admin.vbs.cube.common.RelativeFile;
-import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * This interface is used to control the UI: if it should show a specific dialog
@@ -38,8 +37,9 @@ public interface IUserInterface {
 	 * Display PIN (Password) dialog.
 	 * 
 	 * @param additionalMessage
+	 * @param requestId 
 	 */
-	void showPinDialog(String additionalMessage);
+	void showPinDialog(String additionalMessage, String requestId);
 
 	/**
 	 * Show file transfer dialog
@@ -56,17 +56,19 @@ public interface IUserInterface {
 
 	/**
 	 * Show confirmation dialog
+	 * @param requestId 
 	 */
-	int showConfirmationDialog(String messageKey);
+	void showConfirmationDialog(String messageKey, String requestId);
 
 	/**
 	 * Display a dialog where user could pick an already connected USB device to
 	 * bind it to the selected VM.
+	 * @param list 
 	 * 
 	 * @param h
 	 *            target VM.
 	 */
-	UsbDevice showUsbDeviceDialog(VmHandle h, String messageKey);
+	void showUsbDeviceDialog(String messageKey, UsbDeviceEntryList list, String requestId);
 
 	/** close current dialog. */
 	void closeDialog();

@@ -19,8 +19,8 @@ package ch.admin.vbs.cube.client.wm.ui.tabs.action;
 import java.awt.event.ActionEvent;
 
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
-import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
+import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 /**
  * 

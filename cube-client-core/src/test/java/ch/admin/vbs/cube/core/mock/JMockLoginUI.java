@@ -31,6 +31,7 @@ import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
 
 import ch.admin.vbs.cube.core.ILoginUI;
+import ch.admin.vbs.cube.core.impl.CallbackPin;
 
 /**
  * MockLoginUI is used to simulate login UI. mht/2011.06.01: it seems buggy
@@ -41,7 +42,7 @@ public class JMockLoginUI implements ILoginUI {
 	private JDialog currentDialog;
 
 	@Override
-	public void showPinDialog(final String message, final ILoginUICallback callback) {
+	public void showPinDialog(final String message, final CallbackPin callback) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
@@ -73,9 +74,10 @@ public class JMockLoginUI implements ILoginUI {
 						loginBt.setEnabled(false);
 						char[] input = pfield.getPassword();
 						if (input == null || input.length == 0) {
-							callback.abort();
+							callback.aborted();
 						} else {
-							callback.passwordEntered(input);
+							callback.setPassword(input);
+							callback.process();
 						}
 					}
 				});
@@ -87,9 +89,10 @@ public class JMockLoginUI implements ILoginUI {
 							loginBt.setEnabled(false);
 							char[] input = pfield.getPassword();
 							if (input == null || input.length == 0) {
-								callback.abort();
+								callback.aborted();
 							} else {
-								callback.passwordEntered(input);
+								callback.setPassword(input);
+								callback.process();
 							}
 						}
 					}

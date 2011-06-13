@@ -58,7 +58,6 @@ public class UsbChooserDialog extends CubeWizard {
 	private DefaultComboBoxModel deviceModel;
 	private final IVmMonitor monitor;
 	private JComboBox deviceFld;
-	private final List<UsbDeviceEntry> list;
 
 	/**
 	 * @param list 
@@ -68,7 +67,6 @@ public class UsbChooserDialog extends CubeWizard {
 		super(owner, "");
 		this.messageKey = messageKey;
 		this.monitor = monitor;
-		this.list = list;
 		//
 		deviceModel = new DefaultComboBoxModel();
 		try {

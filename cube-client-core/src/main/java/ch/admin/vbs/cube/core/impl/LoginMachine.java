@@ -32,7 +32,6 @@ import ch.admin.vbs.cube.core.IAuthModuleListener;
 import ch.admin.vbs.cube.core.ILogin;
 import ch.admin.vbs.cube.core.ILoginListener;
 import ch.admin.vbs.cube.core.ILoginUI;
-import ch.admin.vbs.cube.core.ILoginUI.ILoginUICallback;
 import ch.admin.vbs.cube.core.ILoginUI.LoginDialogType;
 import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.ITokenListener;
@@ -253,7 +252,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 
 		@Override
 		public void refreshUI() {
-			loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NOOPTION);
+			loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
 		}
 	}
 
@@ -319,17 +318,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 			if (authAttempts > 0) {
 				message = bundle.getString("login.failed");
 			}
-			loginUI.showPinDialog(message, new ILoginUICallback() {
-				@Override
-				public void passwordEntered(char[] pwd) {
-					authModule.setPassword(pwd);
-				}
-
-				@Override
-				public void abort() {
-					// authModule.abort();
-				}
-			});
+			loginUI.showPinDialog(message, new CallbackPin(authModule));
 		}
 	}
 

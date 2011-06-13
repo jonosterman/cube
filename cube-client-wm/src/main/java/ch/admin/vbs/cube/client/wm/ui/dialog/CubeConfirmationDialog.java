@@ -29,8 +29,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.SpringLayout;
 
-import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
+import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 import com.jidesoft.dialog.ButtonPanel;
 

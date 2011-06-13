@@ -38,10 +38,10 @@ import sun.security.pkcs11.SunPKCS11;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
 import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.core.AuthModuleEvent;
+import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.IAuthModule;
 import ch.admin.vbs.cube.core.IAuthModuleListener;
-import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 
 /**
  * 

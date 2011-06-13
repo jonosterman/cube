@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.wm;
 
 import java.awt.Color;
@@ -53,9 +52,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
-import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.usb.UsbDevice;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * This class is responsible to handle request for UI element (dialog, etc). It
@@ -88,7 +85,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private IVmMonitor vmMon;
 	private ICubeActionListener cubeActionListener;
 	private ICubeClient client;
-	private ICoreFacade core;
 
 	public WindowManager() {
 	}
@@ -489,25 +485,22 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	}
 
 	@Override
-	public void showPinDialog(final String additionalMessage) {
+	public void showPinDialog(final String additionalMessage, final String requestId) {
 		synchronized (lock) {
 			LOG.debug("enter [showPinDialog] [{}]", additionalMessage);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
-			// dialog is non-blocking
+			// create dialog (non-blocking)
 			final CubePasswordDialog passwordDialog = new CubePasswordDialog(getDefaultParentFrame());
 			passwordDialog.addPasswordDialogListener(new CubePasswordDialogListener() {
 				@Override
 				public void quit(final char[] password) {
-					// second send password
-					if (password != null) {
-						cubeActionListener.enteredPassword(password);
-					} else {
-						cubeActionListener.enteredPassword(null);
-					}
+					cubeActionListener.enteredPassword(password, requestId);
 				}
 			});
+			// set as active dialog
 			dialog = passwordDialog;
+			// open dialog
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
@@ -525,60 +518,48 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	}
 
 	@Override
-	public int showConfirmationDialog(String messageKey) {
-		int result = 0;
+	public void showConfirmationDialog(final String messageKey, final String requestId) {
 		synchronized (lock) {
-			LOG.debug("enter [askConfirmation] [{}]", messageKey);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
-			CubeConfirmationDialog dial = new CubeConfirmationDialog(getDefaultParentFrame(), messageKey, CubeConfirmationDialog.TYPE_CANCEL_YES);
+			// create dialog
+			final CubeConfirmationDialog dial = new CubeConfirmationDialog(getDefaultParentFrame(), messageKey, CubeConfirmationDialog.TYPE_CANCEL_YES);
+			// set as active dialo
 			dialog = dial;
-			swingOpen(dial);
-			// wait until dialog closed
-			try {
-				Thread.sleep(1000);
-				while (dial.isVisible()) {
-					Thread.sleep(200);
+			// display dialog
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					LOG.debug("exec  [showConfirmationDialog] [{}]", messageKey);
+					dial.displayWizard();
+					// return result
+					cubeActionListener.enteredConfirmation(dial.getDialogResult(), requestId);
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			result = dial.getDialogResult();
+			});
 		}
-		LOG.debug("exit  [showMessageDialog] [{}]", messageKey);
-		return result;
 	}
 
 	@Override
-	public UsbDevice showUsbDeviceDialog(VmHandle h, String messageKey) {
-		UsbDevice result = null;
+	public void showUsbDeviceDialog(final String messageKey, UsbDeviceEntryList list, final String requestId) {
 		synchronized (lock) {
 			LOG.debug("enter [showVmChooser] [{}]", messageKey);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
-			// check that there is at leat one running VM
-			if (vmMon.getVmState(h) != VmStatus.RUNNING) {
-				LOG.debug("Vm is not running. We could not bind US devices to non-running VMs.");
-				return null;
-			}
-			UsbChooserDialog dial = new UsbChooserDialog(getDefaultParentFrame(), messageKey, vmMon, core.getUsbDevices(h.getVmId()));
+			// create dialog
+			final UsbChooserDialog dial = new UsbChooserDialog(getDefaultParentFrame(), messageKey, vmMon, list);
+			// set as active dialog
 			dialog = dial;
-			swingOpen(dial);
-			// wait until dialog closed
-			try {
-				Thread.sleep(1000);
-				while (dial.isVisible()) {
-					Thread.sleep(200);
+			// display dialog
+			SwingUtilities.invokeLater(new Runnable() {
+				@Override
+				public void run() {
+					LOG.debug("exec  [showUsbDeviceDialog] [{}]", messageKey);
+					dial.displayWizard();
+					// return result
+					cubeActionListener.enteredUsbDevice(dial.getSelection(), requestId);
 				}
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			if (dial.getDialogResult() == 1) {
-				result = dial.getSelection();
-			}
+			});
 		}
-		LOG.debug("exit [showVmChooser] [{}]", messageKey);
-		return result;
 	}
 
 	@Override
@@ -626,10 +607,9 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	// ###############################################
 	// Injections
 	// ###############################################
-	public void setup(ICubeClient client, ICubeActionListener cubeActionListener, IVmMonitor vmMon, IXWindowManager xwm, ICoreFacade core) {
+	public void setup(ICubeClient client, ICubeActionListener cubeActionListener, IVmMonitor vmMon, IXWindowManager xwm) {
 		this.client = client;
 		this.xwm = xwm;
-		this.core = core;
 		xwm.setWindowManagerCallBack(this);
 		this.vmMon = vmMon;
 		if (osdMgmt != null) {

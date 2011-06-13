@@ -73,19 +73,23 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		}
 	}
 
-	private void fireSessionUpdated(ISession session) {
+	private void fireSessionLocked(ISession session) {
 		for (ISessionManagerListener l : listeners) {
-			l.sessionUpdated(session);
+			l.sessionLocked(session);
 		}
 	}
 
 	@Override
 	public void closeSession(ISession session) {
+		LOG.debug("Close session [{}]",session.getId().getSubjectName());
 		synchronized (sessions) {
 			sessions.remove(session.getId().getUuid());
 		}
+		LOG.debug("call session.close() [{}]",session.getId().getSubjectName());
 		session.close();
+		LOG.debug("login.discardAuth [{}]",session.getId().getSubjectName());
 		login.discardAuthentication(session.getId());
+		LOG.debug("fireSessionClosed [{}]",session.getId().getSubjectName());
 		fireSessionClosed(session);
 	}
 
@@ -131,8 +135,9 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	public void userLocked(IIdentityToken id) {
 		ISession ses = sessions.get(id.getUuid());
 		if (ses != null) {
+			LOG.debug("Lock session [{}]",ses.getId().getSubjectName());
 			ses.lock();
-			fireSessionUpdated(ses);
+			fireSessionLocked(ses);
 		}
 	}
 
@@ -140,11 +145,10 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	public void userLogedOut(IIdentityToken id) {
 		ISession ses = null;
 		synchronized (sessions) {
-			ses = sessions.remove(id.getUuid());
+			ses = sessions.get(id.getUuid());
 		}
 		if (ses != null) {
-			ses.close();
-			fireSessionClosed(ses);
+			closeSession(ses);
 		}
 	}
 
