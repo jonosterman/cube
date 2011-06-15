@@ -15,8 +15,6 @@
  */
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
-import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,16 +34,16 @@ public class Save extends AbstractCtrlTask {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(Save.class);
 
-	public Save(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
+	public Save(VmController vmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
+			Container transfer, VmModel vmModel, IOption option) {
+		super(vmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override
 	public void run() {
 		// set temporary status
 		LOG.debug("Start saving...");
-		tempStatus.put(vm.getId(), VmStatus.STOPPING);
+		ctrl.setTempStatus(vm, VmStatus.STOPPING);
 		vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.saving"));
 		LOG.debug("refresh");
 		ctrl.refreshVmStatus(vm);
@@ -85,5 +83,7 @@ public class Save extends AbstractCtrlTask {
 		} catch (Exception e) {
 			LOG.error("Failed to unmount VM's containers", e);
 		}
+		ctrl.clearTempStatus(vm);
+		ctrl.refreshVmStatus(vm);
 	}
 }

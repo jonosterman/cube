@@ -32,9 +32,11 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.client.wm.client.ICubeClient;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.core.ICoreFacade;
 
 import com.jidesoft.swing.JideTabbedPane;
 
@@ -250,6 +252,11 @@ public class NavigationFrame extends JFrame {
 	public IVmControl getVmCtrl() {
 		return vmCtrl;
 	}
+	
+	public void setCore(ICoreFacade core) {
+		tabs.setCore(core);
+	}
+
 
 	private int findTabComponentIndex(VmHandle h) {
 		for (int i = 0; i < tabs.getTabCount(); ++i) {
@@ -263,4 +270,5 @@ public class NavigationFrame extends JFrame {
 		}
 		return -1;
 	}
+
 }

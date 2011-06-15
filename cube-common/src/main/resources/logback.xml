@@ -39,7 +39,7 @@
 		</triggeringPolicy>
 
 		<encoder>
-			<pattern>[cube-common] %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}:%L - %msg%n	</pattern>
+			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}:%L - %msg%n	</pattern>
 		</encoder>
 	</appender>
 

@@ -81,13 +81,15 @@ public class ScAuthModule implements IAuthModule {
 				}
 				currentCallback.password = null;
 				currentCallback = null;
-				// unlock the thread that wait on password in
+				// notify failure
+				fireStateChanged(new AuthModuleEvent(AuthEventType.FAILED, null, builder, null));// unlock the thread that wait on password in
 				// 'AuthCallback.handle()'
 				lock.notifyAll();
 			} else {
 				LOG.debug("CurrentCallback is null. Ignore abort command.");
 			}
 		}
+		
 	}
 
 	@Override

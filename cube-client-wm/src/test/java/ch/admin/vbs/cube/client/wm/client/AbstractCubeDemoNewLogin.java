@@ -78,13 +78,13 @@ public class AbstractCubeDemoNewLogin {
 	protected JFrame[] cubeFrames;
 	protected NavigationFrame[] navBarFrames;
 	// core
-	private LoginMachine login;
-	private ISessionManager smanager;
-	private IAuthModule authModule;
-	private ITokenDevice tokenDevice;
-	private IContainerFactory containerFactory;
-	private ILoginUI loginUI;
-	private ISessionUI sessionUI;
+	protected LoginMachine login;
+	protected ISessionManager smanager;
+	protected IAuthModule authModule;
+	protected ITokenDevice tokenDevice;
+	protected IContainerFactory containerFactory;
+	protected ILoginUI loginUI;
+	protected ISessionUI sessionUI;
 
 	public void initConfiguration() {
 		// init UI Default
@@ -174,7 +174,7 @@ public class AbstractCubeDemoNewLogin {
 		((CubeActionListener)cubeActionListener).setupDependencies(coreFacade);
 		
 		for (NavigationBar n : navBars) {
-			n.setupDependencies(cubeClient, vmControl, vmMonitor);
+			n.setupDependencies(cubeClient, coreFacade, vmControl, vmMonitor);
 			cubeClient.addListener(n);
 		}
 		((WindowManager)windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager);

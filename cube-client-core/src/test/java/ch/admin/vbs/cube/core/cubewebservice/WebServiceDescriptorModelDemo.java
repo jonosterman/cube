@@ -25,8 +25,8 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import ch.admin.vbs.cube.core.AuthModuleEvent;
-import ch.admin.vbs.cube.core.IAuthModuleListener;
 import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
+import ch.admin.vbs.cube.core.IAuthModuleListener;
 import ch.admin.vbs.cube.core.impl.ScAuthModule;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.list.DescriptorModelCache;

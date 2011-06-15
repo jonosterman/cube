@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 import java.awt.Color;
@@ -272,9 +271,7 @@ public final class XWindowManager implements IXWindowManager {
 		IntByReference childrenCount = new IntByReference();
 		// find all children to the rootWindow
 		if (x11.XQueryTree(display, parentWindow, rootWindowRef, parentWindowRef, childrenPtr, childrenCount) == 0) {
-			if (LOG.isErrorEnabled()) {
-				LOG.error("BadWindow - A value for a Window argument does not name a defined Window!");
-			}
+			LOG.error("BadWindow - A value for a Window argument does not name a defined Window!");
 			// close display
 			x11.XCloseDisplay(display);
 			return childrenWindowIdArray;

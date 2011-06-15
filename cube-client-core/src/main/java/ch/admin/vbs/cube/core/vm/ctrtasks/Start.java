@@ -16,7 +16,6 @@
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
 import java.io.File;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +27,7 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
+import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
@@ -37,10 +37,12 @@ import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 public class Start extends AbstractCtrlTask {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(Start.class);
+	private static final long START_TIMEOUT = 40000; // ms
+	private static final long UNKNOWN_STATE_TIMEOUT = 4000; // ms
 
-	public Start(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
+	public Start(VmController vmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
+			Container transfer, VmModel vmModel, IOption option) {
+		super(vmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override
@@ -49,7 +51,8 @@ public class Start extends AbstractCtrlTask {
 		EncryptionKey rtKey = null;
 		try {
 			// set temporary status
-			tempStatus.put(vm.getId(), VmStatus.STARTING);
+			ctrl.setTempStatus(vm, VmStatus.STARTING);
+			//
 			vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.starting"));
 			ctrl.refreshVmStatus(vm);
 			//
@@ -71,6 +74,45 @@ public class Start extends AbstractCtrlTask {
 			product.registerVm(vm); // register VM
 			vpnManager.openVpn(vm, keyring); // open vpn
 			product.startVm(vm); // start VM
+			/*
+			 * wait that the VM reach the state RUNNING. If it fails within the
+			 * timeout, remove the tempStatus flag and let VmContorller handle
+			 * it.
+			 */
+			boolean isUnknown = false;
+			long isUnknownSince = 0;
+			long timeout = System.currentTimeMillis() + START_TIMEOUT;
+			while (System.currentTimeMillis() < timeout) {
+				VmProductState ps = product.getProductState(vm);
+				if (ps == VmProductState.RUNNING || ps == VmProductState.ERROR) {
+					break;
+				} else if (ps == VmProductState.UNKNOWN) {
+					if (isUnknown) {
+						// was already unknown. check timeout
+						if (isUnknownSince + UNKNOWN_STATE_TIMEOUT < System.currentTimeMillis()) {
+							/*
+							 * VM was too long in UNKNOWN state (VirtualBox vm
+							 * is 'saved' or 'stopped' which is normal between
+							 * the 'register' and 'start' commands or between
+							 * 'save/poweroff' and 'unregister' commands) but
+							 * which should last only few seconds. Do not wait
+							 * until START_TIMEOUT is reached and break asap.
+							 */
+							LOG.debug("VM was in UNKNOWN state for to many seconds. It is abnormal.");
+							break;
+						}
+					} else {
+						// just entered unknown state
+						isUnknown = true;
+						isUnknownSince = System.currentTimeMillis();
+					}
+				} else {
+					isUnknown = false;
+				}
+				LOG.debug("Wait VM to be RUNNING..");
+				Thread.sleep(500);
+			}
+			LOG.debug("Wait VM reached state [{}]", product.getProductState(vm));
 		} catch (Exception e) {
 			LOG.error("Failed to start VM", e);
 		} finally {
@@ -79,12 +121,7 @@ public class Start extends AbstractCtrlTask {
 				rtKey.shred(); // just in case..
 			if (vmKey != null)
 				vmKey.shred(); // just in case..
-			// remove temporary status
-			tempStatus.remove(vm.getId());
-			// force vm status to be error. because if VM is left 'STOPPED',
-			// VmController will not update its state (because it does not know
-			// if it was starting or stopping)
-			vm.setVmStatus(VmStatus.ERROR);
+			ctrl.clearTempStatus(vm);
 			ctrl.refreshVmStatus(vm);
 		}
 	}

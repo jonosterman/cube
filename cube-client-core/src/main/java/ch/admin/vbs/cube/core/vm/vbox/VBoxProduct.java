@@ -165,7 +165,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		case Saved:
 		case PoweredOff:
 			// these states could occurs during starting and stopping ...
-			// and it is problematic
+			// and it is problematic. We solved it in VmController.
 			return VmProductState.UNKNOWN;
 		case Aborted:
 			return VmProductState.ERROR;
@@ -342,7 +342,6 @@ public class VBoxProduct implements VBoxCacheListener {
 					unlockSession(session);
 					//
 					machine = getIMachineReference(vm.getId());
-					System.out.println("machine: " + machine.getState());
 					machine.unregister(CleanupMode.Full);
 				}
 				// register VM (using web service)
@@ -571,9 +570,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void save(Vm vm, VmModel model) throws VmException {
-		System.out.println("1");
 		synchronized (wsLock) {
-			System.out.println("2");
 			try {
 				// get IMachine reference
 				IMachine machine = getIMachineReference(vm.getId());
@@ -700,20 +697,22 @@ public class VBoxProduct implements VBoxCacheListener {
 				}
 				// populate result list
 				for (IHostUSBDevice dev : hostDevices) {
-					// exclude GemPlus product from the list in order to avoid attaching the main smart-card reader to a guest
+					// exclude GemPlus product from the list in order to avoid
+					// attaching the main smart-card reader to a guest
 					if (dev.getVendorId() == 0x08e6) {
 						continue;
 					}
 					// exclude product without description
 					String p = dev.getProduct();
 					String m = dev.getManufacturer();
-					if (p == null || p.trim().length()==0) {
+					if (p == null || p.trim().length() == 0) {
 						continue;
 					}
-					// format description : use product description and include manufacturer if available
+					// format description : use product description and include
+					// manufacturer if available
 					String fmt = p;
-					if (m != null && m.trim().length()>0) {
-						fmt += " ("+m+")";
+					if (m != null && m.trim().length() > 0) {
+						fmt += " (" + m + ")";
 					}
 					// add to list
 					if (attachedIds.contains(dev.getAddress())) {

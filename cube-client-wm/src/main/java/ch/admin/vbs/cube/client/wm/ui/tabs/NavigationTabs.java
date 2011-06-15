@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.tabs;
 
 import java.awt.Color;
@@ -26,6 +25,7 @@ import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
 import java.util.ResourceBundle;
 
+import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
@@ -40,14 +40,19 @@ import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
-import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmConnectUsbDevice;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAttachUsbDevice;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDeleteAction;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDetachUsbDevice;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmInstallAdditionsAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmPoweroffAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmSaveAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmStageAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmStartAction;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
+import ch.admin.vbs.cube.client.wm.utils.IconManager;
+import ch.admin.vbs.cube.core.ICoreFacade;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.VmStatus;
 
 import com.jidesoft.swing.JideMenu;
@@ -65,6 +70,7 @@ public class NavigationTabs extends JideTabbedPane {
 	private JPopupMenu vmPopupMenu;
 	private final int monitorCount;
 	private final int monitorIdx;
+	private ICoreFacade core;
 
 	public NavigationTabs(int monitorCount, int monitorIdx) {
 		this.monitorCount = monitorCount;
@@ -214,7 +220,42 @@ public class NavigationTabs extends JideTabbedPane {
 		// add USB menu
 		if (state == VmStatus.RUNNING) {
 			vmPopupMenu.addSeparator();
-			vmPopupMenu.add(new VmConnectUsbDevice(h));
+			// vmPopupMenu.add(new VmConnectUsbDevice(h));
+			//
+			UsbDeviceEntryList list = core.getUsbDeviceList(h.getVmId());
+			JideMenu usbMenu = new JideMenu(I18nBundleProvider.getBundle().getString("cube.action.connectusb.text"));
+			usbMenu.setIcon(IconManager.getInstance().getIcon("usb_icon16.png"));
+			vmPopupMenu.add(usbMenu);
+			if (list.size() == 0) {
+				usbMenu.setEnabled(false);
+			} else {
+				usbMenu.setEnabled(true);
+				// add usb device as checkbox items
+				for (UsbDeviceEntry e : list) {
+					switch (e.getState()) {
+					case ALREADY_ATTACHED: {
+						JCheckBoxMenuItem chk = new JCheckBoxMenuItem(new VmDetachUsbDevice(h, e));
+						chk.setSelected(true);
+						usbMenu.add(chk);
+						break;
+					}
+					case AVAILABLE: {
+						JCheckBoxMenuItem chk = new JCheckBoxMenuItem(new VmAttachUsbDevice(h, e));
+						chk.setSelected(false);
+						usbMenu.add(chk);
+						break;
+					}
+					default:
+						LOG.error("State not supported [{}]", e.getState());
+					case ATTACHED_TO_ANOTHER_VM: {
+						JMenuItem not = new JMenuItem(e.getDevice().toString());
+						not.setEnabled(false);
+						usbMenu.add(not);
+						break;
+					}
+					}
+				}
+			}
 		}
 		// add Monitor move menu
 		if (monitorCount > 1) {
@@ -268,5 +309,9 @@ public class NavigationTabs extends JideTabbedPane {
 
 	public IVmMonitor getVmMon() {
 		return vmMon;
+	}
+
+	public void setCore(ICoreFacade core) {
+		this.core = core;
 	}
 }

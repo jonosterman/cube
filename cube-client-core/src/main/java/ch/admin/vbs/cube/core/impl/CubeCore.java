@@ -341,6 +341,19 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		}
 	}
 
+	@Override
+	public UsbDeviceEntryList getUsbDeviceList(String vmId) {
+		synchronized (uiLock) {
+			UsbDeviceEntryList list = new UsbDeviceEntryList();
+			if (actSession != null && mode == Mode.SESSION) {
+				controlVm(vmId, VmCommand.LIST_USB, list);
+				return list;
+			} else {
+				return list;
+			}
+		}
+	}
+
 	// ==============================================
 	// ILoginUI
 	// ==============================================

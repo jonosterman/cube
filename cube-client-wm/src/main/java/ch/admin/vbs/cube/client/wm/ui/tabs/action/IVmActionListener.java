@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.tabs.action;
 
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 /**
  * The listener interface for receiving virtual machine action events. The class
@@ -71,4 +71,8 @@ public interface IVmActionListener {
 	void installGuestAdditions(VmHandle h);
 
 	void connectUsbDevice(VmHandle h);
+
+	void detachUsbDevice(VmHandle vmHandle, UsbDevice usb);
+
+	void attachUsbDevice(VmHandle vmHandle, UsbDevice usb);
 }

@@ -15,7 +15,6 @@
  */
 package ch.admin.vbs.cube.core.vm;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Executor;
@@ -46,13 +45,14 @@ import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class VmController implements IVmProductListener {
+	private static final long TEMP_STATUS_MAX_TIMEOUT = 1000; // ms
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VmController.class);
 	private HashMap<VmModel, ModelListener> lIndex = new HashMap<VmModel, VmController.ModelListener>();
 	private Object updateLock = new Object();
 	private VBoxProduct product;
 	private Stager stagger;
-	private Map<String, VmStatus> tempStatus = Collections.synchronizedMap(new HashMap<String, VmStatus>());
+	private Map<String, VmStatus> tempStatus = new  HashMap<String, VmStatus>();
 	private Executor exec = Executors.newCachedThreadPool();
 	private IContainerFactory containerFactory;
 	private VpnManager vpnManager;
@@ -61,6 +61,25 @@ public class VmController implements IVmProductListener {
 		// eventually there is only one supported product: VirtualBox
 		product = new VBoxProduct();
 	}
+
+	public void setTempStatus(Vm vm, VmStatus temp) {
+		synchronized (tempStatus) {
+			tempStatus.put(vm.getId(), temp);
+		}
+	}
+
+	public VmStatus getTempStatus(Vm vm) {
+		synchronized (tempStatus) {
+			return tempStatus.get(vm.getId());
+		}
+	}
+	
+	public VmStatus clearTempStatus(Vm vm) {
+		synchronized (tempStatus) {
+			return tempStatus.remove(vm.getId());
+		}
+	}
+
 
 	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
 			IOption option) {
@@ -72,16 +91,16 @@ public class VmController implements IVmProductListener {
 			break;
 		case START:
 			if (vm.getVmStatus() == VmStatus.STOPPED) {
-				exec.execute(new Start(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
+				exec.execute(new Start(this, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			} else {
 				LOG.warn("Vm MUST be stopped to be started.");
 			}
 			break;
 		case POWER_OFF:
-			exec.execute(new PowerOff(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
+			exec.execute(new PowerOff(this, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			break;
 		case SAVE:
-			exec.execute(new Save(this, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
+			exec.execute(new Save(this, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			break;
 		case INSTALL_GUESTADDITIONS:
 			exec.execute(new InstallGuestAdditions(vm));
@@ -135,8 +154,6 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
-	
-
 	private class ModelListener implements IVmModelChangeListener {
 		private final VmModel src;
 
@@ -162,7 +179,6 @@ public class VmController implements IVmProductListener {
 			}
 		}
 	}
-
 
 	/** update vm state due to a change in model. */
 	public void refreshVmStatus(Vm vm) {
@@ -217,10 +233,9 @@ public class VmController implements IVmProductListener {
 							vm.setVmStatus(VmStatus.ERROR);
 							break;
 						case UNKNOWN:
-							// do not update status. keep old one
-							break;
 						default:
 							LOG.debug("Unsupported status [" + product.getProductState(vm) + "]");
+							vm.setVmStatus(VmStatus.ERROR);
 							break;
 						}
 					}
@@ -289,6 +304,7 @@ public class VmController implements IVmProductListener {
 			 */
 			VmStatus status = tempStatus.remove(vm.getId());
 			if (status == VmStatus.STOPPING) {
+				LOG.debug("'STOPPING' VM reached 'STOPPED' status.");
 				// expected STOPPED status
 				refreshVmStatus(vm);
 			} else {
@@ -297,6 +313,13 @@ public class VmController implements IVmProductListener {
 				controlVm(vm, null, VmCommand.POWER_OFF, null, null, null, null);
 			}
 			break;
+		case UNKNOWN:
+			if (oldState == VmProductState.RUNNING && !tempStatus.containsKey(vm.getId())) {
+				// guest OS probably shutdown. trigger shutdown
+				LOG.debug("Cleanup VM");
+				tempStatus.put(vm.getId(), VmStatus.STOPPING);
+				controlVm(vm, null, VmCommand.POWER_OFF, null, null, null, null);
+			}
 		default:
 			break;
 		}

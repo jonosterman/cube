@@ -13,10 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.ctrtasks;
-
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +34,15 @@ public class PowerOff extends AbstractCtrlTask {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(PowerOff.class);
 
-	public PowerOff(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
-			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
-		super(vmController, tempStatus, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
+	public PowerOff(VmController vmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
+			Container transfer, VmModel vmModel, IOption option) {
+		super(vmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override
 	public void run() {
 		// set temporary status
-		tempStatus.put(vm.getId(), VmStatus.STOPPING);
+		ctrl.setTempStatus(vm, VmStatus.STOPPING);
 		vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.stopping"));
 		ctrl.refreshVmStatus(vm);
 		// stop VM
@@ -77,8 +74,7 @@ public class PowerOff extends AbstractCtrlTask {
 		} catch (Exception e) {
 			LOG.error("Failed to unmount VM's containers", e);
 		}
-		tempStatus.remove(vm.getId());
+		ctrl.clearTempStatus(vm);
 		ctrl.refreshVmStatus(vm);
-		
 	}
 }

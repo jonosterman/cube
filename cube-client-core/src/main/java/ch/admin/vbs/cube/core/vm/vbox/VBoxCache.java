@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.virtualbox_4_0.IMachine;
 import org.virtualbox_4_0.MachineState;
+import org.virtualbox_4_0.VBoxException;
 
 /**
  * This class cache and monitor virtualbox machines. It raises events when a
@@ -56,6 +57,9 @@ public class VBoxCache implements Runnable {
 			try {
 				sync();
 			} catch (WebServiceException e) {
+				LOG.error("Failed to synchronize machine list with VirtualBox. Reconnect", e);
+				vprod.reconnect();
+			} catch (VBoxException e) {
 				LOG.error("Failed to synchronize machine list with VirtualBox. Reconnect", e);
 				vprod.reconnect();
 			} catch (Exception e) {

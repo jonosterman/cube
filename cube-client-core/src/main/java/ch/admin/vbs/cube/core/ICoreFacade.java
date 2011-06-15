@@ -19,6 +19,7 @@ import java.net.URL;
 
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * The core facade is the interface between the window manager and the core
@@ -138,5 +139,7 @@ public interface ICoreFacade {
 	void enteredUsbDevice(UsbDevice device, String requestId);
 
 	void attachUsbDeviceRequest(String vmId);
+
+	UsbDeviceEntryList getUsbDeviceList(String vmId);
 
 }

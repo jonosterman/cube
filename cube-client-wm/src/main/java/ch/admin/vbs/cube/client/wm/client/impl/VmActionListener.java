@@ -21,6 +21,7 @@ import java.util.concurrent.Executors;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.IVmActionListener;
 import ch.admin.vbs.cube.core.ICoreFacade;
+import ch.admin.vbs.cube.core.usb.UsbDevice;
 
 public class VmActionListener implements IVmActionListener {
 	private ICoreFacade coreFacade;
@@ -96,6 +97,26 @@ public class VmActionListener implements IVmActionListener {
 			@Override
 			public void run() {
 				coreFacade.attachUsbDeviceRequest(h.getVmId());
+			}
+		});
+	}
+
+	@Override
+	public void attachUsbDevice(final VmHandle h, final UsbDevice usb) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.attachUsbDevice(h.getVmId(), usb);
+			}
+		});
+	}
+
+	@Override
+	public void detachUsbDevice(final VmHandle h, final UsbDevice usb) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.detachUsbDevice(h.getVmId(), usb);
 			}
 		});
 	}

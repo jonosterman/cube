@@ -30,6 +30,7 @@ import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmChangeEvent;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.core.ICoreFacade;
 
 public class NavigationBar implements IVmChangeListener, INavigationBar {
 	/** Logger */
@@ -78,9 +79,10 @@ public class NavigationBar implements IVmChangeListener, INavigationBar {
 	// ################################################
 	// ## Injections
 	// ################################################
-	public void setupDependencies(ICubeClient client, IVmControl vmCtrl, IVmMonitor vmMon) {
+	public void setupDependencies(ICubeClient client, ICoreFacade core, IVmControl vmCtrl, IVmMonitor vmMon) {
 		this.client = client;
 		navFrame.setVmCtrl(vmCtrl);
 		navFrame.setVmMon(vmMon);
+		navFrame.setCore(core);
 	}
 }

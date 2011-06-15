@@ -16,8 +16,6 @@
 
 package ch.admin.vbs.cube.core.vm.ctrtasks;
 
-import java.util.Map;
-
 import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.EncryptionKey;
@@ -27,14 +25,12 @@ import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public abstract class AbstractCtrlTask implements Runnable {
 	protected EncryptionKey vmKey;
 	protected EncryptionKey rtKey;
 	protected final VmController ctrl;
-	protected final Map<String, VmStatus> tempStatus;
 	protected final IKeyring keyring;
 	protected final Vm vm;
 	protected final IContainerFactory containerFactory;
@@ -44,10 +40,9 @@ public abstract class AbstractCtrlTask implements Runnable {
 	protected final VmModel vmModel;
 	protected final IOption option;
 
-	public AbstractCtrlTask(VmController vmController, Map<String, VmStatus> tempStatus, IKeyring keyring, Vm vm, IContainerFactory containerFactory,
+	public AbstractCtrlTask(VmController vmController,  IKeyring keyring, Vm vm, IContainerFactory containerFactory,
 			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
 		this.ctrl = vmController;
-		this.tempStatus = tempStatus;
 		this.keyring = keyring;
 		this.vm = vm;
 		this.containerFactory = containerFactory;
