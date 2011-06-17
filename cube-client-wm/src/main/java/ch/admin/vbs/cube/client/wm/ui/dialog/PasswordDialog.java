@@ -183,19 +183,7 @@ public class PasswordDialog extends CubeWizard {
 		super.displayWizard();
 	}
 
-	/**
-	 * Returns the entered password or null if the user canceled or closed the
-	 * dialog.
-	 * 
-	 * @return the password or null
-	 */
-	public String getPassword() {
-		if (passwordFld.getPassword() != null) {
-			return passwordFld.getPassword().toString();
-		} else {
-			return null;
-		}
-	}
+
 
 	/*
 	 * (non-Javadoc)

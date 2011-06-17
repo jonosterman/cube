@@ -36,8 +36,7 @@ public class VmHandleListRenderer extends DefaultListCellRenderer {
 	@Override
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		if (value == null || !(value instanceof VmHandle)) {
-			value = String.valueOf(value);
-			return this;
+			return super.getListCellRendererComponent(list, String.valueOf(value), index, isSelected, cellHasFocus);
 		} else {
 			VmHandle vm = (VmHandle) value;
 			if (monitor.getVmName(vm) == null) {

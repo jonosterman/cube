@@ -34,8 +34,7 @@ public class UsbDeviceListRenderer extends DefaultListCellRenderer {
 	@Override
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		if (value == null || !(value instanceof UsbDevice)) {
-			value = String.valueOf(value);
-			return this;
+			return super.getListCellRendererComponent(list, String.valueOf(value), index, isSelected, cellHasFocus);
 		} else {
 			UsbDevice device = (UsbDevice) value;
 			value = device.getDescription();

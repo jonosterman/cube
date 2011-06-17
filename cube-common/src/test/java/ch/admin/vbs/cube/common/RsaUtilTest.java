@@ -35,7 +35,7 @@ import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
 public class RsaUtilTest {
 	private static final String testKeystorePassword = "111222";
 	private static final String testKeystoreFile = "/cube-01_pwd-is-111222.p12";
-
+	private Random rnd = new Random(System.currentTimeMillis());
 	@Test
 	public void testRsaUtil() throws Exception {
 		// Read test P12
@@ -56,7 +56,7 @@ public class RsaUtilTest {
 		System.out.println("Use algorithm key size [" + System.getProperty(RSAEncryptUtil.KEYLENGTH_PROPERTY) + "]");
 		// rsa util
 		byte[] original = new byte[4000];
-		new Random().nextBytes(original);
+		rnd.nextBytes(original);
 		// encrypt
 		byte[] encrypted = RSAEncryptUtil.encrypt(original, pubKey);
 		// decrypt

@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -125,8 +126,8 @@ public class TransferMonitor {
 									formerFormerFiles.put(key, formerFiles.get(key));
 								}
 								formerFiles.clear();
-								for (String key : actualFiles.keySet()) {
-									formerFiles.put(key, actualFiles.get(key));
+								for (Entry<String, Long> e : actualFiles.entrySet()) {
+									formerFiles.put(e.getKey(), e.getValue());
 								}
 								actualFiles.clear();
 							}

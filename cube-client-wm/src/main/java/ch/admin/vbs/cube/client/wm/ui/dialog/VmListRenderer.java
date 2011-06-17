@@ -30,8 +30,7 @@ public class VmListRenderer extends DefaultListCellRenderer {
 	@Override
 	public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 		if (value == null || !(value instanceof Vm)) {
-			value = String.valueOf(value);
-			return this;
+			return super.getListCellRendererComponent(list, String.valueOf(value), index, isSelected, cellHasFocus);
 		} else {
 			Vm vm = (Vm) value;
 			if (vm.getDescriptor() == null) {

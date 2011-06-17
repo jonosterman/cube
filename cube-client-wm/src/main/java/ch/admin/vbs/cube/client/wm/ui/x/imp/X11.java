@@ -2556,8 +2556,7 @@ public interface X11 extends Library {
 
 		public final String toString() {
 			return "XKeyboardStateByReference{" + "key_click_percent=" + key_click_percent + ", bell_percent=" + bell_percent + ", bell_pitch=" + bell_pitch
-					+ ", bell_duration=" + bell_duration + ", led_mask=" + led_mask + ", global_auto_repeat=" + global_auto_repeat + ", auto_repeats="
-					+ auto_repeats + '}';
+					+ ", bell_duration=" + bell_duration + ", led_mask=" + led_mask + ", global_auto_repeat=" + global_auto_repeat + "}";
 		}
 	}
 

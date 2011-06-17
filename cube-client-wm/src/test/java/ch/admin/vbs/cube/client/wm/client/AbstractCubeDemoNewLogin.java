@@ -118,15 +118,6 @@ public class AbstractCubeDemoNewLogin {
 		for (int i = 0; i < monitorCount; ++i) {
 			// monitor dimension
 			Rectangle monitorDim = new Rectangle(graphicsDevice[i].getDefaultConfiguration().getBounds());
-			if (new File("/opt/cube/debug").exists()) {
-				// DEBUG
-				LOG.warn("HALF SIZE SCREEN FOR DEBUG PURPOSE"); // DEBUG
-				monitorDim.x += 100; // DEBUG
-				monitorDim.y += 100; // DEBUG
-				monitorDim.width /= 2; // DEBUG
-				monitorDim.height /= 2; // DEBUG
-				// DEBUG
-			}
 			LOG.debug("Screen[{}] ({})", i, monitorDim.toString());
 			// create Cube Frames (each frame cover a monitor)
 			cubeFrames[i] = new BackgroundFrame(i, monitorDim);

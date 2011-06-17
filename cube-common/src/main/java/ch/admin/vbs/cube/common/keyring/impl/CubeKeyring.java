@@ -121,7 +121,7 @@ public class CubeKeyring implements IKeyring {
 					LOG.debug("re-use existing keyring's key (encrypted)[{}] (clear[{}])", encryptedKeyringKey.getAbsolutePath(),
 							decryptedKeyringKeyFile.getAbsoluteFile());
 				} else {
-					throw new KeyringException(String.format("Failed to re-use keyring's key (encrypted)[%s] (clear[{}])",
+					throw new KeyringException(String.format("Failed to re-use keyring's key (encrypted)[%s] (clear[%s])",
 							encryptedKeyringKey.getAbsolutePath(), decryptedKeyringKeyFile.getAbsoluteFile()));
 				}
 			} catch (Exception e) {
@@ -352,7 +352,9 @@ public class CubeKeyring implements IKeyring {
 			SafeFile decFile = new SafeFile(safeDir, generatedRandomFilename());
 			decFile.deleteOnExit();
 			dfu.writeFile(decFile, data);
-			decFile.setReadOnly();
+			if (!decFile.setReadOnly()) {
+				LOG.error("Failed to set file as read-only");
+			}
 			return decFile;
 		} catch (Exception e) {
 			throw new KeyringException("failed to store data", e);
@@ -378,11 +380,15 @@ public class CubeKeyring implements IKeyring {
 
 	@Override
 	public void deleteEntireKeyring() {
-		keyringContainer.getContainerFile().delete();
+		if (!keyringContainer.getContainerFile().delete()) {
+			LOG.warn("Failed to delete keyring.");
+		}
 		File encryptedKeyringKey = new File(//
 				new File(CubeCommonProperties.getProperty(KEYRING_KEYS_DIR_PROP)), //
 				id.getUuidHash() + KEYRING_KEY_FILEEXTENSION);
-		encryptedKeyringKey.delete();
+		if (!encryptedKeyringKey.delete()) {
+			LOG.warn("Failed to delete keyring's encrypted key.");
+		}
 	}
 
 	@Override

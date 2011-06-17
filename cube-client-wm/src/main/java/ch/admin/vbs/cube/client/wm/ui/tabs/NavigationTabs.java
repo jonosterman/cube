@@ -23,9 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.ResourceBundle;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import javax.swing.JCheckBoxMenuItem;
@@ -59,7 +57,6 @@ import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
-import ch.admin.vbs.cube.core.vm.VmHumanComparator;
 import ch.admin.vbs.cube.core.vm.VmStatus;
 
 import com.jidesoft.swing.JideMenu;
@@ -253,14 +250,15 @@ public class NavigationTabs extends JideTabbedPane {
 						usbMenu.add(chk);
 						break;
 					}
-					default:
-						LOG.error("State not supported [{}]", e.getState());
 					case ATTACHED_TO_ANOTHER_VM: {
 						JMenuItem not = new JMenuItem(e.getDevice().toString());
 						not.setEnabled(false);
 						usbMenu.add(not);
 						break;
 					}
+					default:
+						LOG.error("State not supported [{}]", e.getState());
+						break;
 					}
 				}
 			}
@@ -315,9 +313,9 @@ public class NavigationTabs extends JideTabbedPane {
 		if (hidden.size() == 0) {
 			showMenu.setEnabled(false);
 		} else {
-			for(VmHandle h : hidden) {
-				final String label = String.format("%s, %s (%s)", vmMon.getVmName(h),vmMon.getVmDomain(h),vmMon.getVmClassification(h).name());
-				showMenu.add(new VmHideAction(label, h, true, false	));				
+			for (VmHandle h : hidden) {
+				final String label = String.format("%s, %s (%s)", vmMon.getVmName(h), vmMon.getVmDomain(h), vmMon.getVmClassification(h).name());
+				showMenu.add(new VmHideAction(label, h, true, false));
 			}
 			showMenu.setEnabled(true);
 		}

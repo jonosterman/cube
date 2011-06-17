@@ -45,7 +45,6 @@ import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class VmController implements IVmProductListener {
-	private static final long TEMP_STATUS_MAX_TIMEOUT = 1000; // ms
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VmController.class);
 	private HashMap<VmModel, ModelListener> lIndex = new HashMap<VmModel, VmController.ModelListener>();

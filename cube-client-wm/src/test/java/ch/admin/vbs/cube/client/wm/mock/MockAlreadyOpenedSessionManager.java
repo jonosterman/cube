@@ -8,7 +8,6 @@ import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionUI;
 
 public class MockAlreadyOpenedSessionManager implements ISessionManager {
-	private ISessionUI sessionUI;
 	private ArrayList<ISessionManagerListener> listeners = new ArrayList<ISessionManagerListener>();
 	private MockSession session;
 
@@ -41,6 +40,5 @@ public class MockAlreadyOpenedSessionManager implements ISessionManager {
 	}
 
 	public void setup(ISessionUI sessionUI) {
-		this.sessionUI = sessionUI;
 	}
 }

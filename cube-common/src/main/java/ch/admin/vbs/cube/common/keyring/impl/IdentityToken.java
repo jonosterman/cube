@@ -24,6 +24,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.UnrecoverableEntryException;
+import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -106,7 +107,11 @@ public class IdentityToken implements IIdentityToken {
 					}
 				}
 			}
-		} catch (Exception e) {
+		} catch (RuntimeException e) {
+			LOG.error("Problem retrievin the subject alias.", e);
+		} catch (KeyStoreException e) {
+			LOG.error("Problem retrievin the subject alias.", e);
+		} catch (CertificateParsingException e) {
 			LOG.error("Problem retrievin the subject alias.", e);
 		}
 	}

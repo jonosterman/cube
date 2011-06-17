@@ -139,9 +139,6 @@ public class DescriptorModelCache implements IVmModelChangeListener {
 					rcfg.setName(readProp(index, "vm[%s].name", p));
 					rcfg.setType(readProp(index, "vm[%s].type", p));
 					rcfg.setCfgVersion(readProp(index, "vm[%s].version", p));
-					for (Object k : p.keySet()) {
-						String key = (String) k;
-					}
 					//
 					HashSet<String> pindexes = new HashSet<String>();
 					Pattern pVm = Pattern.compile("vm\\["+index+"\\]\\.properties\\.(\\d+)\\..+");

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.common.keyring;
 
 import java.io.File;
@@ -41,6 +40,16 @@ public class SafeFile extends File {
 
 	public SafeFile(File parent, String child) {
 		super(parent, child);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		return super.equals(obj);
+	}
+
+	@Override
+	public int hashCode() {
+		return super.hashCode();
 	}
 
 	public void shred() {

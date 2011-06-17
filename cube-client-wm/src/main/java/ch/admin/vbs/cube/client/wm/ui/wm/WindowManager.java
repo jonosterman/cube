@@ -175,7 +175,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	public void windowUpdated(Window w) {
 		WindowCachedHandle h = null;
 		synchronized (managedWindow) {
-			h = managedWindow.get(w);
+			h = managedWindow.get(w.longValue());
 			// lazy initialized
 			if (h == null) {
 				h = new WindowCachedHandle();
@@ -387,8 +387,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					hide.add(e.getValue());
 				}
 			}
-		}
-		synchronized (xwm) {
 		}
 		xwm.showOnlyTheseWindow(hide, show);
 	}

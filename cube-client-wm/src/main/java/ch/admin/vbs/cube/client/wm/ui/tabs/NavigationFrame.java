@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.tabs;
 
 import java.awt.BorderLayout;
@@ -55,10 +54,10 @@ public class NavigationFrame extends JFrame {
 	private final int monitorIdx;
 	private final JFrame refFrame;
 	private IVmMonitor vmMon;
-	private IVmControl vmCtrl;
 	private Object lock = new Object();
 	private HashMap<VmHandle, TabComponent> cmpMap = new HashMap<VmHandle, TabComponent>();
 	private VmHandleHumanComparator cmp;
+
 	public NavigationFrame(int monitorIdx, int monitorCount, JFrame refFrame) {
 		this.monitorIdx = monitorIdx;
 		this.monitorCount = monitorCount;
@@ -160,8 +159,6 @@ public class NavigationFrame extends JFrame {
 				}
 			}
 
-			
-
 			private Collection<VmHandle> addedVms(Collection<VmHandle> oldlist, Collection<VmHandle> newlist) {
 				ArrayList<VmHandle> result = new ArrayList<VmHandle>(newlist);
 				result.removeAll(oldlist);
@@ -181,7 +178,7 @@ public class NavigationFrame extends JFrame {
 			}
 		});
 	}
-	
+
 	private int getSortedIndex(VmHandle h) {
 		for (int i = 0; i < tabs.getTabCount(); ++i) {
 			Component obj = tabs.getComponentAt(i);
@@ -254,11 +251,9 @@ public class NavigationFrame extends JFrame {
 	/** Injection */
 	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client) {
 		this.vmMon = vmMon;
-		this.vmCtrl = vmCtrl;
 		cmp = new VmHandleHumanComparator(vmMon);
 		tabs.setup(vmCtrl, vmMon, core, client);
 	}
-
 
 	private int findTabComponentIndex(VmHandle h) {
 		for (int i = 0; i < tabs.getTabCount(); ++i) {
@@ -272,5 +267,4 @@ public class NavigationFrame extends JFrame {
 		}
 		return -1;
 	}
-
 }
