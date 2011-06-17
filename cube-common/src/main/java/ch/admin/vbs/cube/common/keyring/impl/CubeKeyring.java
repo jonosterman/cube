@@ -23,8 +23,8 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
+import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.ContainerException;
@@ -35,9 +35,9 @@ import ch.admin.vbs.cube.common.crypto.HashUtil;
 import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
 import ch.admin.vbs.cube.common.keyring.EncryptionKey;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
+import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
-import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
 
 /**
  * This keyring implements a IKeyring following Cube specifications.

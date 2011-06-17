@@ -36,6 +36,7 @@ import ch.admin.vbs.cube.client.wm.client.ICubeClient;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
 import ch.admin.vbs.cube.core.ICoreFacade;
 
 import com.jidesoft.swing.JideTabbedPane;
@@ -57,7 +58,7 @@ public class NavigationFrame extends JFrame {
 	private IVmControl vmCtrl;
 	private Object lock = new Object();
 	private HashMap<VmHandle, TabComponent> cmpMap = new HashMap<VmHandle, TabComponent>();
-
+	private VmHandleHumanComparator cmp;
 	public NavigationFrame(int monitorIdx, int monitorCount, JFrame refFrame) {
 		this.monitorIdx = monitorIdx;
 		this.monitorCount = monitorCount;
@@ -120,7 +121,7 @@ public class NavigationFrame extends JFrame {
 						// update map
 						cmpMap.put(h, c);
 						// add new tab
-						tabs.insertTab(vmMon.getVmName(h), TabIconProvider.getStatusIcon(vmMon.getVmState(h)), c, formatTooltip(h), tabs.getTabCount());
+						tabs.insertTab(vmMon.getVmName(h), TabIconProvider.getStatusIcon(vmMon.getVmState(h)), c, formatTooltip(h), getSortedIndex(h));
 					}
 					for (VmHandle h : updatedVms) {
 						// update tab icon
@@ -159,6 +160,8 @@ public class NavigationFrame extends JFrame {
 				}
 			}
 
+			
+
 			private Collection<VmHandle> addedVms(Collection<VmHandle> oldlist, Collection<VmHandle> newlist) {
 				ArrayList<VmHandle> result = new ArrayList<VmHandle>(newlist);
 				result.removeAll(oldlist);
@@ -177,6 +180,19 @@ public class NavigationFrame extends JFrame {
 				return result;
 			}
 		});
+	}
+	
+	private int getSortedIndex(VmHandle h) {
+		for (int i = 0; i < tabs.getTabCount(); ++i) {
+			Component obj = tabs.getComponentAt(i);
+			if (obj != null && obj instanceof TabComponent) {
+				int x = cmp.compare(h, ((TabComponent) obj).getVmHandle());
+				if (x <= 0) {
+					return i;
+				}
+			}
+		}
+		return tabs.getTabCount();
 	}
 
 	public void refreshTab(final VmHandle h) {
@@ -235,26 +251,12 @@ public class NavigationFrame extends JFrame {
 		return tooltip;
 	}
 
-	public void setVmMon(IVmMonitor vmMon) {
+	/** Injection */
+	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client) {
 		this.vmMon = vmMon;
-		tabs.setVmMon(vmMon);
-	}
-
-	public IVmMonitor getVmMon() {
-		return vmMon;
-	}
-
-	public void setVmCtrl(IVmControl vmCtrl) {
 		this.vmCtrl = vmCtrl;
-		tabs.setVmCtrl(vmCtrl);
-	}
-
-	public IVmControl getVmCtrl() {
-		return vmCtrl;
-	}
-	
-	public void setCore(ICoreFacade core) {
-		tabs.setCore(core);
+		cmp = new VmHandleHumanComparator(vmMon);
+		tabs.setup(vmCtrl, vmMon, core, client);
 	}
 
 

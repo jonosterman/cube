@@ -71,6 +71,12 @@ public class VmMonitor implements IVmMonitor {
 		Vm vm = client.getVm(handle);
 		return vm == null ? "" : vm.getProgressMessage();
 	}
+	
+	@Override
+	public String getVmProperty(VmHandle handle, String key) {
+		Vm vm = client.getVm(handle);
+		return vm == null ? "" : vm.getDescriptor().getLocalCfg().getPropertie(key);
+	}
 
 	// #######################################################
 	// Injection

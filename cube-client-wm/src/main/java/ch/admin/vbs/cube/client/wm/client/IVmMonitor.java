@@ -40,4 +40,6 @@ public interface IVmMonitor {
 	String getVmProgressMessage(VmHandle handle);
 
 	CubeClassification getVmClassification(VmHandle handle);
+
+	String getVmProperty(VmHandle handle, String key);
 }

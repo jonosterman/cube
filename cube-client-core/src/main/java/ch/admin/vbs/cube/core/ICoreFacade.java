@@ -142,4 +142,9 @@ public interface ICoreFacade {
 
 	UsbDeviceEntryList getUsbDeviceList(String vmId);
 
+	// ==========================================
+	// Properties
+	// ==========================================
+	void setVmProperty(String vmId, String key, String value, boolean refreshAllVms);
+
 }

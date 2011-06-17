@@ -40,6 +40,7 @@ public class NavigationBar implements IVmChangeListener, INavigationBar {
 	// UI
 	private NavigationFrame navFrame;
 	private final int monitorIdx;
+	private IVmMonitor vmMon;
 
 	public NavigationBar(int monitorIdx, int monitorCount, JFrame refFrame) {
 		this.monitorIdx = monitorIdx;
@@ -52,15 +53,15 @@ public class NavigationBar implements IVmChangeListener, INavigationBar {
 	@Override
 	public void allVmsChanged() {
 		LOG.debug("VMs changed");
-		// filter tabs for this monitor
+		// filter tabs for this display
 		List<VmHandle> list = client.listVms();
-		ArrayList<VmHandle> monList = new ArrayList<VmHandle>();
+		ArrayList<VmHandle> cDisplayList = new ArrayList<VmHandle>();
 		for (VmHandle h : list) {
-			if (h.getMonitorIdx() == monitorIdx) {
-				monList.add(h);
+			if (h.getMonitorIdx() == monitorIdx && !"true".equalsIgnoreCase(vmMon.getVmProperty(h, "hidden"))) {
+				cDisplayList.add(h);
 			}
 		}
-		navFrame.refreshTabsVms(monList);
+		navFrame.refreshTabsVms(cDisplayList);
 	}
 
 	@Override
@@ -79,10 +80,9 @@ public class NavigationBar implements IVmChangeListener, INavigationBar {
 	// ################################################
 	// ## Injections
 	// ################################################
-	public void setupDependencies(ICubeClient client, ICoreFacade core, IVmControl vmCtrl, IVmMonitor vmMon) {
+	public void setup(ICubeClient client, ICoreFacade core, IVmControl vmCtrl, IVmMonitor vmMon) {
 		this.client = client;
-		navFrame.setVmCtrl(vmCtrl);
-		navFrame.setVmMon(vmMon);
-		navFrame.setCore(core);
+		this.vmMon = vmMon;
+		navFrame.setup(vmMon, vmCtrl, core, client);
 	}
 }

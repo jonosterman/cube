@@ -37,6 +37,7 @@ import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
 import ch.admin.vbs.cube.core.vm.IVmStateChangeListener;
 import ch.admin.vbs.cube.core.vm.Vm;
+import ch.admin.vbs.cube.core.vm.VmModel;
 
 /**
  * CubeCore wrap around the SessionManager (which manages multi-sessions). It
@@ -406,6 +407,22 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				clientFacade.showGetPIN(message, cb.getId());
 			}
 		}
+	}
+	
+	@Override
+	public void setVmProperty(String vmId, String key, String value, boolean refreshAllVms) {
+		// do not synchronize on uiLock since we do not change the UI directly.
+		if (actSession != null && mode == Mode.SESSION) {
+			VmModel m = actSession.getModel();
+			Vm vm = m.findByInstanceUid(vmId);
+			if (vm!=null) {
+				vm.getDescriptor().getLocalCfg().setPropertie(key, value);
+				m.fireVmUpdatedEvent(vm);
+				if (refreshAllVms) {
+					m.fireModelUpdatedEvent();
+				}
+			}
+		}	
 	}
 
 	// ==============================================

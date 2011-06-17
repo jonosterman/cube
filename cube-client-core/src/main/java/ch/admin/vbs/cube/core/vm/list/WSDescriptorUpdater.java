@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.list;
 
+import java.net.ConnectException;
 import java.security.KeyStore.Builder;
 import java.util.HashMap;
 import java.util.List;
@@ -43,6 +43,7 @@ public class WSDescriptorUpdater implements Runnable {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(WSDescriptorUpdater.class);
 	private static final long REFRESH_TIMEOUT = 30000;
+	private static final long CONNECTION_REFUSED_TIMEOUT = 60000;
 	private Thread thread;
 	private final VmModel model;
 	private CubeManagerServicePortType srv;
@@ -129,7 +130,13 @@ public class WSDescriptorUpdater implements Runnable {
 					LOG.error("Failed to update model with webservice", e);
 					// handle unrecoverable errors. exit loop to avoid filling
 					// logs with exceptions.
-					if (handeBadCertificateException(e)) {
+					if (handeConnecionRefusedException(e)) {
+						LOG.debug("Connection refused. Try later.");
+						try {
+							Thread.sleep(CONNECTION_REFUSED_TIMEOUT);
+						} catch (InterruptedException e1) {
+						}
+					} else if (handeBadCertificateException(e)) {
 						LOG.debug("Unrecoverable error. Stop web service.");
 						running = false;
 					}
@@ -186,9 +193,17 @@ public class WSDescriptorUpdater implements Runnable {
 		while (t != null) {
 			if (t instanceof SSLHandshakeException && "Received fatal alert: bad_certificate".equals(t.getMessage())) {
 				return true;
-				// } else {
-				// System.out.println("[" + t.getClass() + "][" + t.getMessage()
-				// + "]");
+			}
+			t = t.getCause();
+		}
+		return false;
+	}
+
+	private boolean handeConnecionRefusedException(Exception e) {
+		Throwable t = e;
+		while (t != null) {
+			if (t instanceof ConnectException && "Connection refused".equals(t.getMessage())) {
+				return true;
 			}
 			t = t.getCause();
 		}

@@ -120,6 +120,16 @@ public class VmActionListener implements IVmActionListener {
 			}
 		});
 	}
+	
+	@Override
+	public void setVmProperty(final VmHandle h, final String key, final String value, final boolean refreshAllVms) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.setVmProperty(h.getVmId(), key, value, refreshAllVms);
+			}
+		});
+	}
 
 	public void setupDependencies(ICoreFacade coreFacade) {
 		this.coreFacade = coreFacade;

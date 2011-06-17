@@ -204,7 +204,7 @@ public final class Cube {
 		((VmActionListener) vmActionListener).setupDependencies(coreFacade);
 		((CubeActionListener) cubeActionListener).setupDependencies(coreFacade);
 		for (NavigationBar n : navBars) {
-			n.setupDependencies(cubeClient, coreFacade, vmControl, vmMonitor);
+			n.setup(cubeClient, coreFacade, vmControl, vmMonitor);
 			cubeClient.addListener(n);
 		}
 		((WindowManager) windowManager).setup(cubeClient, cubeActionListener, vmMonitor, xWindowManager);

@@ -75,4 +75,6 @@ public interface IVmActionListener {
 	void detachUsbDevice(VmHandle vmHandle, UsbDevice usb);
 
 	void attachUsbDevice(VmHandle vmHandle, UsbDevice usb);
+
+	void setVmProperty(VmHandle vmHandle, String key, String value, boolean refreshAllVms);
 }

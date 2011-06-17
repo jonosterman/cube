@@ -27,25 +27,88 @@ public class MockSession implements ISession {
 
 	public MockSession() {
 		vmModel = new VmModel();
-		Vm vm = new Vm(new VmDescriptor());
-		vm.setVmStatus(VmStatus.RUNNING);
-		vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
-		vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
-		vm.getDescriptor().getRemoteCfg().setDescription("description");
-		vm.getDescriptor().getRemoteCfg().setDomain("domain");
-		vm.getDescriptor().getRemoteCfg().setName("Some VM here");
 		try {
+			Vm vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.RUNNING);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some VM here");
 			vmModel.addVm(vm);
+			usbDevices = new UsbDeviceEntryList();
+			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0011", "ACME shop", "1010", "BuzzFlash"), DeviceEntryState.ALREADY_ATTACHED));
+			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0012", "ACME shop", "1012", "Smash Balls"), DeviceEntryState.AVAILABLE));
+			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0013", "Monkey Island Corp.", "1014", "Faggots"),
+					DeviceEntryState.ATTACHED_TO_ANOTHER_VM));
+			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0014", "Monkey Island Corp.", "1016", "Twitts"), DeviceEntryState.ALREADY_ATTACHED));
+			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0015", "ACME shop", "1018", "The whole Internet"), DeviceEntryState.AVAILABLE));
+
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some BB Zm");
+			vmModel.addVm(vm);
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some AA zm");
+			vmModel.addVm(vm);
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some aa vm");
+			vmModel.addVm(vm);
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some bb vm");
+			vmModel.addVm(vm);
+			
+
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.SECRET);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some ZZ vm");
+			vmModel.addVm(vm);
+
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.UNCLASSIFIED);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some ZZ vm");
+			vmModel.addVm(vm);
+
+			vm = new Vm(new VmDescriptor());
+			vm.setVmStatus(VmStatus.STOPPED);
+			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
+			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.RESTRICTED);
+			vm.getDescriptor().getRemoteCfg().setDescription("description");
+			vm.getDescriptor().getRemoteCfg().setDomain("domain");
+			vm.getDescriptor().getRemoteCfg().setName("Some ZZ vm");
+			vmModel.addVm(vm);
+
+			
 		} catch (CubeException e) {
 			e.printStackTrace();
 		}
-		usbDevices = new UsbDeviceEntryList();
-		usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0011", "ACME shop", "1010", "BuzzFlash"), DeviceEntryState.ALREADY_ATTACHED));
-		usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0012", "ACME shop", "1012", "Smash Balls"), DeviceEntryState.AVAILABLE));
-		usbDevices
-				.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0013", "Monkey Island Corp.", "1014", "Faggots"), DeviceEntryState.ATTACHED_TO_ANOTHER_VM));
-		usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0014", "Monkey Island Corp.", "1016", "Twitts"), DeviceEntryState.ALREADY_ATTACHED));
-		usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0015", "ACME shop", "1018", "The whole Internet"), DeviceEntryState.AVAILABLE));
 	}
 
 	@Override

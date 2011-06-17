@@ -19,8 +19,8 @@ package ch.admin.vbs.cube.common.container;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
+import ch.admin.vbs.cube.common.CubeException;
 
 /**
  * Initialize the right container factory based on the configuration file.

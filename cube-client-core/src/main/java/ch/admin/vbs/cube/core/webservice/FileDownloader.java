@@ -117,7 +117,6 @@ public class FileDownloader implements Runnable {
 			int crnl = 0;
 			StringBuffer header = new StringBuffer();
 			while (owf++ < 1000) {
-				// System.out.println("["+(char)h+"]["+h+"]");
 				header.append((char) h);
 				if (h == 10 || h == 13) {
 					if (++crnl > 3) {

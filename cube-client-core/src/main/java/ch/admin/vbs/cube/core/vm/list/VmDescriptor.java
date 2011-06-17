@@ -13,8 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.list;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 import ch.admin.vbs.cube.common.CubeClassification;
 
@@ -42,6 +47,19 @@ public class VmDescriptor {
 	public class LocalConfig {
 		private String vmContainerUid;
 		private String runtimeContainerUid;
+		private Map<String, String> properties = Collections.synchronizedMap(new HashMap<String, String>());
+
+		public void setPropertie(String key, String value) {
+			properties.put(key, value);
+		}
+
+		public String getPropertie(String key) {
+			return properties.get(key);
+		}
+
+		public Set<String> getPropertyKeys() {
+			return new HashSet<String>(properties.keySet());
+		}
 
 		public String getVmContainerUid() {
 			return vmContainerUid;

@@ -23,7 +23,10 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
+import java.util.ArrayList;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
+import java.util.TreeSet;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JComponent;
@@ -35,14 +38,17 @@ import javax.swing.event.ChangeListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.client.wm.client.ICubeClient;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAttachUsbDevice;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDeleteAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDetachUsbDevice;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmHideAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmInstallAdditionsAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmPoweroffAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmSaveAction;
@@ -53,6 +59,7 @@ import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
+import ch.admin.vbs.cube.core.vm.VmHumanComparator;
 import ch.admin.vbs.cube.core.vm.VmStatus;
 
 import com.jidesoft.swing.JideMenu;
@@ -71,6 +78,7 @@ public class NavigationTabs extends JideTabbedPane {
 	private final int monitorCount;
 	private final int monitorIdx;
 	private ICoreFacade core;
+	private ICubeClient client;
 
 	public NavigationTabs(int monitorCount, int monitorIdx) {
 		this.monitorCount = monitorCount;
@@ -257,6 +265,11 @@ public class NavigationTabs extends JideTabbedPane {
 				}
 			}
 		}
+		// add Hide menu
+		if (state == VmStatus.STOPPED || state == VmStatus.STAGABLE) {
+			vmPopupMenu.addSeparator();
+			vmPopupMenu.add(new VmHideAction(h, false));
+		}
 		// add Monitor move menu
 		if (monitorCount > 1) {
 			vmPopupMenu.addSeparator();
@@ -289,29 +302,36 @@ public class NavigationTabs extends JideTabbedPane {
 		cubePopupMenu.add(new CubeLogoutAction());
 		cubePopupMenu.addSeparator();
 		cubePopupMenu.add(new CubeShutdownAction());
+		// show VMs menu
+		// get list of hidden VMs
+		JideMenu showMenu = new JideMenu(I18nBundleProvider.getBundle().getString("vm.action.show.text"));
+		showMenu.setIcon(IconManager.getInstance().getIcon("hide_icon16.png"));
+		TreeSet<VmHandle> hidden = new TreeSet<VmHandle>(new VmHandleHumanComparator(vmMon));
+		for (VmHandle h : client.listVms()) {
+			if ("true".equalsIgnoreCase(vmMon.getVmProperty(h, "hidden"))) {
+				hidden.add(h);
+			}
+		}
+		if (hidden.size() == 0) {
+			showMenu.setEnabled(false);
+		} else {
+			for(VmHandle h : hidden) {
+				final String label = String.format("%s, %s (%s)", vmMon.getVmName(h),vmMon.getVmDomain(h),vmMon.getVmClassification(h).name());
+				showMenu.add(new VmHideAction(label, h, true, false	));				
+			}
+			showMenu.setEnabled(true);
+		}
+		cubePopupMenu.add(showMenu);
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());
 	}
 
-	public void setVmCtrl(IVmControl vmCtrl) {
+	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client) {
 		this.vmCtrl = vmCtrl;
-	}
-
-	public IVmControl getVmCtrl() {
-		return vmCtrl;
-	}
-
-	public void setVmMon(IVmMonitor vmMon) {
 		this.vmMon = vmMon;
+		this.client = client;
 		colorProvider.setVmMon(vmMon);
-	}
-
-	public IVmMonitor getVmMon() {
-		return vmMon;
-	}
-
-	public void setCore(ICoreFacade core) {
 		this.core = core;
 	}
 }

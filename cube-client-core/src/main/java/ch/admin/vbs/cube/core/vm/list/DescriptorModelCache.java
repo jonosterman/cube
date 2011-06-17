@@ -13,12 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.list;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
 import java.util.GregorianCalendar;
 import java.util.HashSet;
 import java.util.Properties;
@@ -83,6 +84,12 @@ public class DescriptorModelCache implements IVmModelChangeListener {
 					writeProp(i, "vm[%d].name", rcfg.getName(), p);
 					writeProp(i, "vm[%d].type", rcfg.getType(), p);
 					writeProp(i, "vm[%d].version", rcfg.getCfgVersion(), p);
+					int pi = 0;
+					for (String key : lcfg.getPropertyKeys()) {
+						writeProp(i, "vm[%d].properties." + pi + ".key", URLEncoder.encode(key, "ASCII"), p);
+						writeProp(i, "vm[%d].properties." + pi + ".value", URLEncoder.encode(lcfg.getPropertie(key), "ASCII"), p);
+						pi++;
+					}
 					i++;
 				} catch (Exception e) {
 					// append if some value is null (that means, server sent
@@ -132,6 +139,26 @@ public class DescriptorModelCache implements IVmModelChangeListener {
 					rcfg.setName(readProp(index, "vm[%s].name", p));
 					rcfg.setType(readProp(index, "vm[%s].type", p));
 					rcfg.setCfgVersion(readProp(index, "vm[%s].version", p));
+					for (Object k : p.keySet()) {
+						String key = (String) k;
+					}
+					//
+					HashSet<String> pindexes = new HashSet<String>();
+					Pattern pVm = Pattern.compile("vm\\["+index+"\\]\\.properties\\.(\\d+)\\..+");
+					for (Object k : p.keySet()) {
+						Matcher m = pVm.matcher((String) k);
+						if (m.matches()) {
+							pindexes.add(m.group(1));
+						}
+					}
+					for (String pi : pindexes) {
+						String key = readProp(index, "vm[%s].properties." + pi + ".key", p);
+						String value = readProp(index, "vm[%s].properties." + pi + ".value", p);
+						key = URLDecoder.decode(key, "ASCII");
+						value = URLDecoder.decode(value, "ASCII");
+						lcfg.setPropertie(key, value);
+					}
+					//
 					Vm vm = model.findByInstanceUid(rcfg.getId());
 					if (vm == null) {
 						vm = new Vm(desc);
