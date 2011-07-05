@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
  */
 public class AESEncrypter {
 	private static final int BUFFER_SIZE = 1024 * 4;
-	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(AESEncrypter.class);
 	private Cipher ecipher;
 	private Cipher dcipher;

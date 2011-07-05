@@ -77,7 +77,7 @@ public abstract class AbstractProperties {
 			// 2) Fallback, using test configuration file (will be present in
 			// classpath during tests)
 			if (url == null) {
-				// fallback to test config if present (typically in junit)
+				// fallback to test config if present (typically allong with junit)
 				url = cl.getResource(testFileName);
 			}
 			// 3) Fallback, using 'standard' configuration file

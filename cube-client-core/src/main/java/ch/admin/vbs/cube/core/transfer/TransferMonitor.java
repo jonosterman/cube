@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.transfer;
 
 import java.io.File;
@@ -26,18 +25,23 @@ import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sun.xml.bind.v2.runtime.unmarshaller.XsiNilLoader.Array;
+
 import ch.admin.vbs.cube.common.RelativeFile;
+import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
 import ch.admin.vbs.cube.core.vm.Vm;
+import ch.admin.vbs.cube.core.vm.VmModel;
 
 /**
  * Monitors the export directories of all virtual machines.
  */
-public class TransferMonitor {
+public class TransferMonitor implements IVmModelChangeListener {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(TransferMonitor.class);
 	private static final int INSPECTION_DELAY = 2000;
 	private static List<Vm> userVmList;
 	private boolean running;
+	private VmModel model;
 
 	/**
 	 * Creates a {@link TransferMonitor}.
@@ -63,8 +67,12 @@ public class TransferMonitor {
 						LOG.error("Problem during sleep.", e);
 					}
 					try {
-						LOG.debug("Insepct export folders..");
-						for (Vm vm : userVmList) {
+						LOG.debug("Inspect export folders..");
+						ArrayList<Vm> clone = null;
+						synchronized (userVmList) {
+							clone = new ArrayList<Vm>(userVmList);							
+						}
+						for (Vm vm : clone) {
 							File exportFolder = vm.getExportFolder();
 							// Do something only if the export folder has been
 							// correctly created.
@@ -133,7 +141,7 @@ public class TransferMonitor {
 							}
 						}
 					} catch (Exception e) {
-						LOG.error("Monitor faileure.", e);
+						LOG.error("Monitor fails.", e);
 					}
 				}
 			}
@@ -159,18 +167,24 @@ public class TransferMonitor {
 		}
 	}
 
-	/**
-	 * @param userVmListParam
-	 *            the actual virtual machines {@link List}.
-	 */
-	public void updateVmListCopy(List<Vm> userVmListParam) {
-		userVmList.clear();
-		for (Vm vm : userVmListParam) {
-			userVmList.add(vm);
+	public void stop() {
+		running = false;
+	}
+
+	public void setVmModel(VmModel model) {
+		this.model = model;
+	}
+
+	@Override
+	public void listUpdated() {
+		synchronized (userVmList) {
+			userVmList.clear();
+			userVmList.addAll(model.getVmList());
 		}
 	}
 
-	public void stop() {
-		running = false;
+	@Override
+	public void vmUpdated(Vm vm) {
+		// not used
 	}
 }
