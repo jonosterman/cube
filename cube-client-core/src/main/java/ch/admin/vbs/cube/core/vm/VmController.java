@@ -81,7 +81,7 @@ public class VmController implements IVmProductListener {
 
 
 	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
-			IOption option) {
+			final IOption option) {
 		LOG.debug("controlVm [{}]", cmd);
 		switch (cmd) {
 		case STAGE:
@@ -119,7 +119,6 @@ public class VmController implements IVmProductListener {
 			} catch (VmException e) {
 				LOG.error("Failed to list usb devices", e);
 			}
-			LOG.info("XXXXXXXXXXXXX usb list : "+((UsbDeviceEntryList)option).size());
 			break;
 		default:
 			LOG.warn("Command not implemented [{}]", cmd);

@@ -731,6 +731,8 @@ public class VBoxProduct implements VBoxCacheListener {
 			}
 		} catch (Exception e) {
 			throw new VmException("Failed to list USB devices", e);
+		} finally {
+			list.setUpdated(true);
 		}
 	}
 

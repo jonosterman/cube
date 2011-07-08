@@ -58,7 +58,7 @@ sub vpnopen() {
 		}
 	}
 	## open VPN
-	print "[DEBUG] Start new openvpn process [setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log-append /tmp/openvpn-${tap}.log]\n";
+	print "[DEBUG] Start new openvpn process [setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log]\n";
 	runCmd("setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &");
 	## wait tap to be defined
 	my $timeout = 15; 
@@ -66,6 +66,7 @@ sub vpnopen() {
 		print "[DEBUG] wait tap to be configured ($timeout)..\n";
 		sleep(1);
 	}
+	`touch /tmp/openvpn-${tap}.log`;
 	## wait "Error/Exiting/exiting" or "Initialization Sequence Completed" messages)
 	while (int(`cat /tmp/openvpn-${tap}.log | grep -i "error"| wc -l`) == 0 && int(`cat /tmp/openvpn-${tap}.log | grep -i "exiting"| wc -l`) == 0 && int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) == 0 && $timeout-- > 0) {
 		print "[DEBUG] wait vpn success or error message ($timeout)..\n";
