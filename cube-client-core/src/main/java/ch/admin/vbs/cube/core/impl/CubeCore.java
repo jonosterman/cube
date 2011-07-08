@@ -349,7 +349,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			if (actSession != null && mode == Mode.SESSION) {
 				controlVm(vmId, VmCommand.LIST_USB, list);
 				long to = System.currentTimeMillis()+1000;
-				while(!list.isUpdated() && to<System.currentTimeMillis()) {
+				while(!list.isUpdated() && to>System.currentTimeMillis()) {
 					try {
 						Thread.sleep(42);
 					} catch (InterruptedException e) {
