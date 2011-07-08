@@ -348,8 +348,10 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			UsbDeviceEntryList list = new UsbDeviceEntryList();
 			if (actSession != null && mode == Mode.SESSION) {
 				controlVm(vmId, VmCommand.LIST_USB, list);
+				LOG.info("retun full list:: "+list.size());
 				return list;
 			} else {
+				LOG.info("return empty list :: "+actSession+ "  --- "+mode);
 				return list;
 			}
 		}

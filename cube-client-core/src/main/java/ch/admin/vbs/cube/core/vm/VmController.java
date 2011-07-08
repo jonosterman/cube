@@ -119,6 +119,7 @@ public class VmController implements IVmProductListener {
 			} catch (VmException e) {
 				LOG.error("Failed to list usb devices", e);
 			}
+			LOG.info("XXXXXXXXXXXXX usb list : "+((UsbDeviceEntryList)option).size());
 			break;
 		default:
 			LOG.warn("Command not implemented [{}]", cmd);
