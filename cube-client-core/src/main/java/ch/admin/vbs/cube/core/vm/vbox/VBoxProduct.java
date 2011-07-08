@@ -700,12 +700,14 @@ public class VBoxProduct implements VBoxCacheListener {
 					// exclude GemPlus product from the list in order to avoid
 					// attaching the main smart-card reader to a guest
 					if (dev.getVendorId() == 0x08e6) {
+						LOG.info("XX - skip matelgo vendor");
 						continue;
 					}
 					// exclude product without description
 					String p = dev.getProduct();
 					String m = dev.getManufacturer();
 					if (p == null || p.trim().length() == 0) {
+						LOG.info("XX - skip empty decription");
 						continue;
 					}
 					// format description : use product description and include
@@ -714,6 +716,7 @@ public class VBoxProduct implements VBoxCacheListener {
 					if (m != null && m.trim().length() > 0) {
 						fmt += " (" + m + ")";
 					}
+					LOG.info("XX - :: "+fmt);
 					// add to list
 					if (attachedIds.contains(dev.getAddress())) {
 						list.add(new UsbDeviceEntry(vm.getId(),//
