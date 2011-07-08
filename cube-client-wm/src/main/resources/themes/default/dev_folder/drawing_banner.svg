@@ -14,7 +14,7 @@
    height="1052.3622047"
    id="svg2"
    version="1.1"
-   inkscape:version="0.47 r22583"
+   inkscape:version="0.48.1 r9760"
    sodipodi:docname="drawing_banner.svg"
    inkscape:export-filename="/home/dreier/workspaces/workspace-cube-cno/cube-client-wm/src/main/resources/themes/cno/cube_banner_x58.png"
    inkscape:export-xdpi="7.1743646"
@@ -26,16 +26,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="325.55942"
-     inkscape:cy="463.23273"
+     inkscape:zoom="0.7"
+     inkscape:cx="286.78014"
+     inkscape:cy="530.09135"
      inkscape:document-units="px"
      inkscape:current-layer="layer1"
      showgrid="false"
      showguides="true"
      inkscape:guide-bbox="true"
      inkscape:window-width="1920"
-     inkscape:window-height="1005"
+     inkscape:window-height="1056"
      inkscape:window-x="0"
      inkscape:window-y="24"
      inkscape:window-maximized="1" />
@@ -44,7 +44,7 @@
     <linearGradient
        id="linearGradient3853">
       <stop
-         style="stop-color:#000000;stop-opacity:0.048;"
+         style="stop-color:#000000;stop-opacity:0.63846153;"
          offset="0"
          id="stop3855" />
       <stop
@@ -637,6 +637,18 @@
          stdDeviation="0.8275996"
          id="feGaussianBlur3829" />
     </filter>
+    <filter
+       inkscape:collect="always"
+       id="filter3923"
+       x="-0.31699658"
+       width="1.6339932"
+       y="-0.98808513"
+       height="2.9761703">
+      <feGaussianBlur
+         inkscape:collect="always"
+         stdDeviation="19.546452"
+         id="feGaussianBlur3925" />
+    </filter>
   </defs>
   <metadata
      id="metadata7">
@@ -837,16 +849,68 @@
        width="398.15674"
        id="rect2892-5"
        style="fill:url(#linearGradient2979);fill-opacity:1;stroke:none"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852" />
+    <text
+       xml:space="preserve"
+       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="31.947966"
+       y="148.14426"
+       id="text4114"><tspan
+         sodipodi:role="line"
+         id="tspan4116"
+         x="31.947966"
+         y="148.14426">Logo:</tspan></text>
+    <text
+       id="text4118"
+       y="268.14426"
+       x="31.947966"
+       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       xml:space="preserve"><tspan
+         y="268.14426"
+         x="31.947966"
+         id="tspan4120"
+         sodipodi:role="line">Logo:</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="31.947966"
+       y="436.14429"
+       id="text4122"><tspan
+         sodipodi:role="line"
+         id="tspan4124"
+         x="31.947966"
+         y="436.14429">Background (493x294):</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:27.063;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="30.678301"
+       y="737.40997"
+       id="text4126"><tspan
+         sodipodi:role="line"
+         x="30.678301"
+         y="737.40997"
+         id="tspan4132"><tspan
+   style="font-size:27.063"
+   id="tspan4215">Dialog</tspan>:</tspan></text>
+    <rect
+       inkscape:export-ydpi="111.43852"
+       inkscape:export-xdpi="111.43852"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       style="fill:url(#radialGradient2963);fill-opacity:1;stroke:none"
+       id="rect3851"
+       width="398.15674"
+       height="237.27782"
+       x="34.604057"
+       y="452.98785" />
     <text
        id="text3767"
        y="595.53516"
        x="165.71506"
        style="font-size:7.20557116999999980px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter3787)"
        xml:space="preserve"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852"><tspan
          id="tspan3769"
@@ -857,7 +921,7 @@
        id="g3016"
        style="fill:#ffffff"
        transform="matrix(0.36224791,0,0,0.36224791,-214.21057,-179.17416)"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852">
       <g
@@ -879,7 +943,7 @@
     <g
        id="g3006"
        transform="matrix(0.36224791,0,0,0.36224791,-214.21057,-179.17416)"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852">
       <text
@@ -941,68 +1005,29 @@
     </g>
     <text
        xml:space="preserve"
-       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="31.947966"
-       y="148.14426"
-       id="text4114"><tspan
-         sodipodi:role="line"
-         id="tspan4116"
-         x="31.947966"
-         y="148.14426">Logo:</tspan></text>
-    <text
-       id="text4118"
-       y="268.14426"
-       x="31.947966"
-       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       xml:space="preserve"><tspan
-         y="268.14426"
-         x="31.947966"
-         id="tspan4120"
-         sodipodi:role="line">Logo:</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:27.06330872px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="31.947966"
-       y="436.14429"
-       id="text4122"><tspan
-         sodipodi:role="line"
-         id="tspan4124"
-         x="31.947966"
-         y="436.14429">Background (493x294):</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:27.063;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="30.678301"
-       y="737.40997"
-       id="text4126"><tspan
-         sodipodi:role="line"
-         x="30.678301"
-         y="737.40997"
-         id="tspan4132"><tspan
-   style="font-size:27.063"
-   id="tspan4215">Dialog</tspan>:</tspan></text>
-    <text
-       xml:space="preserve"
-       style="font-size:7.20557117px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
-       x="165.71506"
+       style="font-size:7.20557117px;font-style:normal;font-weight:normal;text-align:center;text-anchor:middle;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"
+       x="232.80577"
        y="595.53516"
        id="text3757"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852"><tspan
          sodipodi:role="line"
-         x="165.71506"
+         x="232.80577"
          y="595.53516"
          id="tspan3761">I will not mess with my data anymore</tspan></text>
-    <rect
-       inkscape:export-ydpi="111.43852"
+    <path
+       sodipodi:type="arc"
+       style="opacity:0.328125;fill:#ffffff;fill-opacity:1;stroke:none;filter:url(#filter3923)"
+       id="path3909"
+       sodipodi:cx="235.61807"
+       sodipodi:cy="583.65143"
+       sodipodi:rx="73.993675"
+       sodipodi:ry="23.738585"
+       d="m 309.61175,583.65143 a 73.993675,23.738585 0 1 1 -147.98735,0 73.993675,23.738585 0 1 1 147.98735,0 z"
+       transform="translate(-1.9356461,-12.024666)"
+       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
-       style="fill:url(#radialGradient2963);fill-opacity:1;stroke:none"
-       id="rect3851"
-       width="398.15674"
-       height="237.27782"
-       x="34.604057"
-       y="452.98785" />
+       inkscape:export-ydpi="111.43852" />
   </g>
 </svg>
