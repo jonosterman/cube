@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.impl;
 
 import java.io.ByteArrayInputStream;
@@ -53,6 +52,7 @@ public class ScAuthModule implements IAuthModule {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(ScAuthModule.class);
 	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
+	public static final long PKCS11_TIMEOUT = 10000;
 	private ArrayList<IAuthModuleListener> listeners = new ArrayList<IAuthModuleListener>(2);
 	private Executor exec = Executors.newCachedThreadPool();
 	private Object lock = new Object();
@@ -70,6 +70,10 @@ public class ScAuthModule implements IAuthModule {
 
 	@Override
 	public void abort() {
+		abort(AuthEventType.FAILED);
+	}
+
+	private void abort(AuthEventType reason) {
 		synchronized (lock) {
 			LOG.debug("Abort current authentification");
 			if (currentCallback != null) {
@@ -82,14 +86,14 @@ public class ScAuthModule implements IAuthModule {
 				currentCallback.password = null;
 				currentCallback = null;
 				// notify failure
-				fireStateChanged(new AuthModuleEvent(AuthEventType.FAILED, null, builder, null));// unlock the thread that wait on password in
+				fireStateChanged(new AuthModuleEvent(reason, null, builder, null));
+				// unlock the thread that wait on password in
 				// 'AuthCallback.handle()'
 				lock.notifyAll();
 			} else {
 				LOG.debug("CurrentCallback is null. Ignore abort command.");
 			}
 		}
-		
 	}
 
 	@Override
@@ -112,6 +116,7 @@ public class ScAuthModule implements IAuthModule {
 			currentCallback = new AuthCallback();
 			// execute builder thread
 			exec.execute(new BuilderRunnable(currentCallback));
+			exec.execute(new BuilderWatchdog(currentCallback));
 		}
 	}
 
@@ -123,6 +128,7 @@ public class ScAuthModule implements IAuthModule {
 				currentCallback.password = password;
 				// unlock the thread that wait on password in
 				// 'AuthCallback.handle()'
+				LOG.debug("Password set.");
 				lock.notifyAll();
 			} else {
 				LOG.debug("CurrentCallback is null. Ignore submited Password.");
@@ -161,21 +167,27 @@ public class ScAuthModule implements IAuthModule {
 				StringBuilder buf = new StringBuilder();
 				buf.append("library = ").append(pkcs11LibraryPath).append("\nname = Cube\n");
 				provider = new sun.security.pkcs11.SunPKCS11(new ByteArrayInputStream(buf.toString().getBytes()));
+				checkCanceled();
 				Security.addProvider(provider);
+				checkCanceled();
 				// create builder
 				builder = KeyStore.Builder.newInstance("PKCS11", provider, new KeyStore.CallbackHandlerProtection(callback));
+				checkCanceled();
 				// request keystore
-				LOG.debug("Request keystore (slow)");
+				LOG.debug("Request keystore");
 				keystore = builder.getKeyStore();// <- slow part
 				LOG.debug("Got keystore");
+				checkCanceled();
 				// validate keystore with root CA
 				if (!caValid.validate(keystore)) {
 					throw new CubeException("Certificates on smart-cards are invalid.");
 				}
 				// check that this builder is still 'active' before
 				// updating keystore field in module.
+				checkCanceled();
 				synchronized (lock) {
 					if (callback == currentCallback && callback.active) {
+						callback.active = false;
 						LOG.debug("KeyStore opened and set as active for this module [{}]", keystore.aliases());
 						// notify success
 						fireStateChanged(new AuthModuleEvent(AuthEventType.SUCCEED, keystore, builder, callback.password));
@@ -186,24 +198,44 @@ public class ScAuthModule implements IAuthModule {
 					// check that this builder is still 'active' before
 					// notifying failure.
 					if (callback == currentCallback && callback.active) {
+						callback.active = false;
+						AuthEventType reason = AuthEventType.FAILED;
 						if (handlePinIncorrect(e)) {
 							LOG.debug("Incorrect PIN");
+							reason = AuthEventType.FAILED_WRONGPIN;
+						} else if (handleCanceled(e)) {
+							LOG.debug("PKCS11 login canceled");
+							reason = AuthEventType.FAILED_CANCELED;
 						} else {
-							// a 'PKCS11Exception: CKR_FUNCTION_FAILED' error
-							// could be rised if
-							// user removed his smart-card during login. Log it
-							// as debug.
+							/*
+							 * a 'PKCS11Exception: CKR_FUNCTION_FAILED' error
+							 * could be raised if user removed his smart-card
+							 * during login. Log it as debug.
+							 */
 							LOG.debug("Failed to open KeyStore", e);
 						}
 						// notify failure
-						fireStateChanged(new AuthModuleEvent(AuthEventType.FAILED, null, builder, null));
+						fireStateChanged(new AuthModuleEvent(reason, null, builder, null));
 					}
 				}
 			} finally {
 				// we can clear the password variable since the keystore is
 				// opened now.
+				callback.active = false;
 				callback.clearPassword();
 			}
+		}
+
+		private void checkCanceled() {
+			synchronized (lock) {
+				if (callback != currentCallback || !callback.active) {
+					throw new RuntimeException("cancel");
+				}
+			}
+		}
+
+		private boolean handleCanceled(Exception e) {
+			return e instanceof RuntimeException && "cancel".equals(e.getMessage());
 		}
 
 		private boolean handlePinIncorrect(Exception e) {
@@ -256,6 +288,46 @@ public class ScAuthModule implements IAuthModule {
 		public void clearPassword() {
 			if (password != null) {
 				Arrays.fill(password, '\0');
+			}
+		}
+	}
+
+	/**
+	 * Somtimes the PKCS11 part hangs forever. In order to avoid the user to
+	 * wait and decide himself to remove the smart-card and retry, we start this
+	 * watchdog in order to detect this situation and require user to retry.
+	 */
+	private class BuilderWatchdog implements Runnable {
+		private final AuthCallback callback;
+
+		public BuilderWatchdog(AuthCallback currentCallback) {
+			callback = currentCallback;
+		}
+
+		@Override
+		public void run() {
+			try {
+				// wait password to start PKCS11 timeout count-down
+				while (callback == currentCallback && callback.active) {
+					Thread.sleep(500);
+					if (callback.password != null)
+						break;
+				}
+				// wait timeout
+				Thread.sleep(PKCS11_TIMEOUT);
+				// check if still active and restart callback & watchdog if
+				// necessary
+				synchronized (lock) {
+					if (callback == currentCallback && callback.active) {
+						LOG.debug("PKCS11 implementation does not react within {} ms. Restart it.", PKCS11_TIMEOUT);
+						abort(AuthEventType.FAILED_CARDTIMEOUT);
+						//
+					} else {
+						LOG.debug("Watchdog exit normally (no timeout)");
+					}
+				}
+			} catch (Exception e) {
+				LOG.error("Watchdog failed");
 			}
 		}
 	}

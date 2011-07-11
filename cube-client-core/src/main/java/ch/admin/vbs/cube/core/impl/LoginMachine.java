@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.impl.IdentityToken;
 import ch.admin.vbs.cube.core.AuthModuleEvent;
+import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.IAuthModule;
 import ch.admin.vbs.cube.core.IAuthModuleListener;
@@ -70,6 +71,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 	private IIdentityToken currentIdentity;
 	// State
 	private IState currentState;
+	private AuthEventType failureReason;
 	private int authAttempts = 0;
 	// other beans
 	private ITokenDevice tokenDevice;
@@ -160,7 +162,11 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 			currentIdentity = new IdentityToken(event.getKeystore(), event.getBuilder(), event.getPassword());
 			queueTansistion(StateTransition.AUTH_SUCCEED);
 			break;
+		case FAILED_CARDTIMEOUT:
 		case FAILED:
+		case FAILED_CANCELED:
+		case FAILED_WRONGPIN:
+			failureReason = event.getType();
 			queueTansistion(StateTransition.AUTH_FAILED);
 			break;
 		default:
@@ -252,7 +258,18 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 
 		@Override
 		public void refreshUI() {
-			loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
+			switch (failureReason) {
+			case FAILED_WRONGPIN:
+				loginUI.showDialog(bundle.getString("login.remove_smartcard_wrongpin"), LoginDialogType.NO_OPTION);
+				break;
+			case FAILED_CARDTIMEOUT:
+				loginUI.showDialog(bundle.getString("login.remove_smartcard_carderror"), LoginDialogType.NO_OPTION);
+				break;
+			default:
+				loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
+				break;
+			}
+			failureReason = null;
 		}
 	}
 

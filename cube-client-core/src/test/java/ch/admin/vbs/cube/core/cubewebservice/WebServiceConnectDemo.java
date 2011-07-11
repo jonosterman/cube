@@ -57,7 +57,7 @@ public class WebServiceConnectDemo {
 						e.printStackTrace();
 					}
 				} else {
-					System.out.println("Authentication failed");
+					System.out.println("Authentication failed ["+event.getType()+"]");
 				}
 			}
 		});
