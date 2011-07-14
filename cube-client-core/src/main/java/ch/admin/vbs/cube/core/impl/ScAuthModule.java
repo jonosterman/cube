@@ -75,14 +75,12 @@ public class ScAuthModule implements IAuthModule {
 
 	private void abort(AuthEventType reason) {
 		synchronized (lock) {
-			LOG.debug("Abort current authentification");
 			if (currentCallback != null) {
+				LOG.debug("Invalidate current authentification");
 				// disable callback
 				currentCallback.active = false;
 				// nullify all variables
-				if (currentCallback.password != null) {
-					Arrays.fill(currentCallback.password, '\0');
-				}
+				currentCallback.clearPassword();
 				currentCallback.password = null;
 				currentCallback = null;
 				// notify failure
@@ -91,7 +89,7 @@ public class ScAuthModule implements IAuthModule {
 				// 'AuthCallback.handle()'
 				lock.notifyAll();
 			} else {
-				LOG.debug("CurrentCallback is null. Ignore abort command.");
+				LOG.debug("CurrentCallback is null. Ignore invalidation command.");
 			}
 		}
 	}
@@ -128,7 +126,7 @@ public class ScAuthModule implements IAuthModule {
 				currentCallback.password = password;
 				// unlock the thread that wait on password in
 				// 'AuthCallback.handle()'
-				LOG.debug("Password set.");
+				LOG.debug("User gave its password. Notify waiting threads.");
 				lock.notifyAll();
 			} else {
 				LOG.debug("CurrentCallback is null. Ignore submited Password.");
@@ -262,17 +260,22 @@ public class ScAuthModule implements IAuthModule {
 						PasswordCallback pwdCbk = (PasswordCallback) c;
 						// if password has not been set yet. Wait for it.
 						synchronized (lock) {
-							if (!active)
+							if (!active || this != currentCallback)
 								return;
 							if (password == null) {
 								try {
-									LOG.debug("Wait for password..");
+									/*
+									 * wait until user entered its password or
+									 * that the authentication process has been
+									 * canceled (user removed its token).
+									 */
+									LOG.debug("Wait that user enter its password.");
 									lock.wait();
 								} catch (InterruptedException e) {
 									LOG.error("Failure", e);
 								}
 							} else {
-								LOG.debug("Password already ready");
+								LOG.debug("Password already available: continue authentication.");
 							}
 							pwdCbk.setPassword(password);
 							lock.notifyAll();
