@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.impl;
 
 import java.util.ArrayList;
@@ -81,15 +80,15 @@ public class SessionManager implements ISessionManager, ILoginListener {
 
 	@Override
 	public void closeSession(ISession session) {
-		LOG.debug("Close session [{}]",session.getId().getSubjectName());
+		LOG.debug("Close session [{}]", session.getId().getSubjectName());
 		synchronized (sessions) {
 			sessions.remove(session.getId().getUuid());
 		}
-		LOG.debug("call session.close() [{}]",session.getId().getSubjectName());
+		LOG.debug("call session.close() [{}]", session.getId().getSubjectName());
 		session.close();
-		LOG.debug("login.discardAuth [{}]",session.getId().getSubjectName());
+		LOG.debug("login.discardAuth [{}]", session.getId().getSubjectName());
 		login.discardAuthentication(session.getId());
-		LOG.debug("fireSessionClosed [{}]",session.getId().getSubjectName());
+		LOG.debug("fireSessionClosed [{}]", session.getId().getSubjectName());
 		fireSessionClosed(session);
 	}
 
@@ -135,7 +134,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	public void userLocked(IIdentityToken id) {
 		ISession ses = sessions.get(id.getUuid());
 		if (ses != null) {
-			LOG.debug("Lock session [{}]",ses.getId().getSubjectName());
+			LOG.debug("Lock session [{}]", ses.getId().getSubjectName());
 			ses.lock();
 			fireSessionLocked(ses);
 		}
@@ -146,9 +145,9 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		ISession ses = null;
 		synchronized (sessions) {
 			ses = sessions.get(id.getUuid());
-		}
-		if (ses != null) {
-			closeSession(ses);
+			if (ses != null) {
+				closeSession(ses);
+			}
 		}
 	}
 
