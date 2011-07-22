@@ -52,6 +52,8 @@ import org.virtualbox_4_0.StorageBus;
 import org.virtualbox_4_0.StorageControllerType;
 import org.virtualbox_4_0.VBoxException;
 import org.virtualbox_4_0.VirtualBoxManager;
+import org.virtualbox_4_0.NetworkAdapterType;
+
 
 import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.container.SizeFormatUtil;
