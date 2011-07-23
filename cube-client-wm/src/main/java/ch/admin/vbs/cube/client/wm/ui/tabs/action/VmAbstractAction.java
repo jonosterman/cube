@@ -86,22 +86,22 @@ public abstract class VmAbstractAction extends AbstractAction {
 	 * Registers <code>VmActionListener</code> so that it will receive virtual
 	 * machine action events.
 	 * 
-	 * @param vmActionListener
+	 * @param l
 	 *            VmActionListener to register
 	 */
-	public static synchronized void addVmActionListener(IVmActionListener vmActionListener) {
-		vmActionListeners.add(vmActionListener);
+	public static synchronized void addVmActionListener(IVmActionListener l) {
+		vmActionListeners.add(l);
 	}
 
 	/**
 	 * Unregisters <code>VmActionListener</code> so that it will no longer
 	 * receive virtual machine action events.
 	 * 
-	 * @param vmActionListener
+	 * @param l
 	 *            vmActionListener to be removed
 	 */
-	public static synchronized void removeActionListener(IVmActionListener vmActionListener) {
-		vmActionListeners.remove(vmActionListener);
+	public static synchronized void removeActionListener(IVmActionListener l) {
+		vmActionListeners.remove(l);
 	}
 
 	/**

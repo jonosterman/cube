@@ -29,6 +29,7 @@ import ch.admin.vbs.cube.client.wm.client.ICubeClient;
 import ch.admin.vbs.cube.client.wm.client.IVmChangeListener;
 import ch.admin.vbs.cube.client.wm.client.VmChangeEvent;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
+import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -56,6 +57,7 @@ public class CubeClient implements ICubeClient {
 	private HashMap<VmHandle, Vm> vmsStr = new HashMap<VmHandle, Vm>();
 	private HashMap<String, VmHandle> vmsRev = new HashMap<String, VmHandle>();
 	private ArrayList<IVmChangeListener> listeners = new ArrayList<IVmChangeListener>();
+	private ICubeUI cubeUI;
 
 	public CubeClient() {
 	}
@@ -83,7 +85,7 @@ public class CubeClient implements ICubeClient {
 				ncol2.put(v.getId(), h);
 			}
 			for (Vm v : addedVms) {
-				VmHandle h = new VmHandle(v.getId());
+				VmHandle h = new VmHandle(v.getId(), cubeUI.getDefaultScreen().getId());
 				ncol1.put(h, v);
 				ncol2.put(v.getId(), h);
 			}
@@ -128,7 +130,7 @@ public class CubeClient implements ICubeClient {
 		// notify UI for changes
 		notifyVmChanged(h);
 	}
-
+	
 	// #######################################################
 	// Events methods
 	// #######################################################
@@ -162,6 +164,10 @@ public class CubeClient implements ICubeClient {
 		synchronized (listeners) {
 			listeners.remove(l);
 		}
+	}
+	
+	public void setup(ICubeUI cubeUI) {
+		this.cubeUI = cubeUI;
 	}
 
 	// #######################################################

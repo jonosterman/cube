@@ -67,6 +67,9 @@ public final class XWindowManager implements IXWindowManager {
 	 * Creates the x window manager singleton instance.
 	 */
 	private XWindowManager() {
+	}
+
+	public void start() {
 		detectOperationSystemArchitecture();
 		detectDefaultDisplay();
 		x11 = X11.INSTANCE;
@@ -183,7 +186,7 @@ public final class XWindowManager implements IXWindowManager {
 							Thread.sleep(WAITING_TIME);
 							timeout += WAITING_TIME;
 							if (LOG.isDebugEnabled()) {
-								LOG.debug("Looking for window with namePattern='" + namePattern + "' ...");
+								LOG.debug("Looking for window {" + namePattern + "} ");
 							}
 						} catch (InterruptedException e) {
 							break;

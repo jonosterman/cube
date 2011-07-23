@@ -81,7 +81,7 @@ public class VmMonitor implements IVmMonitor {
 	// #######################################################
 	// Injection
 	// #######################################################
-	public void setupDependencies(ICubeClient client) {
+	public void setup(ICubeClient client) {
 		this.client = client;
 	}
 }

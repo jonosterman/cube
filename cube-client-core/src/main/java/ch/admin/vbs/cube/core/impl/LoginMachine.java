@@ -304,7 +304,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 				break;
 			case AUTH_FAILED:
 				authAttempts++;
-				if (authAttempts >= MAX_AUTH_ATTEMPTS) {
+				if (authAttempts >= MAX_AUTH_ATTEMPTS || failureReason == AuthEventType.FAILED_CARDTIMEOUT) {
 					// force the user to remove smart-card
 					setState(stateLockedTokenIn);
 				} else {

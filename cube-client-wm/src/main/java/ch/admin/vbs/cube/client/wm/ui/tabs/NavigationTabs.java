@@ -23,6 +23,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.MessageFormat;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.TreeSet;
 
@@ -41,6 +42,9 @@ import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
+import ch.admin.vbs.cube.client.wm.ui.CubeUI.CubeScreen;
+import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLayoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAttachUsbDevice;
@@ -54,6 +58,7 @@ import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmStageAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmStartAction;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
+import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
@@ -72,14 +77,13 @@ public class NavigationTabs extends JideTabbedPane {
 	private TabColorProvider colorProvider;
 	private JidePopupMenu cubePopupMenu;
 	private JPopupMenu vmPopupMenu;
-	private final int monitorCount;
-	private final int monitorIdx;
+	private final String monitorId;
 	private ICoreFacade core;
 	private ICubeClient client;
+	private ICubeUI cubeUI;
 
-	public NavigationTabs(int monitorCount, int monitorIdx) {
-		this.monitorCount = monitorCount;
-		this.monitorIdx = monitorIdx;
+	public NavigationTabs(String monitorId) {
+		this.monitorId = monitorId;
 		// default settings
 		setTabResizeMode(RESIZE_MODE_FIXED); // exact size set in CubeUIDefaults
 		setShowGripper(false); //
@@ -122,11 +126,11 @@ public class NavigationTabs extends JideTabbedPane {
 									if (comp != null) {
 										vmCtrl.showVm(comp.getVmHandle());
 									} else {
-										vmCtrl.hideAllVms(NavigationTabs.this.monitorIdx);
+										vmCtrl.hideAllVms(NavigationTabs.this.monitorId);
 									}
 								}
 							} else {
-								vmCtrl.hideAllVms(NavigationTabs.this.monitorIdx);
+								vmCtrl.hideAllVms(NavigationTabs.this.monitorId);
 							}
 						}
 					}
@@ -134,16 +138,16 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		});
 		// add header logo
-		if (monitorIdx == 0) {
-			LogoPanel logo = new LogoPanel();
-			logo.addMouseListener(new MouseAdapter() {
-				@Override
-				public void mousePressed(MouseEvent e) {
-					showLogoPopupMenu(e);
-				}
-			});
-			setTabLeadingComponent(logo);
-		}
+		// if (monitorIdx == 0) {
+		LogoPanel logo = new LogoPanel();
+		logo.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mousePressed(MouseEvent e) {
+				showLogoPopupMenu(e);
+			}
+		});
+		setTabLeadingComponent(logo);
+		// }
 	}
 
 	/**
@@ -269,19 +273,19 @@ public class NavigationTabs extends JideTabbedPane {
 			vmPopupMenu.add(new VmHideAction(h, false));
 		}
 		// add Monitor move menu
-		if (monitorCount > 1) {
+		List<CubeScreen> screens = cubeUI.getScreens();
+		if (screens.size() > 1) {
 			vmPopupMenu.addSeparator();
 			JideMenu monitorMenu = new JideMenu(resourceBundle.getString("vm.move.monitor.menu"));
 			vmPopupMenu.add(monitorMenu);
-			for (int i = 0; i < monitorCount; ++i) {
-				if (i != monitorIdx) {
-					final int destMonitorIndex = i;
-					// Monitor number starts with 1
-					JMenuItem item = new JMenuItem(MessageFormat.format(resourceBundle.getString("vm.move.monitor.menu.item"), i + 1));
+			for (CubeScreen c : screens) {
+				if (!c.getId().equals(monitorId) && c.isConnected()) {
+					final String destMonitorId = c.getId();
+					JMenuItem item = new JMenuItem(MessageFormat.format(resourceBundle.getString("vm.move.monitor.menu.item"), destMonitorId));
 					item.addActionListener(new ActionListener() {
 						@Override
 						public void actionPerformed(ActionEvent e) {
-							vmCtrl.moveVm(h, destMonitorIndex);
+							vmCtrl.moveVm(h, destMonitorId);
 						}
 					});
 					monitorMenu.add(item);
@@ -289,7 +293,6 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		}
 		// show popup
-		LOG.debug("showTabPopupMenu .. show");
 		vmPopupMenu.show(parent, event.getX(), event.getY());
 	}
 
@@ -319,16 +322,31 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 			showMenu.setEnabled(true);
 		}
+		// add multi-screen layout menu
+		List<CubeScreen> screens = cubeUI.getScreens();
+		if (screens.size() > 1) {
+			JideMenu screensMenu = new JideMenu(I18nBundleProvider.getBundle().getString("vm.action.screens.text"));
+			cubePopupMenu.add(screensMenu);
+			screensMenu.add(new CubeLayoutAction(cubeUI,Layout.A,I18nBundleProvider.getBundle().getString("vm.action.screens.a0.text"), IconManager.getInstance().getIcon(
+					"screensA0_icon16.png")));
+			screensMenu.add(new CubeLayoutAction(cubeUI,Layout.B,I18nBundleProvider.getBundle().getString("vm.action.screens.0b.text"), IconManager.getInstance().getIcon(
+					"screens0B_icon16.png")));
+			screensMenu.add(new CubeLayoutAction(cubeUI,Layout.AB,I18nBundleProvider.getBundle().getString("vm.action.screens.ab.text"), IconManager.getInstance().getIcon(
+					"screensAB_icon16.png")));
+			screensMenu.add(new CubeLayoutAction(cubeUI,Layout.BA,I18nBundleProvider.getBundle().getString("vm.action.screens.ba.text"), IconManager.getInstance().getIcon(
+					"screensBA_icon16.png")));
+		}
 		cubePopupMenu.add(showMenu);
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());
 	}
 
-	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client) {
+	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client, ICubeUI cubeUI) {
 		this.vmCtrl = vmCtrl;
 		this.vmMon = vmMon;
 		this.client = client;
+		this.cubeUI = cubeUI;
 		colorProvider.setVmMon(vmMon);
 		this.core = core;
 	}

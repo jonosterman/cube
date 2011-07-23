@@ -103,7 +103,7 @@ public class ClientFacade implements IClientFacade {
 	// #######################################################
 	// Injections
 	// #######################################################
-	public void setupDependencies(ICubeClient client, IUserInterface userIface) {
+	public void setup(ICubeClient client, IUserInterface userIface) {
 		this.userIface = userIface;
 		this.client = client;
 	}

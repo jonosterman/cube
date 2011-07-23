@@ -79,9 +79,9 @@ public class OsdFrameManager {
 	}
 
 	public void update(Collection<VmHandle> values) {
-		HashMap<Integer, VmHandle> map = new HashMap<Integer, VmHandle>();
+		HashMap<String, VmHandle> map = new HashMap<String, VmHandle>();
 		for (VmHandle h : values) {
-			map.put(h.getMonitorIdx(), h);
+			map.put(h.getMonitorId(), h);
 		}
 		// update osd content
 		for (int i = 0; i < osdFrames.length; i++) {

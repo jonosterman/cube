@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.dialog;
 
 import java.awt.Color;
@@ -79,6 +78,12 @@ public class CubePasswordDialog extends CubeWizard {
 			@Override
 			public void windowClosing(WindowEvent e) {
 				notifyListenersAndClose(true);
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+				LOG.debug("request focus for login window");
+				passwordFld.requestFocus();
 			}
 		});
 		setModal(false);
@@ -182,8 +187,6 @@ public class CubePasswordDialog extends CubeWizard {
 		}
 		super.displayWizard();
 	}
-
-
 
 	/*
 	 * (non-Javadoc)

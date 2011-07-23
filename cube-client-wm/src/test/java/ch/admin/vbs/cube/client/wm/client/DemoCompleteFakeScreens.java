@@ -1,19 +1,4 @@
-/**
- * Copyright (C) 2011 / manhattan <https://cube.forge.osor.eu>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *         http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-package ch.admin.vbs.cube.client.wm.apps;
+package ch.admin.vbs.cube.client.wm.client;
 
 import java.io.File;
 
@@ -26,6 +11,7 @@ import ch.admin.vbs.cube.client.wm.client.impl.CubeClient;
 import ch.admin.vbs.cube.client.wm.client.impl.VmActionListener;
 import ch.admin.vbs.cube.client.wm.client.impl.VmControl;
 import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
+import ch.admin.vbs.cube.client.wm.mock.MockXrandr;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAbstractAction;
@@ -34,9 +20,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager;
 import ch.admin.vbs.cube.client.wm.utils.CubeUIDefaults;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
-import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrCLI;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
-import ch.admin.vbs.cube.common.MachineUuid;
 import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
 import ch.admin.vbs.cube.core.IAuthModule;
 import ch.admin.vbs.cube.core.ILogin;
@@ -49,45 +33,22 @@ import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 
 /**
- * This class is the entry point to start the cube secure client.
+ * This demo application is used to develop and test the user UI (tabs, pop-ups,
+ * etc).
+ * 
+ * It setups a client with a fake session manager. This fake session manager
+ * emulate a logged user (session is open) with dummy VM.
+ * 
  */
-public final class Cube {
-	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(Cube.class);
-	// Beans
+public class DemoCompleteFakeScreens {
 	private IoC ioc = new IoC();
+	private static final Logger LOG = LoggerFactory.getLogger(DemoCompleteFakeScreens.class);
 
-	/**
-	 * Starts the cube application.
-	 * 
-	 * @param args
-	 *            the command line arguments
-	 */
-	public static void main(String[] args) {
-		try {
-			LOG.info("================================================================");
-			LOG.info("================================================================");
-			LOG.info("===                                                          ===");
-			LOG.info("===                       CUBE STARTUP                       ===");
-			LOG.info("===                                                          ===");
-			LOG.info("================================================================");
-			LOG.info("================================================================");
-			LOG.info("");
-			LOG.info(" Machine UUID: " + MachineUuid.getMachineUuid().getUuidAsString());
-			LOG.info("");
-			LOG.info("================================================================");
-			// #########################
-			// Start application
-			// #########################
-			Cube d = new Cube();
-			d.run();
-		} catch (Exception e) {
-			LOG.error("Failed to start cube", e);
-		}
+	public static void main(String[] args) throws Exception {
+		DemoCompleteFakeScreens d = new DemoCompleteFakeScreens();
+		d.run();
 	}
 
-	
-	
 	private void run() throws Exception {
 		// init UI Default
 		CubeUIDefaults.initDefaults();
@@ -97,9 +58,8 @@ public final class Cube {
 		new File(CubeCommonProperties.getProperty("cube.containers.dir")).mkdirs();
 		// cleanup older containers
 		DmcryptContainerFactory.cleanup();
-
 		// create beans
-		ioc.addBean(new XrandrCLI());
+		ioc.addBean(new MockXrandr());
 		ioc.addBean(new CubeUI());
 		ioc.addBean(new CubeClient());
 		ioc.addBean(new ClientFacade());
@@ -115,14 +75,11 @@ public final class Cube {
 		ioc.addBean(new ScAuthModule());
 		ioc.addBean(new DmcryptContainerFactory());
 		ioc.addBean(new ScTokenDevice());
-		
 		// IoC
 		ioc.setupDependenciesOnAllBeans();
-		
 		// exotic stuff (to be cleaned up)
 		VmAbstractAction.addVmActionListener(ioc.getBean(VmActionListener.class));
 		CubeAbstractAction.addCubeActionListener(ioc.getBean(CubeActionListener.class));
-		
 		// object's specific initialization
 		ioc.getBean(IXrandr.class).start();
 		ioc.getBean(XWindowManager.class).start();

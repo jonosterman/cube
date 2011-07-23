@@ -35,8 +35,8 @@
 
   <logger name="ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater" level="INFO"/>
   
-  <logger name="ch.admin.vbs.cube.client.wm.cube" level="INFO"/>
-  <logger name="ch.admin.vbs.cube.client.wm.ui" level="INFO"/>
+  <logger name="ch.admin.vbs.cube.client.wm.cube" level="DEBUG"/>
+  <logger name="ch.admin.vbs.cube.client.wm.ui" level="DEBUG"/>
 
   <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
   <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>  

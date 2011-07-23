@@ -131,7 +131,7 @@ public class VmActionListener implements IVmActionListener {
 		});
 	}
 
-	public void setupDependencies(ICoreFacade coreFacade) {
+	public void setup(ICoreFacade coreFacade) {
 		this.coreFacade = coreFacade;
 	}
 }

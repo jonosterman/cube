@@ -29,10 +29,10 @@ public class VmControl implements IVmControl {
 	private IWindowsControl winCtrl;
 
 	@Override
-	public void moveVm(VmHandle h, int monitor) {
-		int oldMonitor = h.getMonitorIdx();
+	public void moveVm(VmHandle h, String monitorId) {
+		String oldMonitor = h.getMonitorId();
 		// update handle
-		h.setMonitorIdx(monitor);
+		h.setMonitorId(monitorId);
 		// trigger an event to update all NavigationBars
 		client.notifyAllVmChanged();
 		// move X window
@@ -45,14 +45,14 @@ public class VmControl implements IVmControl {
 	}
 
 	@Override
-	public void hideAllVms(int monitor) {
-		winCtrl.hideAllVmWindows(monitor);
+	public void hideAllVms(String monitorId) {
+		winCtrl.hideAllVmWindows(monitorId);
 	}
 
 	// #######################################################
 	// Injections
 	// #######################################################
-	public void setupDependencies(ICubeClient client, IWindowsControl winCtrl) {
+	public void setup(ICubeClient client, IWindowsControl winCtrl) {
 		this.client = client;
 		this.winCtrl = winCtrl;
 	}

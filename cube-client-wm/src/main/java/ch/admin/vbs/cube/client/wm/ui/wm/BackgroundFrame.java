@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.wm;
 
 import java.awt.BorderLayout;
@@ -29,10 +28,11 @@ import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 public class BackgroundFrame extends JFrame {
 	private static final long serialVersionUID = 1L;
-	public static final String TITLE_PREFIX = "CubeFrame.display#";
+	public static final String TITLE_PREFIX = "Cube.BackgroundFrame#";
 
-	public BackgroundFrame(int idx, Rectangle bounds) {
-		super(TITLE_PREFIX + idx);
+	public BackgroundFrame(String id, Rectangle bounds) {
+		// title is important since in WindowsManager we search window by name
+		super(TITLE_PREFIX + id);
 		setUndecorated(true);
 		JPanel panel = new JPanel(new BorderLayout());
 		setContentPane(panel);

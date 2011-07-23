@@ -147,7 +147,6 @@ public class MockSession implements ISession {
 		switch (cmd) {
 		case LIST_USB:
 			UsbDeviceEntryList list = (UsbDeviceEntryList) option;
-			System.out.println("new list");
 			list.addAll(usbDevices);
 			break;
 		case ATTACH_USB: {

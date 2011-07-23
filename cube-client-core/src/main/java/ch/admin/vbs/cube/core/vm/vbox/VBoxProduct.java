@@ -47,6 +47,7 @@ import org.virtualbox_4_0.IUSBDevice;
 import org.virtualbox_4_0.IVirtualBox;
 import org.virtualbox_4_0.LockType;
 import org.virtualbox_4_0.MachineState;
+import org.virtualbox_4_0.NetworkAdapterType;
 import org.virtualbox_4_0.SessionState;
 import org.virtualbox_4_0.StorageBus;
 import org.virtualbox_4_0.StorageControllerType;
@@ -430,6 +431,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		if ("vpn".equals(nic)) {
 			// use pre-configured mac + bridge
 			INetworkAdapter na = machine.getNetworkAdapter(id);
+			na.setAdapterType(NetworkAdapterType.I82540EM);
 			na.attachToBridgedInterface();
 			na.setHostInterface(bridge);
 			na.setMACAddress(mac);
@@ -437,11 +439,13 @@ public class VBoxProduct implements VBoxCacheListener {
 		} else if ("disabled".equals(nic)) {
 			// Do not use it
 			INetworkAdapter na = machine.getNetworkAdapter(id);
+			na.setAdapterType(NetworkAdapterType.I82540EM);
 			na.detach();
 			na.setEnabled(false);
 		} else if ("bridged".equals(nic)) {
 			// use pre-configured mac + bridge
 			INetworkAdapter na = machine.getNetworkAdapter(id);
+			na.setAdapterType(NetworkAdapterType.I82540EM);
 			na.attachToBridgedInterface();
 			na.setHostInterface(bridge);
 			na.setMACAddress(mac);
@@ -449,6 +453,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		} else if ("disconnected".equals(nic)) {
 			// use pre-configured mac
 			INetworkAdapter na = machine.getNetworkAdapter(id);
+			na.setAdapterType(NetworkAdapterType.I82540EM);
 			na.detach();
 			na.setMACAddress(mac);
 			na.setEnabled(true);

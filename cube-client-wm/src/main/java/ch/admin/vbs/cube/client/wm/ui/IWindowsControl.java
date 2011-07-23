@@ -25,7 +25,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 public interface IWindowsControl {
 	void showVmWindow(VmHandle h);
 
-	void moveVmWindow(VmHandle h, int monitor);
+	void moveVmWindow(VmHandle h, String monitor);
 
-	void hideAllVmWindows(int monitor);
+	void hideAllVmWindows(String monitor);
 }

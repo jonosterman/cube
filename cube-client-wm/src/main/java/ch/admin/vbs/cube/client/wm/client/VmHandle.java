@@ -32,11 +32,14 @@ package ch.admin.vbs.cube.client.wm.client;
  */
 public class VmHandle {
 	private final String vmId;
-	private int monitorIdx;
+	private String monitorId;
 
-	public VmHandle(String vmId) {
+	public VmHandle(String vmId, String monitorId) {
 		if (vmId == null)
 			throw new NullPointerException("vmId should not be null");
+		if (monitorId == null)
+			throw new NullPointerException("monitorId should not be null");
+		this.monitorId = monitorId;
 		this.vmId = vmId;
 	}
 
@@ -54,16 +57,16 @@ public class VmHandle {
 		return vmId.hashCode();
 	}
 
-	public int getMonitorIdx() {
-		return monitorIdx;
+	public String getMonitorId() {
+		return monitorId;
 	}
 
-	public void setMonitorIdx(int monitorIdx) {
-		this.monitorIdx = monitorIdx;
+	public void setMonitorId(String monitorId) {
+		this.monitorId = monitorId;
 	}
 
 	@Override
 	public String toString() {
-		return String.format("VmHandle[%s][%d]", vmId, monitorIdx);
+		return String.format("VmHandle[%s][%s]", vmId, monitorId);
 	}
 }

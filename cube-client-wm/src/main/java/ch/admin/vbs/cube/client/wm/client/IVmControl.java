@@ -34,7 +34,7 @@ public interface IVmControl {
 	 * 
 	 * @param monitor
 	 */
-	void hideAllVms(int monitor);
+	void hideAllVms(String monitorId);
 
 	/**
 	 * Request to move the given VM on the target monitor. If the move is
@@ -46,5 +46,5 @@ public interface IVmControl {
 	 * @param targetMonitor
 	 *            target monitor.
 	 */
-	void moveVm(VmHandle h, int targetMonitor);
+	void moveVm(VmHandle h, String monitorId);
 }
