@@ -7,19 +7,23 @@ platform to access several environments in a
 secure manner from the same physical machine.
 
 It relies on the use of virtualization in order
-to provide contained environment. These virtual
-machines are connected to a target infrastructure
+to provide contained environments. These virtual
+machines are connected to target infrastructures
 though network tunnels.
 
-Virtual machines are contained in encrypted 
+Virtual machines are stored in encrypted 
 containers on the client with their configuration
 and network keys. Each containers is kept closed
-until it is actually used. Virtual machine are
-run locally.
+until it is actually used. Virtual machines
+run locally (NOT another thin client). Container
+are sealed with a smart-card token (PKCS11). 
+therfore confidential data are kept under user 
+control. Data transfer between machine are
+regulated and protocoled.
 
 Administartor could prepare several virtual 
 machine templates. User may eventually 'stage' 
-one or several environement on a client in order 
+one or several environements on a client in order 
 to start them.
 
 User has a simple 'kiosk' like interface where he
@@ -31,55 +35,66 @@ machines.
 
 ## Checkout code from GITHUB
 
-  git config --global user.name "Your Name"
-  git config --global user.email Your@Email
+ git config --global user.name "Your Name"
+ git config --global user.email Your@Email
+ git clone git@github.com:vboxusers/cube.git
 
-  git clone git@github.com:<Username>/cube.git
+## Update System
+#  install additional packages: 
 
-## update system
-#  install packages: 
-apt-get install openvpn bridge-utils virtualbox-4.0
+ apt-get install openvpn bridge-utils virtualbox-4.0
+
+## Create some directories
+
+ mkdir -p /opt/cube/client/certificates
+ mkdir -p /opt/cube/client/var
+ mkdir -p /opt/cube/client/scripts
+ chown -R <YOUR USERNAME> /opt/cube
+
 #  link script in /opt/cube/client/scripts:
-ln -s /home/xxxx/xxxx/cube/cube-common/src/main/resources/scripts/container-cleanup /opt/cube/client/scripts/container-cleanup
-...
+ ln -s /home/<YOUR USERNAME>/xxxx/cube/cube-common/src/main/resources/scripts/container-cleanup /opt/cube/client/scripts/container-cleanup
+ ...
 #  update /etc/sudo.d/cube:
 ###############
 ## CUBE
 ###############
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-mount-container.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-create-container.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-unmount-container.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-delete-container.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/cube-shutdown.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vpn-open.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
-%<username> ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-mount-container.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-create-container.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-unmount-container.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-delete-container.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/cube-shutdown.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-open.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
+%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
 
+## Link certificate (for smart-card use)
 
-
-
+ ln -s  /home/<YOUR USERNAME>/xxxxxxxxx/trusted-sdtest-rootca.jks /opt/cube/client/certificates/rootca.jks
 
 ## Commit your changes
+
   git commit -m 'excplicit comments'
-  git remote add origin git@github.com:<Username>/cube.git
+  git remote add origin git@github.com:<YOUR USERNAME>/cube.git
   git push -u origin master
 
-## build cube, update eclipse project and check file headers
- mvn -Dmaven.test.skip=true  clean install eclipse:eclipse license:format
+## build cube, update eclipse project 
+##   note: generating project must be run in cube directory
+##         or maven will fail to include other projects as
+##         in classpath
+##   note: "license:format" should be run on each sub-project
+##         separately.
+
+ mvn -Dmaven.test.skip=true  clean install eclipse:eclipse 
+ cd cube-common
+ mvn -Dmaven.test.skip=true license:format
+ ...
 
 ## build + test 
- mvn clean install eclipse:eclipse license:check
+
+ mvn clean install 
 
 ## Configure eclipse
- add classpath variale: M2_REPO=/home/XXXX/.m2/repository
 
-
-
-
-
-
-
-
-
+ add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
 
