@@ -140,7 +140,9 @@ public class ShellUtil {
 					// save line
 					outputStr.append(line).append('\n');
 					// log
-					LOG.debug("<{}> {}", prefix, line);
+					if (LOG.isTraceEnabled()) {
+						LOG.trace("<{}> {}", prefix, line);
+					}
 				}
 			} catch (Exception e) {
 				LOG.error("Failed to process output [" + prefix + "]", e);

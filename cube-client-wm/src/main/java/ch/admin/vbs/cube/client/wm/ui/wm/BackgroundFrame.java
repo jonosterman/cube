@@ -25,13 +25,17 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 public class BackgroundFrame extends JFrame {
+	private static final Logger LOG = LoggerFactory.getLogger(BackgroundFrame.class);
 	private static final long serialVersionUID = 1L;
 	public static final String TITLE_PREFIX = "Cube.BackgroundFrame#";
 
-	public BackgroundFrame(String id, Rectangle bounds) {
+	public BackgroundFrame(final String id, Rectangle bounds) {
 		// title is important since in WindowsManager we search window by name
 		super(TITLE_PREFIX + id);
 		setUndecorated(true);
@@ -43,5 +47,6 @@ public class BackgroundFrame extends JFrame {
 		setPreferredSize(new Dimension(bounds.width, bounds.height));
 		setLocation(bounds.x, bounds.y);
 		pack();
+
 	}
 }

@@ -61,6 +61,7 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 
 	/** Constructor. */
 	public NavigationBar(String monitorLabel) {
+		LOG.info("CREATE NAVBAR [{}]",monitorLabel);
 		this.monitorId = monitorLabel;
 		initUI();
 	}

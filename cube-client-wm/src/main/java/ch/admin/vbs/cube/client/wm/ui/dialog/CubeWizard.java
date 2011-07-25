@@ -18,7 +18,6 @@ package ch.admin.vbs.cube.client.wm.ui.dialog;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.GraphicsEnvironment;
 import java.awt.Point;
 
 import javax.swing.Action;
@@ -32,6 +31,7 @@ import javax.swing.JSeparator;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
 
+import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 import com.jidesoft.dialog.ButtonPanel;
@@ -110,8 +110,9 @@ public abstract class CubeWizard extends StandardDialog {
 		buildUI();
 		pack();
 		// center
-		GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-		Point leftUpperCorner = new Point(ge.getCenterPoint());
+		Point leftUpperCorner = new Point(//
+				CubeUI.getDefaultScreenBounds().x + (CubeUI.getDefaultScreenBounds().width / 2),//
+				CubeUI.getDefaultScreenBounds().y + (CubeUI.getDefaultScreenBounds().height) / 2);
 		leftUpperCorner.translate(-getWidth() / 2, -getHeight() / 2);
 		setLocation(Math.max(0, leftUpperCorner.x), Math.max(0, leftUpperCorner.y));
 		// dispose dialog when no more visible

@@ -33,13 +33,12 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import ch.admin.vbs.cube.client.wm.xrandx.IXRListener;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
+import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.XRResolution;
 
 public class MockXrandr implements IXrandr {
-	private ArrayList<IXRListener> listeners = new ArrayList<IXRListener>();
 	private ArrayList<XRScreen> screens = new ArrayList<XRScreen>();
 	private ArrayList<XRResolution> res = new ArrayList<XRScreen.XRResolution>(2);
 	private ArrayList<String> freqs = new ArrayList<String>(2);
@@ -52,20 +51,17 @@ public class MockXrandr implements IXrandr {
 		res.add(new XRResolution(320, 200, freqs));
 		res.add(new XRResolution(640, 480, freqs));
 		res.add(new XRResolution(800, 600, freqs));
-		screens.add(new XRScreen("screen-A", "connected", 60, 60, res, res.get(0), "50.0"));
-		screens.add(new XRScreen("screen-B", "connected", 720, 60, res, res.get(1), "50.0"));
+		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(0), "50.0"));
+		screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(1), "50.0"));
 		list.addElement(screens.get(0));
 		list.addElement(screens.get(1));
 	}
 
+	
 	@Override
-	public void addListener(IXRListener l) {
-		listeners.add(l);
-	}
-
-	@Override
-	public void removeListener(IXRListener l) {
-		listeners.remove(l);
+	public void reloadConfiguration() {
+		// TODO Auto-generated method stub
+		
 	}
 
 	@SuppressWarnings("unchecked")
@@ -79,7 +75,7 @@ public class MockXrandr implements IXrandr {
 	@Override
 	public void setScreen(XRScreen xrScreen, boolean connected, int x, int y) {
 		XRScreen s = new XRScreen(xrScreen.getId(), //
-				connected ? "connected" : "disconnected", //
+				connected ? State.CONNECTED_AND_ACTIVE : State.DISCONNECTED, //
 				x, //
 				y, //
 				xrScreen.getResolutions(),//
@@ -88,9 +84,6 @@ public class MockXrandr implements IXrandr {
 		for (int i = 0; i < screens.size(); i++) {
 			if (screens.get(i).getId().equals(xrScreen.getId())) {
 				screens.set(i, s);
-				for (IXRListener l : listeners) {
-					l.screenChanged();
-				}
 				return;
 			}
 		}
@@ -111,18 +104,15 @@ public class MockXrandr implements IXrandr {
 				synchronized (lock) {
 					int t = (Integer) model.getValue();
 					while (screens.size() < t) {
-						screens.add(new XRScreen("screen-" + screens.size(), rn.nextBoolean() ? "connected" : "disconnected", 0, 0, res, res.get(rn.nextInt(res
-								.size())), "50.0"));
+						screens.add(new XRScreen("screen-" + screens.size(), //
+								rn.nextBoolean() ? State.CONNECTED_AND_ACTIVE : State.DISCONNECTED, //
+								0, 0, res, res.get(rn.nextInt(res.size())), "50.0"));
 						list.add(screens.size() - 1, screens.get(screens.size() - 1));
 					}
 					while (screens.size() > t) {
 						screens.remove(screens.size() - 1);
 						list.removeElementAt(screens.size());
 					}
-				}
-				//
-				for (IXRListener l : listeners) {
-					l.screenChanged();
 				}
 			}
 		});

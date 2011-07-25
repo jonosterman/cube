@@ -149,6 +149,8 @@ public class NavigationTabs extends JideTabbedPane {
 		});
 		setTabLeadingComponent(logo);
 		// }
+		
+		
 	}
 
 	/**
@@ -280,7 +282,7 @@ public class NavigationTabs extends JideTabbedPane {
 			JideMenu monitorMenu = new JideMenu(resourceBundle.getString("vm.move.monitor.menu"));
 			vmPopupMenu.add(monitorMenu);
 			for (CubeScreen c : screens) {
-				if (!c.getId().equals(monitorId) && c.isConnected()) {
+				if (!c.getId().equals(monitorId) && c.isActive()) {
 					final String destMonitorId = c.getId();
 					JMenuItem item = new JMenuItem(MessageFormat.format(resourceBundle.getString("vm.move.monitor.menu.item"), destMonitorId));
 					item.addActionListener(new ActionListener() {

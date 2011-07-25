@@ -19,8 +19,9 @@ package ch.admin.vbs.cube.client.wm.xrandx;
 import java.util.List;
 
 public class XRScreen {
+	public enum State { CONNECTED, CONNECTED_AND_ACTIVE, DISCONNECTED }
 	private final String id;
-	private final String state;
+	private final State state;
 	private final int posy;
 	private final int posx;
 	private final XRResolution selectedResolution;
@@ -29,11 +30,11 @@ public class XRScreen {
 
 	@Override
 	public String toString() {
-		return String.format("[%s] %s , %dx%d", id, state, selectedResolution == null ? -1 : selectedResolution.width, selectedResolution == null ? -1
+		return String.format("[%s] state:%s , %dx%d", id, state, selectedResolution == null ? -1 : selectedResolution.width, selectedResolution == null ? -1
 				: selectedResolution.height);
 	}
 
-	public XRScreen(String id, String state, int posx, int posy, List<XRResolution> resolutions, XRResolution selectedResolution, String selectedFrequency) {
+	public XRScreen(String id, State state, int posx, int posy, List<XRResolution> resolutions, XRResolution selectedResolution, String selectedFrequency) {
 		this.id = id;
 		this.state = state;
 		this.posx = posx;
@@ -59,14 +60,11 @@ public class XRScreen {
 		return id;
 	}
 
-	public boolean isConnected() {
-		return "connected".equals(state);
-	}
-	public int getPosy() {
+	public int getPosY() {
 		return posy;
 	}
 
-	public int getPosx() {
+	public int getPosX() {
 		return posx;
 	}
 
@@ -94,7 +92,7 @@ public class XRScreen {
 		return selectedFrequency;
 	}
 
-	public String getState() {
+	public State getState() {
 		return state;
 	}
 

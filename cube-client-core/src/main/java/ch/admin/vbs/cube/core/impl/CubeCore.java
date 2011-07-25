@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.core.impl;
 
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -102,6 +103,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		currentCallback = callback;
 	}
 
+
+
 	// ==============================================
 	// ISessionManagerListener
 	// ==============================================
@@ -127,6 +130,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		synchronized (uiLock) {
 			if (actSession != null && actSession == session) {
 				LOG.debug("active session [{}] locked", session.getId());
+				clientFacade.displayTabs(new ArrayList<Vm>(0));
 				setActiveSession(null);
 			}
 		}
@@ -349,14 +353,14 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			UsbDeviceEntryList list = new UsbDeviceEntryList();
 			if (actSession != null && mode == Mode.SESSION) {
 				controlVm(vmId, VmCommand.LIST_USB, list);
-				long to = System.currentTimeMillis()+1000;
-				while(!list.isUpdated() && to>System.currentTimeMillis()) {
+				long to = System.currentTimeMillis() + 1000;
+				while (!list.isUpdated() && to > System.currentTimeMillis()) {
 					try {
 						Thread.sleep(42);
 					} catch (InterruptedException e) {
 					}
 				}
-				LOG.debug("Got a list in [{} ms] with "+list.size()+" element(s).",to-System.currentTimeMillis());
+				LOG.debug("Got a list in [{} ms] with " + list.size() + " element(s).", to - System.currentTimeMillis());
 				return list;
 			} else {
 				LOG.debug("Core locked or no session active.");
@@ -418,21 +422,21 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			}
 		}
 	}
-	
+
 	@Override
 	public void setVmProperty(String vmId, String key, String value, boolean refreshAllVms) {
 		// do not synchronize on uiLock since we do not change the UI directly.
 		if (actSession != null && mode == Mode.SESSION) {
 			VmModel m = actSession.getModel();
 			Vm vm = m.findByInstanceUid(vmId);
-			if (vm!=null) {
+			if (vm != null) {
 				vm.getDescriptor().getLocalCfg().setPropertie(key, value);
 				m.fireVmUpdatedEvent(vm);
 				if (refreshAllVms) {
 					m.fireModelUpdatedEvent();
 				}
 			}
-		}	
+		}
 	}
 
 	// ==============================================

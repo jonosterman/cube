@@ -25,4 +25,5 @@ public interface ISessionUI {
 	void showDialog(String message, ISession session);
 
 	void showWorkspace(ISession session);
+	
 }

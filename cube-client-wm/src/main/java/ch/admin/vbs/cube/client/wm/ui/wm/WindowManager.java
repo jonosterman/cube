@@ -53,7 +53,6 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.UsbChooserDialog;
 import ch.admin.vbs.cube.client.wm.ui.tabs.NavigationBar;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
-import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
@@ -83,7 +82,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private HashMap<String, VmHandle> visibleWindows = new HashMap<String, VmHandle>();
 	private NavigationBar[] navbarFrames;
 	private JFrame[] parentFrames;
-//	private OsdFrameManager osdMgmt;
+	// private OsdFrameManager osdMgmt;
 	//
 	private IXWindowManager xwm;
 	private IVmMonitor vmMon;
@@ -133,17 +132,19 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			xwm.showOnlyTheseWindow(hide, show);
 		}
 		// hide OSD
-//		osdMgmt.hideAll();
+		// osdMgmt.hideAll();
 	}
 
 	private void showNavigationBarAndVms() {
 		synchronized (lock) {
 			// index visible window's IDs
 			HashSet<String> visibleIds = new HashSet<String>();
-			LOG.debug("visible windows [{}]", visibleWindows.size());
-			for (VmHandle vh : visibleWindows.values()) {
-				visibleIds.add(vh.getVmId());
-				LOG.debug("visible windows [{}]", vh.getVmId());
+			synchronized (visibleWindows) {
+				LOG.debug("visible windows [{}]", visibleWindows.size());
+				for (VmHandle vh : visibleWindows.values()) {
+					visibleIds.add(vh.getVmId());
+					LOG.debug("visible windows [{}]", vh.getVmId());
+				}
 			}
 			// show VM window
 			ArrayList<Window> show = new ArrayList<Window>();
@@ -159,7 +160,11 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			}
 			// add NavigationBar to show list
 			for (CubeScreen n : cubeUI.getScreens()) {
-				show.add(getCachedWindow(n.getNavigationBar()));
+				if (n.isActive()) {
+					show.add(getCachedWindow(n.getNavigationBar()));
+				} else {
+					hide.add(getCachedWindow(n.getNavigationBar()));
+				}
 			}
 			// show windows
 			synchronized (xwm) {
@@ -294,7 +299,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	// ###############################################
 	@Override
 	public void moveVmWindow(VmHandle h, String monitorIdxBeforeUpdate) {
-			if (h.getMonitorId().equals(monitorIdxBeforeUpdate)) {
+		if (h.getMonitorId().equals(monitorIdxBeforeUpdate)) {
 			// not moved
 			LOG.debug("Skip moving VM Window [{}] to monitor [{}]", h.getVmId(), h.getMonitorId());
 			return;
@@ -323,11 +328,17 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	 * findWindowByNamePattern()) .
 	 */
 	private final Window getCachedWindow(JFrame parentFrame) {
+		if (parentFrame == null) {
+			throw new NullPointerException("Argument parentFrame must be none-null");
+		}
 		synchronized (cachedWindows) {
 			Window w = cachedWindows.get(parentFrame);
 			if (w == null) {
 				synchronized (xwm) {
 					w = xwm.findWindowByNamePattern(parentFrame.getTitle());
+					if (w == null) {
+						LOG.error("Not XWindow found for window [{}]", parentFrame.getTitle());
+					}
 				}
 				cachedWindows.put(parentFrame, w);
 			}
@@ -338,18 +349,20 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void showVmWindow(VmHandle vm) {
 		// update visibleWindows map
-		if (vm != null) {
-			visibleWindows.put(vm.getMonitorId(), vm);
-		}
-		// update osds
-		//osdMgmt.update(visibleWindows.values());
-		// do not show window if a dialog is displayed
-		if (dialog != null)
-			return;
-		// index visible window's IDs
 		HashSet<String> visibleIds = new HashSet<String>();
-		for (VmHandle vh : visibleWindows.values()) {
-			visibleIds.add(vh.getVmId());
+		synchronized (visibleWindows) {
+			if (vm != null) {
+				visibleWindows.put(vm.getMonitorId(), vm);
+			}
+			// update osds
+			// osdMgmt.update(visibleWindows.values());
+			// do not show window if a dialog is displayed
+			if (dialog != null)
+				return;
+			// index visible window's IDs
+			for (VmHandle vh : visibleWindows.values()) {
+				visibleIds.add(vh.getVmId());
+			}
 		}
 		// show VM window
 		ArrayList<Window> show = new ArrayList<Window>();
@@ -366,21 +379,23 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		synchronized (xwm) {
 			xwm.showOnlyTheseWindow(hide, show);
 		}// show OSD
-		//osdMgmt.showOsdFrames();
+			// osdMgmt.showOsdFrames();
 	}
 
 	@Override
 	public void hideAllVmWindows(String monitorId) {
 		LOG.debug("Hide all VMs windows");
 		// update visibleWindows map
-		visibleWindows.remove(monitorId);
-		// do not show/hide window if a dialog is displayed
-		if (dialog != null)
-			return;
-		// index visible window's IDs
 		HashSet<String> visibleIds = new HashSet<String>();
-		for (VmHandle vh : visibleWindows.values()) {
-			visibleIds.add(vh.getVmId());
+		synchronized (visibleWindows) {
+			visibleWindows.remove(monitorId);
+			// do not show/hide window if a dialog is displayed
+			if (dialog != null)
+				return;
+			// index visible window's IDs
+			for (VmHandle vh : visibleWindows.values()) {
+				visibleIds.add(vh.getVmId());
+			}
 		}
 		// show VM window
 		ArrayList<Window> show = new ArrayList<Window>();
@@ -578,40 +593,39 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			// ensure that navigation bar are visible
 			showNavigationBarAndVms();
 			//
-//			osdMgmt.showOsdFrames();
+			// osdMgmt.showOsdFrames();
 		}
 	}
 
 	// ###############################################
 	// Getter/setter methods
 	// ###############################################
-//	public void setParentFrame(JFrame[] frames) {
-//		this.parentFrames = frames;
-//		// init OSD frames
-//		if (osdMgmt == null) {
-//			OsdFrame[] osds = new OsdFrame[frames.length];
-//			for (int k = 0; k < frames.length; k++) {
-//				osds[k] = new OsdFrame(frames[k]);
-//			}
-//			osdMgmt = new OsdFrameManager(osds);
-//			osdMgmt.setVmMon(vmMon);
-//		} else {
-//			LOG.error("Could not re-initilize OSD manager.");
-//		}
-//	}
-//
-//	private JFrame getDefaultParentFrame() {
-//		return parentFrames[0];
-//	}
-//
-//	public JFrame[] getParentFrame() {
-//		return parentFrames;
-//	}
-//
-//	public void setNavigationFrames(NavigationBar[] navbarFrames) {
-//		this.navbarFrames = navbarFrames;
-//	}
-
+	// public void setParentFrame(JFrame[] frames) {
+	// this.parentFrames = frames;
+	// // init OSD frames
+	// if (osdMgmt == null) {
+	// OsdFrame[] osds = new OsdFrame[frames.length];
+	// for (int k = 0; k < frames.length; k++) {
+	// osds[k] = new OsdFrame(frames[k]);
+	// }
+	// osdMgmt = new OsdFrameManager(osds);
+	// osdMgmt.setVmMon(vmMon);
+	// } else {
+	// LOG.error("Could not re-initilize OSD manager.");
+	// }
+	// }
+	//
+	// private JFrame getDefaultParentFrame() {
+	// return parentFrames[0];
+	// }
+	//
+	// public JFrame[] getParentFrame() {
+	// return parentFrames;
+	// }
+	//
+	// public void setNavigationFrames(NavigationBar[] navbarFrames) {
+	// this.navbarFrames = navbarFrames;
+	// }
 	// ###############################################
 	// Injections
 	// ###############################################
@@ -622,9 +636,9 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		this.xwm = xwm;
 		xwm.setWindowManagerCallBack(this);
 		this.vmMon = vmMon;
-//		if (osdMgmt != null) {
-//			osdMgmt.setVmMon(vmMon);
-//		}
+		// if (osdMgmt != null) {
+		// osdMgmt.setVmMon(vmMon);
+		// }
 		this.cubeActionListener = cubeActionListener;
 	}
 }

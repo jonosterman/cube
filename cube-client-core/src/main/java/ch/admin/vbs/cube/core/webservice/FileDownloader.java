@@ -155,6 +155,7 @@ public class FileDownloader implements Runnable {
 				received += cnt;
 				if ((received / 1048576000) != last) {
 					last = received / 1048576000;
+					bo.flush();
 					LOG.debug("Download progress [{}]", SizeFormatUtil.format(received));
 				}
 				bo.write(buffer, 0, cnt);

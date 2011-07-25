@@ -244,7 +244,6 @@ public class Session implements Runnable, ISession {
 	@Override
 	public void lock() {
 		LOG.debug("Trigger 'lock'");
-		new Exception().printStackTrace();
 		synchronized (lock) {
 			state = State.lock;
 			stateCnt++;

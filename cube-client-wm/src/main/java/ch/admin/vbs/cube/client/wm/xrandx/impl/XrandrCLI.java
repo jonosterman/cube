@@ -25,43 +25,23 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.client.wm.xrandx.IXRListener;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
+import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.XRResolution;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
 
-public class XrandrCLI implements IXrandr, Runnable {
+public class XrandrCLI implements IXrandr {
 	private static final Logger LOG = LoggerFactory.getLogger(XrandrCLI.class);
 	private ShellUtil su = new ShellUtil();
 	private boolean running;
 	private HashMap<String, XRScreen> screenCache = new HashMap<String, XRScreen>();
-	private ArrayList<IXRListener> listeners = new ArrayList<IXRListener>();
 	private Object lock = new Object();
 
 	@Override
 	public void start() {
-		Thread t = new Thread(this, "XRandxCLI");
-		t.start();
-		while (screenCache.size() == 0) {
-			try {
-				Thread.sleep(200);
-			} catch (InterruptedException e) {
-			}
-		}
-	}
-
-	@Override
-	public void run() {
-		running = true;
-		while (running) {
-			monitorXrandr();
-			try {
-				Thread.sleep(5000);
-			} catch (Exception e) {
-			}
-		}
+		reloadConfiguration();
 	}
 
 	@Override
@@ -71,19 +51,6 @@ public class XrandrCLI implements IXrandr, Runnable {
 		}
 	}
 
-	@Override
-	public void addListener(IXRListener l) {
-		synchronized (lock) {
-			listeners.add(l);
-		}
-	}
-
-	@Override
-	public void removeListener(IXRListener l) {
-		synchronized (lock) {
-			listeners.remove(l);
-		}
-	}
 
 	private String query() throws ShellUtilException {
 		synchronized (lock) {
@@ -92,19 +59,19 @@ public class XrandrCLI implements IXrandr, Runnable {
 		}
 	}
 
-	private void monitorXrandr() {
+	@Override
+	public void reloadConfiguration() {
 		try {
 			// list and parse screens info (using xrandx and regular
 			// expressions)
 			ArrayList<XRScreen> screens = new ArrayList<XRScreen>();
-			LOG.debug("Query xrandr..");
 			String[] lines = query().split("\\n");
-			Pattern monLine = Pattern.compile("^(\\w+) (\\w+) (\\d+)x(\\d+)\\+(\\d+)\\+(\\d+) \\d+mm x \\d+mm$");
+			Pattern monLine = Pattern.compile("^(\\w+) (\\w+)( (\\d+)x(\\d+)\\+(\\d+)\\+(\\d+))? .*");
 			Pattern resLine = Pattern.compile("^\\s+(\\d+)x(\\d+)\\s+(.*)$");
 			Pattern freqPat = Pattern.compile("([\\d\\.]+)(\\*?)");
 			ArrayList<XRResolution> resolutions = null;
 			String screenId = null;
-			String screenState = null;
+			State screenState = null;
 			String selectedFreq = null;
 			XRResolution selectedRes = null;
 			int posx = 0, posy = 0;
@@ -113,8 +80,8 @@ public class XrandrCLI implements IXrandr, Runnable {
 				if (screenId != null) {
 					Matcher m = resLine.matcher(lines[i]);
 					if (m.matches()) {
-						int height = Integer.parseInt(m.group(1));
-						int width = Integer.parseInt(m.group(2));
+						int width = Integer.parseInt(m.group(1));
+						int height = Integer.parseInt(m.group(2));
 						ArrayList<String> freqs = new ArrayList<String>();
 						Matcher fm = freqPat.matcher(m.group(3));
 						boolean selected = false;
@@ -148,6 +115,11 @@ public class XrandrCLI implements IXrandr, Runnable {
 						// proceed line as a monitor line (see below)
 						resolutions = null;
 						screenId = null;
+						screenState = State.DISCONNECTED;
+						posx = 0;
+						posy = 0;
+						selectedRes = null;
+						selectedFreq = null;
 					}
 				}
 				// lookup for monitor line
@@ -156,39 +128,45 @@ public class XrandrCLI implements IXrandr, Runnable {
 					if (m.matches()) {
 						resolutions = new ArrayList<XRScreen.XRResolution>();
 						screenId = m.group(1);
-						screenState = m.group(2);
-						posx = Integer.parseInt(m.group(5));
-						posy = Integer.parseInt(m.group(6));
+						if ("connected".equals(m.group(2))) {
+							if (m.group(6) == null) {
+								screenState = State.CONNECTED;
+								posx = 0;
+								posy = 0;
+							} else {
+								screenState = State.CONNECTED_AND_ACTIVE;
+								posx = Integer.parseInt(m.group(6));
+								posy = Integer.parseInt(m.group(7));
+							}
+						} else {
+							screenState = State.DISCONNECTED;
+						}
 					}
 				}
 			}
+			LOG.debug("[{}] screens found.", screens.size());
 			// check for new/removed/modified screens
-			int changes = 0;
 			synchronized (screenCache) {
 				HashMap<String, XRScreen> screenCacheCopy = (HashMap<String, XRScreen>) screenCache.clone();
-				System.out.println("" + screens.size());
 				for (XRScreen s : screens) {
 					XRScreen c = screenCacheCopy.remove(s.getId());
-					if (c != null && s.getState().equals(c.getState())) {
-						// already known screen
+					if (c == null) {
+						// New screen. Create and keep a reference in cache.
+						LOG.debug("New screen found [{}] .", s.getId());
+						screenCache.put(s.getId(), s);
 					} else {
-						// new or modified screen
-						changes++;
-						LOG.debug("Screen [{}] has been modified.", s.getId());
+						// Known screen. Update cache reference
 						screenCache.put(s.getId(), s);
 					}
 				}
 				for (XRScreen c : screenCacheCopy.values()) {
-					// removed screens
-					changes++;
+					// Removed screens. Remove reference from cache.
 					LOG.debug("Screen [{}] has been removed.", c.getId());
 					screenCache.remove(c.getId());
 				}
 			}
-			if (changes > 0) {
-				LOG.debug("Screen configuration changed");
-				fireChanges();
-			}
+//			// notify listener that the cache has been refreshed
+//			fireChanges();
 		} catch (ShellUtilException e) {
 			LOG.error("Failed to call xrandr", e);
 		}
@@ -198,16 +176,16 @@ public class XrandrCLI implements IXrandr, Runnable {
 		synchronized (lock) {
 			try {
 				su.run(null, ShellUtil.NO_TIMEOUT, "xrandr", "--output", screen.getId(), "--pos", xpos + "x" + ypos, active ? "--auto" : "--off");
-			} catch (ShellUtilException e) {
+				Thread.sleep(300);
+				if (active) {
+					// ensure that lcd is not tuned off.
+					su.run(null, ShellUtil.NO_TIMEOUT, "xset", "dpms", "force", "on");
+				}
+			} catch (Exception e) {
 				LOG.error("Failed to set screen position wit xrandr", e);
 				LOG.error(su.getStandardError().toString());
 			}
 		}
 	}
 
-	private void fireChanges() {
-		for (IXRListener l : listeners) {
-			l.screenChanged();
-		}
-	}
 }

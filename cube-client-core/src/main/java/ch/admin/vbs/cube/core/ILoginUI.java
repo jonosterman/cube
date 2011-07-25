@@ -41,4 +41,5 @@ public interface ILoginUI {
 
 	/** close any opened dialog and show current session VMs */
 	void closeDialog();
+	
 }

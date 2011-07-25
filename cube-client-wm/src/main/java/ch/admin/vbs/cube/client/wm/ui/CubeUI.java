@@ -16,10 +16,8 @@
 
 package ch.admin.vbs.cube.client.wm.ui;
 
-import java.awt.Component;
+import java.awt.GraphicsEnvironment;
 import java.awt.Rectangle;
-import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,15 +33,19 @@ import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.NavigationBar;
 import ch.admin.vbs.cube.client.wm.ui.wm.BackgroundFrame;
-import ch.admin.vbs.cube.client.wm.xrandx.IXRListener;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
+import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
+import ch.admin.vbs.cube.client.wm.xrandx.impl.AcpiListener;
+import ch.admin.vbs.cube.client.wm.xrandx.impl.AcpiListener.AcpiEvent;
+import ch.admin.vbs.cube.client.wm.xrandx.impl.AcpiListener.IAcpiEventListener;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.core.ICoreFacade;
 
-public class CubeUI implements ICubeUI, IXRListener {
+public class CubeUI implements ICubeUI/* , IXRListener */{
 	private static final Logger LOG = LoggerFactory.getLogger(CubeUI.class);
+	private static CubeScreen last;
 	private IXrandr xrandr;
 	private Object lock = new Object();
 	private HashMap<String, CubeScreen> cubeScrs = new HashMap<String, CubeUI.CubeScreen>();
@@ -53,6 +55,7 @@ public class CubeUI implements ICubeUI, IXRListener {
 	private IVmControl vmControl;
 	private ICubeUI cubeUI;
 	private XrandrTwoDisplayLayout layoutMgr;
+	private AcpiListener acpi;
 	private Layout currentLayout = Layout.AB;
 
 	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI) {
@@ -62,25 +65,63 @@ public class CubeUI implements ICubeUI, IXRListener {
 		this.vmControl = vmControl;
 		this.cubeUI = cubeUI;
 		this.xrandr = xrandr;
-		this.xrandr.addListener(this);
+		// this.xrandr.addListener(this);
 		layoutMgr = new XrandrTwoDisplayLayout();
 		// force first sync
-		screenChanged();
+		// screenChanged();
+	}
+
+	public void start() {
+		// force first layout
+		layoutScreens(Layout.AB);
+		// init acpi listener (for acpi buttons + lid)
+		acpi = new AcpiListener();
+		acpi.addListener(new IAcpiEventListener() {
+			@Override
+			public void acpi(AcpiEvent e) {
+				switch (e.getType()) {
+				case EXTERN_DISPLAY_BUTTON:
+					// If user press the 'screen switch' special button, we just
+					// switch to the next layout.
+					int idx = 0;
+					if (currentLayout != null) {
+						for (int i = 0; i < Layout.values().length; i++) {
+							if (Layout.values()[i] == currentLayout) {
+								idx = i;
+								break;
+							}
+						}
+					}
+					// loop around possible layouts
+					idx = (idx + 1) % Layout.values().length;
+					// re-layout screens based on new layout mode
+					layoutScreens(Layout.values()[idx]);
+					break;
+				case LID_EVENT:
+					// re-layout screens based on new screen state
+					layoutScreens(currentLayout);
+					break;
+				default:
+					break;
+				}
+			}
+		});
+		acpi.start();
 	}
 
 	@Override
 	public void layoutScreens(Layout layout) {
+		// update reference to last selected layout
 		currentLayout = layout;
+		// layout screens (using xrandx)
 		layoutMgr.layout(layout, xrandr);
-	}
-
-	@Override
-	public void screenChanged() {
-		synchronized (lock) {
-			// fetch display list & dimension
-			List<XRScreen> screens = xrandr.getScreens();
-			//
-			updateCubeScreen(screens);
+		// sync CubeScreen dimensions
+		updateCubeScreen(xrandr.getScreens());
+		// remap tabs in not-active screens
+		for (CubeScreen c : cubeScrs.values()) {
+			if (!c.active) {
+				c.moveAllTabsToAnotherScreen();
+			}
 		}
 	}
 
@@ -95,12 +136,21 @@ public class CubeUI implements ICubeUI, IXRListener {
 	public CubeScreen getDefaultScreen() {
 		synchronized (lock) {
 			for (CubeScreen c : cubeScrs.values()) {
-				if (c.isConnected()) {
+				if (c.isActive()) {
+					last = c;
 					return c;
 				}
 			}
 			LOG.error("No screen to return as default");
 			return null;
+		}
+	}
+
+	public static Rectangle getDefaultScreenBounds() {
+		if (last == null) {
+			return GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().getDefaultConfiguration().getBounds();
+		} else {
+			return new Rectangle(last.bgdBounds);
 		}
 	}
 
@@ -117,19 +167,23 @@ public class CubeUI implements ICubeUI, IXRListener {
 
 	private void updateCubeScreen(List<XRScreen> screens) {
 		synchronized (lock) {
+			@SuppressWarnings("unchecked")
 			HashMap<String, CubeScreen> copy = (HashMap<String, CubeScreen>) cubeScrs.clone();
 			for (XRScreen s : screens) {
 				CubeScreen c = copy.remove(s.getId());
 				if (c == null) {
+					// Create new CubeScreen object
 					c = new CubeScreen();
 					cubeScrs.put(s.getId(), c);
 					c.init(s);
 				} else {
+					// Update existing CubeScreen object
 					c.update(s);
 				}
 			}
 			// removed screens
 			for (CubeScreen c : copy.values()) {
+				// Dispose CubeScreen object
 				c.dispose();
 				cubeScrs.remove(c.id);
 			}
@@ -140,110 +194,93 @@ public class CubeUI implements ICubeUI, IXRListener {
 	 * CubeScreen hold a reference to the background frame, and the
 	 * NavigationBar's frame
 	 */
-	public class CubeScreen implements ComponentListener {
+	public class CubeScreen/* implements ComponentListener */{
 		private JFrame backgroundFrame;
-		private String id;
+		private String id; // screen ID (VGA1, LVDS1, ...)
 		private NavigationBar navbar;
-		private boolean connected;
+		private boolean active; // plugged-in and configured
+		private Rectangle bgdBounds;
+		private Rectangle navBounds;
 
 		public CubeScreen() {
 		}
 
 		public void init(XRScreen screen) {
 			id = screen.getId();
-			connected = screen.isConnected();
-			// create navigation bar frame
-			navbar = new NavigationBar(screen.getId());
-			navbar.setup(vmMonitor, vmControl, core, client, cubeUI);
-			navbar.setVisible(screen.isConnected());
+			active = screen.getState() == State.CONNECTED_AND_ACTIVE;
+			LOG.debug(
+					"Create CubeScreen[{}] with state [" + screen.getState() + "] and position (" + screen.getPosX() + ":" + screen.getPosY() + ")("
+							+ screen.getCurrentWidth() + "x" + screen.getCurrentHeight() + ")", id);
 			// create background frame
-			backgroundFrame = new BackgroundFrame(this.id, new Rectangle(screen.getPosx(), screen.getPosy(), screen.getCurrentWidth(),
-					screen.getCurrentHeight()));
-			backgroundFrame.setVisible(screen.isConnected());
-			backgroundFrame.addComponentListener(this);
+			bgdBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), screen.getCurrentHeight());
+			backgroundFrame = new BackgroundFrame(this.id, bgdBounds);
+			backgroundFrame.setVisible(active);
+			// create navigation bar
+			navBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), NavigationBar.FRAME_HEIGHT);
+			navbar = new NavigationBar(screen.getId());
+			navbar.setBounds(navBounds);
+			navbar.setup(vmMonitor, vmControl, core, client, cubeUI);
+			navbar.setVisible(active);
 		}
 
 		/** Take care of size and state changes. */
 		public void update(XRScreen screen) {
-			connected = screen.isConnected();
-			System.out.println("Update:::"+screen.isConnected());
-			backgroundFrame.setVisible(screen.isConnected());
-			navbar.setVisible(screen.isConnected());
-			// update size / position
-			backgroundFrame.setBounds(
-			new Rectangle(screen.getPosx(), screen.getPosy(), screen.getCurrentWidth(),
-					screen.getCurrentHeight()));
-			navbar.setBounds(
-					new Rectangle(screen.getPosx(), screen.getPosy(), screen.getCurrentWidth(),
-							NavigationBar.FRAME_HEIGHT));
+			bgdBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), screen.getCurrentHeight());
+			navBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), NavigationBar.FRAME_HEIGHT);
+			LOG.debug(
+					"Update CubeScreen[{}] with state [" + screen.getState() + "] and position (" + screen.getPosX() + ":" + screen.getPosY() + ")("
+							+ screen.getCurrentWidth() + "x" + screen.getCurrentHeight() + ")", id);
+			// update active flag
+			active = screen.getState() == State.CONNECTED_AND_ACTIVE;
+			// update background size
+			backgroundFrame.setVisible(active);
+			backgroundFrame.setBounds(bgdBounds);
+			// update navigation bar size
+			navbar.setVisible(active);
+			navbar.setBounds(navBounds);
+		}
+
+		private void moveAllTabsToAnotherScreen() {
+			CubeScreen target = null;
+			for (CubeScreen c : cubeScrs.values()) {
+				if (c.isActive() && c != this) {
+					target = c;
+					break;
+				}
+			}
+			if (target == null) {
+				// if no other monitor is available. Put VM in 'Hidden'
+				// menu.
+				for (VmHandle h : client.listVms()) {
+					if (h.getMonitorId().equals(id)) {
+						core.setVmProperty(h.getVmId(), "hidden", "true", true);
+					}
+				}
+				return;
+			} else {
+				// move all VMs in target screen.
+				for (VmHandle h : client.listVms()) {
+					if (h.getMonitorId().equals(id)) {
+						vmControl.moveVm(h, target.getId());
+					}
+				}
+			}
 		}
 
 		/** dispose all resources allocated so far. */
 		public void dispose() {
 			try {
+				LOG.debug("Dispose CubeScreen [{}] and related resources", id);
 				backgroundFrame.setVisible(false);
 				navbar.setVisible(false);
 				// move all tabs that are in this screen in another screen
-				CubeScreen target = null;
-				for (CubeScreen c : cubeScrs.values()) {
-					if (c.isConnected() && c != this) {
-						target = c;
-						break;
-					}
-				}
-				if (target == null) {
-					// if no other monitor is available. Put VM in 'Hidden'
-					// menu.
-					for (VmHandle h : client.listVms()) {
-						if (h.getMonitorId().equals(id)) {
-							core.setVmProperty(h.getVmId(), "hidden", "true", true);
-						}
-					}
-					return;
-				} else {
-					// move all VMs in target screen.
-					for (VmHandle h : client.listVms()) {
-						if (h.getMonitorId().equals(id)) {
-							vmControl.moveVm(h, target.getId());
-						}
-					}
-				}
+				moveAllTabsToAnotherScreen();
 				//
 				backgroundFrame.dispose();
 				navbar.dispose();
 			} catch (Exception e) {
 				LOG.error("Falied to dispose display.", e);
 			}
-		}
-
-		private void updateNavigationBarDimension(Component component) {
-			LOG.debug("Update bar position and dimension (" + component.getX() + ":" + component.getY() + ")(" + component.getWidth() + "x"
-					+ NavigationBar.FRAME_HEIGHT + ")");
-			navbar.setLocation(component.getX(), component.getY());
-			navbar.setSize(component.getWidth(), NavigationBar.FRAME_HEIGHT);
-		}
-
-		// ################################################
-		// ## ComponentListener
-		// ################################################
-		@Override
-		public void componentHidden(ComponentEvent e) {
-			updateNavigationBarDimension(e.getComponent());
-		}
-
-		@Override
-		public void componentMoved(ComponentEvent e) {
-			updateNavigationBarDimension(e.getComponent());
-		}
-
-		@Override
-		public void componentResized(ComponentEvent e) {
-			updateNavigationBarDimension(e.getComponent());
-		}
-
-		@Override
-		public void componentShown(ComponentEvent e) {
-			updateNavigationBarDimension(e.getComponent());
 		}
 
 		public JFrame getBackgroundFrame() {
@@ -258,8 +295,8 @@ public class CubeUI implements ICubeUI, IXRListener {
 			return id;
 		}
 
-		public boolean isConnected() {
-			return connected;
+		public boolean isActive() {
+			return active;
 		}
 	}
 }
