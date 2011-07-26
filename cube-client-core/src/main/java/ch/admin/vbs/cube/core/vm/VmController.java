@@ -130,6 +130,7 @@ public class VmController implements IVmProductListener {
 	public void start() {
 		stagger = new Stager(this, product);
 		vpnManager = new VpnManager();
+		vpnManager.start();
 		try {
 			containerFactory = ContainerFactoryProvider.getFactory();
 		} catch (Exception e) {

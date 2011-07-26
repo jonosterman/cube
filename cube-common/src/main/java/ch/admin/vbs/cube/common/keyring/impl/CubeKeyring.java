@@ -64,6 +64,7 @@ public class CubeKeyring implements IKeyring {
 	private IIdentityToken id;
 	private DataFile dfu = new DataFile();
 	private DataStore ds = new DataStore();
+	private boolean open;
 
 	public CubeKeyring() {
 		// initialize container factory
@@ -201,77 +202,7 @@ public class CubeKeyring implements IKeyring {
 				throw new KeyringException(String.format("Failed to create keyring's [%s].", keyringContainer.getContainerFile().getAbsolutePath()), e);
 			}
 		}
-		// System.exit(0);
-		// // check if container & key exist
-		// if (encryptedKeyringKey.exists() && keyringContainerFile.exists()) {
-		// // use existing keyring & key
-		// LOG.debug("Use existing keyring's key (encrypted)[{}]",
-		// encryptedKeyringKey.getAbsolutePath());
-		// // decrypt key
-		// // (@TODO if key was encrypted with an older key (not valid
-		// // anymore), we MUST re-encrypt it with the new one)
-		// // (@TODO provide a way to request the password if needed)
-		// dfu.writeFile(decryptedKeyringKeyFile,
-		// RSAEncryptUtil.decrypt(dfu.readFile(encryptedKeyringKey),
-		// id.getPrivatekey(KeyType.ENCIPHERMENT)));
-		// // it should not be mounted, but if something goes wrong in a
-		// // previous user session, it still can be mounted. So we try to
-		// // unmount it, just in case. We could let it and skip mount, but
-		// // we will never be sure it has been mounted correctly with the
-		// // right key, etc. so we prefer clean it up and re-mount it
-		// // again.
-		// LOG.debug("Try to unmount keyring (just in case something was left open). before mounting it again.");
-		// try {
-		// containerFactory.unmountContainer(keyringContainer);
-		// } catch (Exception e) {
-		// LOG.error("Failed to unmount keyring", e);
-		// }
-		// } else {
-		// // eventually delete old keyring container or key
-		// if (encryptedKeyringKey.exists()) {
-		// LOG.debug("Delete old keyring's key (associated container does not exist)");
-		// encryptedKeyringKey.delete();
-		// }
-		// if (keyringContainerFile.exists()) {
-		// LOG.debug("Delete old keyring's container (associated key does not exist)");
-		// containerFactory.deleteContainer(keyringContainer);
-		// }
-		// // create a new keyring (key + container)
-		// LOG.debug("Create new keyring's key (encrypted)[{}]",
-		// encryptedKeyringKey.getAbsolutePath());
-		// // generate new random key, save it, decrypted, in a file
-		// ByteArrayOutputStream out = new ByteArrayOutputStream();
-		// KeyGenerator.generateKey(Integer.parseInt(CubeCommonProperties.getProperty(KEYRING_DEFAULT_KEY_BIT_SIZE_PROP)),
-		// out);
-		// dfu.writeFile(decryptedKeyringKeyFile, out.toByteArray());
-		// // encrypt key with user's public key (think: smartcard)
-		// byte[] encKeyringKeyData = RSAEncryptUtil.encrypt(out.toByteArray(),
-		// id.getPublickey(KeyType.ENCIPHERMENT));
-		// // save encrypted key in a file
-		// dfu.writeFile(encryptedKeyringKey, encKeyringKeyData);
-		// // create new container
-		// keyringContainer.setSize(Long.parseLong(CubeCommonProperties.getProperty(KEYRING_DEFAULT_SIZE_PROP)));
-		// LOG.debug("Create new keyring's container [{}] [{} MB]",
-		// keyringContainer.getContainerFile().getAbsolutePath(),
-		// keyringContainer.getSize() / 1024 / 1024);
-		// containerFactory.createContainer(keyringContainer, key);
-		// }
-		// // Open keyring container (at this point container and key should
-		// // exists, key should be available 'decrypted')
-		// try {
-		// // open container
-		// LOG.debug("Open keyring: container[{}]  key[{}]",
-		// keyringContainer.getContainerFile().getAbsolutePath(),
-		// keyringContainer.getMountpoint()
-		// .getAbsolutePath());
-		// containerFactory.mountContainer(keyringContainer, key);
-		// } finally {
-		// // shred & delete decrypted key
-		// key.shred();
-		// }
-		// } catch (Exception e) {
-		// throw new KeyringException("Failed to init keyring", e);
-		// }
+		open = true;
 	}
 
 	private final void decryptKey(File srcFile, SafeFile dstFile, IIdentityToken id) throws IOException, CubeException {
@@ -285,6 +216,7 @@ public class CubeKeyring implements IKeyring {
 	@Override
 	public void close() throws KeyringException {
 		LOG.debug("Close keyring");
+		open = false;
 		try {
 			containerFactory.unmountContainer(keyringContainer);
 		} catch (ContainerException e) {
@@ -404,5 +336,10 @@ public class CubeKeyring implements IKeyring {
 	@Override
 	public void setId(IIdentityToken id) {
 		this.id = id;
+	}
+	
+	@Override
+	public boolean isOpen() {
+		return open;
 	}
 }

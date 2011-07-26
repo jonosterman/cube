@@ -16,6 +16,8 @@
 
 package ch.admin.vbs.cube.core.network.vpn;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -25,6 +27,7 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
+import ch.admin.vbs.cube.core.network.vpn.NicMonitor.NicChangeListener;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
@@ -34,6 +37,35 @@ import cube.cubemanager.services.InstanceConfigurationDTO;
 public class VpnManager {
 	private static final Logger LOG = LoggerFactory.getLogger(VpnManager.class);
 	private ExecutorService exs = Executors.newCachedThreadPool();
+	private NicMonitor nicMonitor;
+	private HashMap<String, CacheEntry> vpnCache = new HashMap<String, CacheEntry>();
+	
+	public void start() {
+		nicMonitor = new NicMonitor();
+		nicMonitor.addListener(new NicChangeListener() {
+			@Override
+			public void nicChanged() {
+				LOG.debug("NIC changed. Restart VPNs.");
+				ArrayList<CacheEntry> vpns = new ArrayList<VpnManager.CacheEntry>();
+				synchronized (vpnCache) {
+					vpns.addAll(vpnCache.values());
+				}
+				for (CacheEntry e : vpns) {
+					if (e.keyring.isOpen()) {
+						try {
+							openVpn(e.vm, e.keyring);
+						} catch (VmException e1) {
+							LOG.error("Failed to re-open VPN");
+						}
+					} else {
+						// keyring has been closed in the mean time
+						LOG.error("Failed to re-open VPN because Keyring is closed.");
+					}
+				}
+			}
+		});
+		nicMonitor.start();
+	}
 
 	/**
 	 * During stagging, th vpnmanager will just sotre its config in runtime
@@ -106,6 +138,9 @@ public class VpnManager {
 					tmpKey.shred();
 					tmpCa.shred();
 					tmpCert.shred();
+					synchronized (vpnCache) {
+						vpnCache.put(vm.getId(), new CacheEntry(vm,keyring));
+					}
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
 				}
@@ -115,6 +150,9 @@ public class VpnManager {
 
 	public void closeVpn(Vm vm) throws VmException {
 		try {
+			synchronized (vpnCache) {
+				vpnCache.remove(vm.getId());
+			}
 			// load configuration
 			VpnConfig cfg = new VpnConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 			cfg.load();
@@ -129,6 +167,15 @@ public class VpnManager {
 			);
 		} catch (Exception e) {
 			throw new VmException("Failed to close VPN.", e);
+		}
+	}
+	
+	private class CacheEntry {
+		private Vm vm;
+		private IKeyring keyring;
+		public CacheEntry(Vm vm, IKeyring keyring) {
+			this.vm = vm;
+			this.keyring = keyring;
 		}
 	}
 }

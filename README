@@ -98,3 +98,17 @@ machines.
 
  add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
 
+
+## Quick deploy on test machine
+
+mvn -Dmaven.test.skip=true install \
+&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-wm/4.0/cube-client-wm-4.0.jar 172.20.3.1:/opt/cube/client/ \
+&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-core/4.0/cube-client-core-4.0.jar 172.20.3.1:/opt/cube/client/lib/ \
+&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-common/4.0/cube-common-4.0.jar 172.20.3.1:/opt/cube/client/lib/ \
+&& ssh 172.20.3.1 "pkill java"
+
+
+
+
+
+

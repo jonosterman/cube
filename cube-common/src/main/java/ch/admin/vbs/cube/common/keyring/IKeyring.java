@@ -93,4 +93,6 @@ public interface IKeyring {
 	File getFile(String filename) throws KeyringException;
 
 	void setId(IIdentityToken id);
+	
+	public boolean isOpen();
 }

@@ -78,7 +78,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private HashMap<JFrame, Window> cachedWindows = new HashMap<JFrame, Window>();
 	private HashMap<String, Window> borderedWindows = new HashMap<String, Window>();
 	private Pattern windowPatternVirtualMachine = Pattern.compile("^(.*) - .*Oracle VM VirtualBox.*$");
-	private Pattern windowPatternNavigationBar = Pattern.compile("^CubeNavigation([0-9]+)$");
+	private Pattern windowPatternNavigationBar = Pattern.compile("^"+NavigationBar.FRAME_TITLEPREFIX+"(.*+)$");
 	private HashMap<String, VmHandle> visibleWindows = new HashMap<String, VmHandle>();
 	private NavigationBar[] navbarFrames;
 	private JFrame[] parentFrames;

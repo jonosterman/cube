@@ -50,7 +50,7 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(NavigationBar.class);
 	public static final int FRAME_HEIGHT = 25;
-	private static final String FRAME_TITLEPREFIX = "CubeNavigation#";
+	public static final String FRAME_TITLEPREFIX = "CubeNavigation#";
 	private NavigationTabs tabs;
 	private IVmMonitor vmMon;
 	private Object lock = new Object();
