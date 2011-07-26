@@ -70,7 +70,7 @@ public class FileTransferWizard extends CubeWizard {
 	 *            the listener listening for the user decision.
 	 */
 	public FileTransferWizard(Vm srcVm, RelativeFile transferFileName, List<Vm> vms, FileTransferWizardListener listener) {
-		super(null, "<place title here>");
+		super(null);
 		this.srcVm = srcVm;
 		this.filename = transferFileName;
 		this.listener = listener;

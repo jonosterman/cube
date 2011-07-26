@@ -72,7 +72,7 @@ public class PasswordDialog extends CubeWizard {
 	 *            the owner of the dialog, which the dialog belong to
 	 */
 	public PasswordDialog(JFrame owner) {
-		super(owner, null);
+		super(owner);
 		listeners = new LinkedList<PasswordDialogListener>();
 		// make sure closing event is a cancel
 		addWindowListener(new WindowAdapter() {

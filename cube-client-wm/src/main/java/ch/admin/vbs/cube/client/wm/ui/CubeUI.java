@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.client.ICubeClient;
+import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
@@ -57,14 +58,17 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 	private XrandrTwoDisplayLayout layoutMgr;
 	private AcpiListener acpi;
 	private Layout currentLayout = Layout.AB;
+	private IUserInterface userIface;
+	private boolean started;
 
-	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI) {
+	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI, IUserInterface userIface) {
 		this.core = core;
 		this.client = client;
 		this.vmMonitor = vmMonitor;
 		this.vmControl = vmControl;
 		this.cubeUI = cubeUI;
 		this.xrandr = xrandr;
+		this.userIface = userIface;
 		// this.xrandr.addListener(this);
 		layoutMgr = new XrandrTwoDisplayLayout();
 		// force first sync
@@ -107,6 +111,7 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 			}
 		});
 		acpi.start();
+		started = true;
 	}
 
 	@Override
@@ -122,6 +127,9 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 			if (!c.active) {
 				c.moveAllTabsToAnotherScreen();
 			}
+		}
+		if (started) {
+		userIface.refresh();
 		}
 	}
 

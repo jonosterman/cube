@@ -64,7 +64,7 @@ public class UsbChooserDialog extends CubeWizard {
 	 * 
 	 */
 	public UsbChooserDialog(JFrame owner, String messageKey, IVmMonitor monitor, List<UsbDeviceEntry> list) {
-		super(owner, "");
+		super(owner);
 		this.messageKey = messageKey;
 		this.monitor = monitor;
 		//

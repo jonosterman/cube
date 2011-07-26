@@ -53,6 +53,7 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.UsbChooserDialog;
 import ch.admin.vbs.cube.client.wm.ui.tabs.NavigationBar;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
@@ -78,7 +79,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private HashMap<JFrame, Window> cachedWindows = new HashMap<JFrame, Window>();
 	private HashMap<String, Window> borderedWindows = new HashMap<String, Window>();
 	private Pattern windowPatternVirtualMachine = Pattern.compile("^(.*) - .*Oracle VM VirtualBox.*$");
-	private Pattern windowPatternNavigationBar = Pattern.compile("^"+NavigationBar.FRAME_TITLEPREFIX+"(.*+)$");
+	private Pattern windowPatternNavigationBar = Pattern.compile("^" + NavigationBar.FRAME_TITLEPREFIX + "(.*+)$");
 	private HashMap<String, VmHandle> visibleWindows = new HashMap<String, VmHandle>();
 	private NavigationBar[] navbarFrames;
 	private JFrame[] parentFrames;
@@ -594,6 +595,41 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			showNavigationBarAndVms();
 			//
 			// osdMgmt.showOsdFrames();
+		}
+	}
+
+	@Override
+	public void refresh() {
+		synchronized (lock) {
+			if (dialog == null) {
+				LOG.debug("Refresh WM: show VMs");
+				showNavigationBarAndVms();
+			} else {
+				LOG.debug("Refresh WM: show Dialog");
+				ArrayList<Window> show = new ArrayList<Window>();
+				ArrayList<Window> hide = new ArrayList<Window>();
+				// hide VMs' windows
+				synchronized (lock) {
+					for (Entry<String, Window> e : borderedWindows.entrySet()) {
+						hide.add(e.getValue());
+					}
+				}
+				// hide NavigationBar
+				for (CubeScreen n : cubeUI.getScreens()) {
+					hide.add(getCachedWindow(n.getNavigationBar()));
+				}
+				// show dialog
+				synchronized (xwm) {
+					Window w = xwm.findWindowByNamePattern(CubeWizard.WIZARD_WINDOW_TITLE);
+					if (w != null) {
+						show.add(w);
+					}
+				}
+				// hide windows
+				synchronized (xwm) {
+					xwm.showOnlyTheseWindow(hide, show);
+				}
+			}
 		}
 	}
 

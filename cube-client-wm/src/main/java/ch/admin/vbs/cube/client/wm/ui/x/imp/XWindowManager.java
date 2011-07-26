@@ -647,4 +647,28 @@ public final class XWindowManager implements IXWindowManager {
 	public void setWindowManagerCallBack(IWindowManagerCallback cb) {
 		this.cb = cb;
 	}
+
+//	public void list() {//DEBUG DEBUG DEBUIG
+//		Window foundWindow = null;
+//		Display display = x11.XOpenDisplay(displayName);
+//		// get the root window
+//		Window rootWindow = x11.XRootWindow(display, screenIndex);
+//		long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
+//		for (long windowId : childrenWindowIdArray) {
+//			Window window = new Window(windowId);
+//			// get window attributes
+//			XWindowAttributes attributes = new XWindowAttributes();
+//			x11.XGetWindowAttributes(display, window, attributes);
+//			// get window title
+//			XTextProperty windowTitle = new XTextProperty();
+//			x11.XFetchName(display, window, windowTitle);
+//			// filter windows with attributes which our windows do not have
+//			if (!attributes.override_redirect && windowTitle.value != null) {
+//				LOG.warn("Scan windows [{}]",windowTitle.value);
+//		
+//			}
+//		}
+//		// close display
+//		x11.XCloseDisplay(display);
+//	}
 }

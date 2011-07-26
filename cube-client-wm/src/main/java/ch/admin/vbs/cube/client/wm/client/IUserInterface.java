@@ -72,4 +72,7 @@ public interface IUserInterface {
 
 	/** close current dialog. */
 	void closeDialog();
+	
+	/** display dialog if necessary or VMs */
+	void refresh();
 }

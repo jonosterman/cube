@@ -46,6 +46,7 @@ import com.jidesoft.dialog.StandardDialog;
  * 
  */
 public abstract class CubeWizard extends StandardDialog {
+	public static final String WIZARD_WINDOW_TITLE = "CubeWizard";
 	/** Logger */
 	private static final long serialVersionUID = 0L;
 	private static final Dimension MINIMUM_DIALOG_SIZE = new Dimension(400, 247);
@@ -64,8 +65,9 @@ public abstract class CubeWizard extends StandardDialog {
 	 * @param title
 	 *            the title of the dialog
 	 */
-	public CubeWizard(JFrame owner, String title) {
+	public CubeWizard(JFrame owner) {
 		super(owner, true);
+		setTitle(WIZARD_WINDOW_TITLE);
 		setUndecorated(true);
 	}
 

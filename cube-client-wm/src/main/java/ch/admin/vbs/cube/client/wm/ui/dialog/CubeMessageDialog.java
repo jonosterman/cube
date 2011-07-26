@@ -100,7 +100,7 @@ public class CubeMessageDialog extends CubeWizard {
 	 *            the message type of the dialog, which takes the fitting icon
 	 */
 	public CubeMessageDialog(JFrame owner, String message, String title, int messageType) {
-		super(owner, "");
+		super(owner);
 		this.message = message;
 		this.title = title;
 		this.messageType = messageType;

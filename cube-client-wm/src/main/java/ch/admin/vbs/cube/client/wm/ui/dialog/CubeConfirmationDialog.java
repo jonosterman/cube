@@ -61,7 +61,7 @@ public class CubeConfirmationDialog extends CubeWizard {
 	 *            the message type of the dialog, which takes the fitting icon
 	 */
 	public CubeConfirmationDialog(JFrame owner, String messageKey, int messageType) {
-		super(owner, "");
+		super(owner);
 		this.messageKey = messageKey;
 		this.messageType = messageType;
 	}
