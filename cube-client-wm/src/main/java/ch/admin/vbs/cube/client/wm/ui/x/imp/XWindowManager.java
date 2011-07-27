@@ -24,8 +24,8 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.client.wm.client.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
+import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
@@ -316,27 +316,7 @@ public final class XWindowManager implements IXWindowManager {
 		x11.XMoveResizeWindow(display, childWindow, bounds.x, bounds.y, bounds.width, bounds.height);
 		x11.XFlush(display);
 		// close display
-		x11.XCloseDisplay(display);
-		// -----------------
-		display = x11.XOpenDisplay(displayName);
-		long[] childrenWindowIdArray = getChildrenList(display, childWindow);
-		for (long windowId : childrenWindowIdArray) {
-			Window window = new Window(windowId);
-			LOG.debug("---> reparentWindowAndResize() send ConfigureNotify to [{}] name[{}]", window, getWindowName(window));
-			// Send an event to force application (VirtualBox) to resize. It is
-			// needed if we move the VM on a 2nd screen with another resolution
-			// than the first one.
-			NativeLong event_mask = new NativeLong(X11.ConfigureNotify);
-			XConfigureEvent event = new XConfigureEvent();
-			event.type = X11.ConfigureNotify;
-			event.display = display;
-			event.height = bounds.height;
-			event.width = bounds.width;
-			event.border_width = 0;
-			event.above = null;
-			event.override_redirect = 0;
-			x11.XSendEvent(display, window, 1, event_mask, event);
-		}
+		sendResizeEvent(display, childWindow, bounds);
 		x11.XCloseDisplay(display);
 	}
 
@@ -361,7 +341,8 @@ public final class XWindowManager implements IXWindowManager {
 		// select the events that this window will get
 		// x11.XSelectInput(eventDisplay, window, new
 		// NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask ));
-		x11.XSelectInput(eventDisplay, window, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask | X11.StructureNotifyMask));
+		x11.XSelectInput(eventDisplay, window, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask
+				| X11.StructureNotifyMask));
 		x11.XFlush(eventDisplay);
 	}
 
@@ -442,7 +423,7 @@ public final class XWindowManager implements IXWindowManager {
 			case X11.UnmapNotify:
 			default:
 				// noisy !!
-				//LOG.error("Ignore XEvent [{}]", event.type);
+				// LOG.error("Ignore XEvent [{}]", event.type);
 				break;
 			}
 		}
@@ -655,5 +636,26 @@ public final class XWindowManager implements IXWindowManager {
 			}
 		}
 		return childrenWindowIdArray;
+	}
+
+	private void sendResizeEvent(Display display, Window childWindow, Rectangle bounds) {
+		long[] childrenWindowIdArray = getChildrenList(display, childWindow);
+		for (long windowId : childrenWindowIdArray) {
+			Window window = new Window(windowId);
+			LOG.debug("---> sendResizeEvent() to [{}] name[{}]", window, getWindowName(window));
+			// Send an event to force application (VirtualBox) to resize. It is
+			// needed if we move the VM on a 2nd screen with another resolution
+			// than the first one.
+			NativeLong event_mask = new NativeLong(X11.ConfigureNotify);
+			XConfigureEvent event = new XConfigureEvent();
+			event.type = X11.ConfigureNotify;
+			event.display = display;
+			event.height = bounds.height;
+			event.width = bounds.width;
+			event.border_width = 0;
+			event.above = null;
+			event.override_redirect = 0;
+			x11.XSendEvent(display, window, 1, event_mask, event);
+		}
 	}
 }

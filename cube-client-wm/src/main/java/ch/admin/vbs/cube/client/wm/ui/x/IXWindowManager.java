@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package ch.admin.vbs.cube.client.wm.client;
+package ch.admin.vbs.cube.client.wm.ui.x;
 
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.Collection;
 
-import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IXWindowManager {

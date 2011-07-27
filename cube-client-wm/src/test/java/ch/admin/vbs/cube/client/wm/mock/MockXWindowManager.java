@@ -24,8 +24,8 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.client.wm.client.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
+import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public class MockXWindowManager implements IXWindowManager {
