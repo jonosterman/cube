@@ -139,8 +139,6 @@ public interface ICoreFacade {
 
 	void enteredUsbDevice(UsbDevice device, String requestId);
 
-	void attachUsbDeviceRequest(String vmId);
-
 	UsbDeviceEntryList getUsbDeviceList(String vmId);
 
 	// ==========================================

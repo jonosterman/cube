@@ -61,7 +61,6 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 
 	/** Constructor. */
 	public NavigationBar(String monitorLabel) {
-		LOG.info("CREATE NAVBAR [{}]",monitorLabel);
 		this.monitorId = monitorLabel;
 		initUI();
 	}
@@ -79,13 +78,13 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 				cDisplayList.add(h);
 			}
 		}
-		LOG.debug("Some VMs changed. Refresh tab list ({}/{})",cDisplayList.size(),list.size());
+		LOG.trace("Some VMs changed. Refresh tab list ({}/{})",cDisplayList.size(),list.size());
 		refreshTabsVms(cDisplayList);
 	}
 
 	@Override
 	public void vmChanged(VmChangeEvent event) {
-		LOG.debug("VM [{}] changed", event.getVmHandle());
+		LOG.trace("VM [{}] changed", event.getVmHandle());
 		refreshTab(event.getVmHandle());
 	}
 
@@ -203,7 +202,7 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	}
 
 	public void refreshTab(final VmHandle h) {
-		LOG.debug("Refresh Tab [{}]", h);
+		LOG.trace("Refresh Tab [{}]", h);
 		if (h == null)
 			throw new NullPointerException("Given VmHandle is null");
 		SwingUtilities.invokeLater(new Runnable() {

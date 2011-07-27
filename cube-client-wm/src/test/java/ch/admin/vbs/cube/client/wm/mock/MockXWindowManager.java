@@ -32,14 +32,10 @@ public class MockXWindowManager implements IXWindowManager {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(MockXWindowManager.class);
 	private Random d = new Random();
+
 	
 	@Override
-	public void adjustScreenForChild(Window parentWindow, int width, int height) {
-	}
-
-	@Override
-	public Window createBorderWindow(Window parentWindow, int borderSize, Color borderColor, Color backgroundColor,
-			Rectangle bounds) {
+	public Window createBorderWindow(Window parentWindow, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
 		return null;
 	}
 
@@ -48,16 +44,14 @@ public class MockXWindowManager implements IXWindowManager {
 		LOG.debug("not implemented");
 	}
 
-	@Override
-	public void findAndBindWindowByNamePattern(String vmId, String namePattern, Window bindingWindow) {
-		LOG.debug("not implemented");
-	}
+
 
 	@Override
-	public Window findWindowByNamePattern(String name) {
+	public Window findWindowByTitle(String name) {
 		Window w = new Window(d.nextLong());
 		return w;
 	}
+
 
 	@Override
 	public void removeWindow(Window window) {
@@ -70,19 +64,26 @@ public class MockXWindowManager implements IXWindowManager {
 	}
 
 	@Override
+	public void hideAndReparentToRoot(Window window) {
+	}
+
+	@Override
+	public void reparentWindow(Window borderWindow, Window w) {
+	}
+
+	@Override
 	public void showOnlyTheseWindow(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
 		LOG.debug("not implemented");
 	}
-	
+
 	@Override
 	public String getWindowName(Window w) {
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 	@Override
 	public void setWindowManagerCallBack(IWindowManagerCallback cb) {
 		// TODO Auto-generated method stub
-		
 	}
-	
 }

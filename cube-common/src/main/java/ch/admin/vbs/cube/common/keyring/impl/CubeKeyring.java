@@ -210,7 +210,9 @@ public class CubeKeyring implements IKeyring {
 		// (@TODO if key was encrypted with an older key (not valid
 		// anymore), we MUST re-encrypt it with the new one)
 		// (@TODO provide a way to request the password if needed)
+		LOG.debug("begin decryption");
 		dfu.writeFile(dstFile, RSAEncryptUtil.decrypt(dfu.readFile(srcFile), id.getPrivatekey(KeyType.ENCIPHERMENT)));
+		LOG.debug("decryption ended");
 	}
 
 	@Override

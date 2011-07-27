@@ -22,6 +22,8 @@ import java.security.KeyStore.Builder;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 
 import org.slf4j.Logger;
@@ -82,13 +84,15 @@ public class VBoxProduct implements VBoxCacheListener {
 	private static final String CONTROLLER_NAME = "IDE Controller";
 	public static final String SNAPSHOT_DIRECTORY = "snapshots";
 	private static final String DISK1 = "disk1";
+	private static final long MAX_SHUTDOWN_TIME = 60000; // 1 minute
+	private static final long MAX_SAVE_TIME = 60000; // 1 minute
 	private static final long MEGA = 1048576;
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VBoxProduct.class);
 	//
 	private VirtualBoxManager mgr;
 	private IVirtualBox vbox;
-	private Object wsLock = new Object();
+	private Lock lock = new ReentrantLock();
 	private VBoxCache cache;
 	private ArrayList<IVmProductListener> listeners = new ArrayList<IVmProductListener>(2);
 	private boolean connected = false;
@@ -109,10 +113,15 @@ public class VBoxProduct implements VBoxCacheListener {
 
 	/** used by VBoxCache */
 	public List<IMachine> getMachines() {
-		if (!connected)
+		if (!connected) {
 			return new ArrayList<IMachine>(0);
-		synchronized (wsLock) {
+		}
+		//
+		lock.lock();
+		try {
 			return vbox.getMachines();
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -251,6 +260,9 @@ public class VBoxProduct implements VBoxCacheListener {
 			} else {
 				tempFile.delete();
 			}
+			vm.setProgress(100);
+			vm.setProgressMessage("");
+			model.fireVmStateUpdatedEvent(vm);
 		} catch (Exception e) {
 			throw new VmException("Failed to stage VirtualBox VM.", e);
 		}
@@ -296,134 +308,140 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void registerVm(Vm vm) throws VmException {
-		synchronized (wsLock) { // load configuration from VM container
-			try {
-				VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
-				cfg.load();
-				// check if VM is already registered. Clean it up if necessary.
-				IMachine machine = getIMachineReference(vm.getId());
-				if (machine != null) {
-					LOG.debug("An older VM with the UID [{}] is already registred. Cleanup this VM before registering the new one.", vm.getId());
-					ISession session = mgr.getSessionObject();
-					// power-off in necessary
-					machine = getIMachineReference(vm.getId());
-					if (machine.getState() == MachineState.Running) {
-						machine.lockMachine(session, LockType.Shared);
-						machine = session.getMachine();
-						// power off machine
-						IProgress progress = session.getConsole().powerDown();
-						// wait until completed
-						while (!progress.getCompleted()) {
-							// notify progress to model listeners
-							LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
-							vm.setProgress(progress.getOperationPercent().intValue());
-							Thread.sleep(500);
-						}
-						unlockSession(session);
-					}
-					// discard state if necessary
-					machine = getIMachineReference(vm.getId());
-					if (machine.getState() == MachineState.Saved) {
-						machine.lockMachine(session, LockType.Shared);
-						machine = session.getMachine();
-						session.getConsole().discardSavedState(true);
-						unlockSession(session);
-					}
-					// remove HDD if necessary
-					machine = getIMachineReference(vm.getId());
-					for (IMediumAttachment atta : machine.getMediumAttachments()) {
-						if (atta.getMedium() != null) {
-							machine.lockMachine(session, LockType.Shared);
-							machine = session.getMachine();
-							LOG.debug("Remove medium [{}]", atta.getMedium().getName());
-							machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
-							machine.saveSettings();
-							atta.getMedium().close();
-						}
+		VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
+		try {
+			cfg.load();
+		} catch (Exception e) {
+			throw new VmException("Failed to create tun interfaces", e);
+		}
+		//
+		lock.lock();
+		try {
+			// check if VM is already registered. Clean it up if necessary.
+			IMachine machine = getIMachineReference(vm.getId());
+			if (machine != null) {
+				LOG.debug("An older VM with the UID [{}] is already registred. Cleanup this VM before registering the new one.", vm.getId());
+				ISession session = mgr.getSessionObject();
+				// power-off in necessary
+				machine = getIMachineReference(vm.getId());
+				if (machine.getState() == MachineState.Running) {
+					machine.lockMachine(session, LockType.Shared);
+					machine = session.getMachine();
+					// power off machine
+					IProgress progress = session.getConsole().powerDown();
+					// wait until completed
+					while (!progress.getCompleted()) {
+						// notify progress to model listeners
+						LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
+						vm.setProgress(progress.getOperationPercent().intValue());
+						Thread.sleep(500);
 					}
 					unlockSession(session);
-					//
-					machine = getIMachineReference(vm.getId());
-					machine.unregister(CleanupMode.Full);
 				}
-				// register VM (using web service)
-				LOG.debug("Register VM [{}].", vm.getId());
-				machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
-				// configure VM
-				LOG.debug("Configure VM [{}].", vm.getId());
-				machine.getBIOSSettings().setIOAPICEnabled(cfg.getOptionAsBoolean(VBoxOption.IoApic));
-				machine.getBIOSSettings().setACPIEnabled(cfg.getOptionAsBoolean(VBoxOption.Acpi));
-				machine.getBIOSSettings().setBootMenuMode(BIOSBootMenuMode.MenuOnly);
-				machine.getBIOSSettings().setLogoDisplayTime(0l);
-				machine.setHWVirtExProperty(HWVirtExPropertyType.NestedPaging, cfg.getOptionAsBoolean(VBoxOption.Pae));
-				machine.setMemorySize(cfg.getOptionAsLong(VBoxOption.BaseMemory));
-				machine.setVRAMSize(cfg.getOptionAsLong(VBoxOption.VideoMemory));
-				machine.setSnapshotFolder(vm.getRuntimeContainer().getMountpoint().getAbsolutePath());
-				machine.createSharedFolder("export", vm.getExportFolder().getAbsolutePath(), true, true);
-				machine.createSharedFolder("import", vm.getImportFolder().getAbsolutePath(), false, true);
-				machine.setAccelerate2DVideoEnabled(false);
-				machine.setAccelerate3DEnabled(true);
-				machine.setClipboardMode(ClipboardMode.Bidirectional);
-				machine.setCPUCount(1l);
-				machine.setCPUProperty(CPUPropertyType.PAE, true);
-				machine.getUSBController().setEnabled(true);
-				// configure sound card
-				machine.getAudioAdapter().setAudioController(AudioControllerType.AC97);
-				machine.getAudioAdapter().setAudioDriver(AudioDriverType.Pulse);
-				machine.getAudioAdapter().setEnabled(true);
-				// configure network interfaces
-				addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), null, machine);
-				addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), null, machine);
-				addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), null, machine);
-				addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), null, machine);
-				LOG.debug("Save VM settings [{}].", vm.getId());
-				synchronized (wsLock) {
-					machine.saveSettings();
-					vbox.registerMachine(machine);
-				}
-				// configure disks (need to lock the machine)
-				Runtime.getRuntime()
-						.exec("dd count=1000 if=/dev/zero of=/tmp/mp_vmctn/disk1.raw;rm -f /tmp/mp_vmctn/disk1;VBoxManage internalcommands converthd -srcformat RAW -dstformat VDI /tmp/mp_vmctn/disk1.raw /tmp/mp_vmctn/disk1");
-				synchronized (wsLock) {
-					ISession session = mgr.getSessionObject();
-					machine.lockMachine(session, LockType.Write);
+				// discard state if necessary
+				machine = getIMachineReference(vm.getId());
+				if (machine.getState() == MachineState.Saved) {
+					machine.lockMachine(session, LockType.Shared);
 					machine = session.getMachine();
-					try {
-						//
-						IStorageController store = machine.addStorageController(CONTROLLER_NAME, StorageBus.IDE);
-						store.setControllerType(StorageControllerType.PIIX4);
-						IMedium medium = vbox.openMedium(new File(vm.getVmContainer().getMountpoint(), cfg.getOption(VBoxOption.Disk1File)).getAbsolutePath(),
-								DeviceType.HardDisk, AccessMode.ReadWrite);
-						machine.attachDevice(CONTROLLER_NAME, 0, 0, DeviceType.HardDisk, medium);
-						machine.attachDevice(CONTROLLER_NAME, 1, 0, DeviceType.DVD, null);
+					session.getConsole().discardSavedState(true);
+					unlockSession(session);
+				}
+				// remove HDD if necessary
+				machine = getIMachineReference(vm.getId());
+				for (IMediumAttachment atta : machine.getMediumAttachments()) {
+					if (atta.getMedium() != null) {
+						machine.lockMachine(session, LockType.Shared);
+						machine = session.getMachine();
+						LOG.debug("Remove medium [{}]", atta.getMedium().getName());
+						machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
 						machine.saveSettings();
-					} catch (Exception e) {
-						throw new CubeException("Fail to attach VM devices", e);
-					} finally {
-						unlockSession(session);
+						atta.getMedium().close();
 					}
 				}
-				// Create 'tun' devices (need sudo rights)
-				ArrayList<String> nics = new ArrayList<String>();
-				if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic1))) {
-					nics.add(cfg.getOption(VBoxOption.Nic1Bridge));
-				}
-				if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic2))) {
-					nics.add(cfg.getOption(VBoxOption.Nic2Bridge));
-				}
-				if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic3))) {
-					nics.add(cfg.getOption(VBoxOption.Nic3Bridge));
-				}
-				if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic4))) {
-					nics.add(cfg.getOption(VBoxOption.Nic4Bridge));
-				}
-				ScriptUtil script = new ScriptUtil();
-				for (String nic : nics) {
-					script.execute("sudo", "./vbox-tuncreate.pl", "--tun", nic);
-				}
-			} catch (Exception e) {
-				throw new VmException("Failed to register VM", e);
+				unlockSession(session);
+				//
+				machine = getIMachineReference(vm.getId());
+				machine.unregister(CleanupMode.Full);
 			}
+			// register VM (using web service)
+			LOG.debug("Register VM [{}].", vm.getId());
+			machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
+			// configure VM
+			LOG.debug("Configure VM [{}].", vm.getId());
+			machine.getBIOSSettings().setIOAPICEnabled(cfg.getOptionAsBoolean(VBoxOption.IoApic));
+			machine.getBIOSSettings().setACPIEnabled(cfg.getOptionAsBoolean(VBoxOption.Acpi));
+			machine.getBIOSSettings().setBootMenuMode(BIOSBootMenuMode.MenuOnly);
+			machine.getBIOSSettings().setLogoDisplayTime(0l);
+			machine.setHWVirtExProperty(HWVirtExPropertyType.NestedPaging, cfg.getOptionAsBoolean(VBoxOption.Pae));
+			machine.setMemorySize(cfg.getOptionAsLong(VBoxOption.BaseMemory));
+			machine.setVRAMSize(cfg.getOptionAsLong(VBoxOption.VideoMemory));
+			machine.setSnapshotFolder(vm.getRuntimeContainer().getMountpoint().getAbsolutePath());
+			machine.createSharedFolder("export", vm.getExportFolder().getAbsolutePath(), true, true);
+			machine.createSharedFolder("import", vm.getImportFolder().getAbsolutePath(), false, true);
+			machine.setAccelerate2DVideoEnabled(false);
+			machine.setAccelerate3DEnabled(true);
+			machine.setClipboardMode(ClipboardMode.Bidirectional);
+			machine.setCPUCount(1l);
+			machine.setCPUProperty(CPUPropertyType.PAE, true);
+			machine.getUSBController().setEnabled(true);
+			// configure sound card
+			machine.getAudioAdapter().setAudioController(AudioControllerType.AC97);
+			machine.getAudioAdapter().setAudioDriver(AudioDriverType.Pulse);
+			machine.getAudioAdapter().setEnabled(true);
+			// configure network interfaces
+			addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), null, machine);
+			addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), null, machine);
+			addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), null, machine);
+			addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), null, machine);
+			LOG.debug("Save VM settings [{}].", vm.getId());
+			machine.saveSettings();
+			vbox.registerMachine(machine);
+			// configure disks (need to lock the machine)
+			Runtime.getRuntime()
+					.exec("dd count=1000 if=/dev/zero of=/tmp/mp_vmctn/disk1.raw;rm -f /tmp/mp_vmctn/disk1;VBoxManage internalcommands converthd -srcformat RAW -dstformat VDI /tmp/mp_vmctn/disk1.raw /tmp/mp_vmctn/disk1");
+			ISession session = mgr.getSessionObject();
+			machine.lockMachine(session, LockType.Write);
+			machine = session.getMachine();
+			try {
+				//
+				IStorageController store = machine.addStorageController(CONTROLLER_NAME, StorageBus.IDE);
+				store.setControllerType(StorageControllerType.PIIX4);
+				IMedium medium = vbox.openMedium(new File(vm.getVmContainer().getMountpoint(), cfg.getOption(VBoxOption.Disk1File)).getAbsolutePath(),
+						DeviceType.HardDisk, AccessMode.ReadWrite);
+				machine.attachDevice(CONTROLLER_NAME, 0, 0, DeviceType.HardDisk, medium);
+				machine.attachDevice(CONTROLLER_NAME, 1, 0, DeviceType.DVD, null);
+				machine.saveSettings();
+			} catch (Exception e) {
+				throw new CubeException("Fail to attach VM devices", e);
+			} finally {
+				unlockSession(session);
+			}
+		} catch (Exception e) {
+			throw new VmException("Failed to register VM", e);
+		} finally {
+			lock.unlock();
+		}
+		try {
+			// Create 'tun' devices (need sudo rights)
+			ArrayList<String> nics = new ArrayList<String>();
+			if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic1))) {
+				nics.add(cfg.getOption(VBoxOption.Nic1Bridge));
+			}
+			if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic2))) {
+				nics.add(cfg.getOption(VBoxOption.Nic2Bridge));
+			}
+			if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic3))) {
+				nics.add(cfg.getOption(VBoxOption.Nic3Bridge));
+			}
+			if ("vpn".equalsIgnoreCase(cfg.getOption(VBoxOption.Nic4))) {
+				nics.add(cfg.getOption(VBoxOption.Nic4Bridge));
+			}
+			ScriptUtil script = new ScriptUtil();
+			for (String nic : nics) {
+				script.execute("sudo", "./vbox-tuncreate.pl", "--tun", nic);
+			}
+		} catch (Exception e) {
+			throw new VmException("Failed to create tun interfaces", e);
 		}
 	}
 
@@ -471,99 +489,106 @@ public class VBoxProduct implements VBoxCacheListener {
 	 * @return
 	 */
 	private IMachine getIMachineReference(String id) {
+		lock.lock();
 		try {
-			synchronized (wsLock) {
-				if (vbox == null || id == null)
-					return null;
-				return vbox.findMachine(id);
-			}
+			if (vbox == null || id == null)
+				return null;
+			return vbox.findMachine(id);
 		} catch (VBoxException e) {
 			return null;
+		} finally {
+			lock.unlock();
 		}
 	}
 
 	public void poweroffVm(Vm vm, VmModel model) throws VmException {
-		synchronized (wsLock) {
-			try {
-				// get IMachine reference
-				IMachine machine = getIMachineReference(vm.getId());
-				if (machine.getState() == MachineState.PoweredOff) {
-					// already power-off
-					return;
-				}
-				ISession session = mgr.getSessionObject();
-				// lock IMachine
-				machine.lockMachine(session, LockType.Shared);
-				machine = session.getMachine();
-				try {
-					// power off machine
-					IProgress progress = session.getConsole().powerDown();
-					// wait until completed
-					while (!progress.getCompleted()) {
-						// notify progress to model listeners
-						LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
-						vm.setProgress(progress.getOperationPercent().intValue());
-						model.fireVmStateUpdatedEvent(vm);
-						Thread.sleep(500);
-					}
-				} finally {
-					// ensure that session is unlocked
-					unlockSession(session);
-				}
-				vm.setProgress(100);
-				model.fireVmStateUpdatedEvent(vm);
-			} catch (Exception e) {
-				throw new VmException("", e);
+		lock.lock();
+		try {
+			// get IMachine reference
+			IMachine machine = getIMachineReference(vm.getId());
+			if (machine == null || machine.getState() == MachineState.PoweredOff) {
+				// already power-off
+				return;
 			}
+			ISession session = mgr.getSessionObject();
+			// lock IMachine
+			machine.lockMachine(session, LockType.Shared);
+			machine = session.getMachine();
+			try {
+				// power off machine
+				IProgress progress = session.getConsole().powerDown();
+				// wait until completed
+				long to = System.currentTimeMillis() + MAX_SHUTDOWN_TIME;
+				while (!progress.getCompleted()) {
+					if (System.currentTimeMillis() > to) {
+						LOG.error("Shutdown timeout reached. Abort shutdown.");
+						break;
+					}
+					// notify progress to model listeners
+					LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
+					vm.setProgress(progress.getOperationPercent().intValue());
+					model.fireVmStateUpdatedEvent(vm);
+					Thread.sleep(500);
+				}
+			} finally {
+				// ensure that session is unlocked
+				unlockSession(session);
+			}
+			vm.setProgress(100);
+			vm.setProgressMessage("");
+			model.fireVmStateUpdatedEvent(vm);
+		} catch (Exception e) {
+			throw new VmException("", e);
+		} finally {
+			lock.unlock();
 		}
 	}
 
 	private void unlockSession(ISession session) {
-		synchronized (wsLock) {
-			// it is not clear how/when to unlock session...
-			if (session.getState() == SessionState.Locked) {
-				try {
-					session.unlockMachine();
-					LOG.debug("Session unlocked");
-				} catch (Exception e) {
-					LOG.error("Failed to unlock session", e);
-				}
-			} else {
-				LOG.error("Session was not locked [" + session.getState() + "]");
+		// it is not clear how/when to unlock session...
+		if (session.getState() == SessionState.Locked) {
+			try {
+				session.unlockMachine();
+				LOG.debug("Session unlocked");
+			} catch (Exception e) {
+				LOG.error("Failed to unlock session", e);
 			}
+		} else {
+			LOG.error("Session was not locked [" + session.getState() + "]");
 		}
 	}
 
 	public void unregisterVm(Vm vm) throws VmException {
-		synchronized (wsLock) {
-			try {
-				IMachine machine = getIMachineReference(vm.getId());
-				if (machine != null) {
-					// unregister all disks before unregistering VM
-					ISession session = mgr.getSessionObject();
-					machine.lockMachine(session, LockType.Write);
-					machine = session.getMachine();
-					for (IMediumAttachment atta : machine.getMediumAttachments()) {
-						if (atta.getMedium() != null) {
-							LOG.debug("Remove medium [{}]", atta.getMedium().getName());
-							machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
-							machine.saveSettings();
-							atta.getMedium().close();
-						}
-					}
-					unlockSession(session);
-					// unregister VM
-					machine = getIMachineReference(vm.getId());
-					if (machine == null) {
-						LOG.error("Machine disapears... (?)");
-					} else {
-						machine.unregister(CleanupMode.Full);
-						unlockSession(session);
+		lock.lock();
+		try {
+			IMachine machine = getIMachineReference(vm.getId());
+			if (machine != null) {
+				// unregister all disks before unregistering VM
+				ISession session = mgr.getSessionObject();
+				machine.lockMachine(session, LockType.Write);
+				machine = session.getMachine();
+				for (IMediumAttachment atta : machine.getMediumAttachments()) {
+					if (atta.getMedium() != null) {
+						LOG.debug("Remove medium [{}]", atta.getMedium().getName());
+						machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
+						machine.saveSettings();
+						atta.getMedium().close();
 					}
 				}
-			} catch (Exception e) {
-				throw new VmException("", e);
+				unlockSession(session);
+				// unregister VM
+				machine = getIMachineReference(vm.getId());
+				if (machine == null) {
+					LOG.error("Machine disapears... (?)");
+				} else {
+					machine.unregister(CleanupMode.Full);
+					unlockSession(session);
+				}
 			}
+		} catch (Exception e) {
+			throw new VmException("", e);
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -576,45 +601,52 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void save(Vm vm, VmModel model) throws VmException {
-		synchronized (wsLock) {
+		lock.lock();
+		try {
+			// get IMachine reference
+			IMachine machine = getIMachineReference(vm.getId());
+			ISession session = mgr.getSessionObject();
+			// lock IMachine
+			machine.lockMachine(session, LockType.Shared);
+			machine = session.getMachine();
 			try {
-				// get IMachine reference
-				IMachine machine = getIMachineReference(vm.getId());
-				ISession session = mgr.getSessionObject();
-				// lock IMachine
-				machine.lockMachine(session, LockType.Shared);
-				machine = session.getMachine();
-				try {
-					// save IMachine
-					IProgress progress = session.getConsole().saveState();
-					// wait until completed
-					while (!progress.getCompleted()) {
-						// notify progress to model listeners
-						LOG.debug("save progress [{}%]", progress.getOperationPercent());
-						vm.setProgress(progress.getOperationPercent().intValue());
-						model.fireVmStateUpdatedEvent(vm);
-						Thread.sleep(500);
+				// save IMachine
+				IProgress progress = session.getConsole().saveState();
+				// wait until completed
+				long to = System.currentTimeMillis() + MAX_SAVE_TIME;
+				while (!progress.getCompleted()) {
+					if (System.currentTimeMillis() > to) {
+						LOG.error("Shutdown timeout reached. Abort shutdown.");
+						break;
 					}
-					// rename saved state file
-					LOG.debug("VM save completed. Rename snapshot");
-					File mp = vm.getRuntimeContainer().getMountpoint();
-					ShellUtil su = new ShellUtil();
-					su.run(null, ShellUtil.NO_TIMEOUT, "mv", "-f", //
-							new File(mp, "{" + vm.getId() + "}.sav").getAbsolutePath(), //
-							new File(mp, "state.sav").getAbsolutePath());
-					// discard state or we won't be able to unregister it
-					machine = lockMachine(vm.getId(), session);
-					session.getConsole().discardSavedState(true);
-				} finally {
-					// ensure that session is unlocked
-					unlockSession(session);
+					// notify progress to model listeners
+					LOG.debug("save progress [{}%]", progress.getOperationPercent());
+					vm.setProgress(progress.getOperationPercent().intValue());
+					model.fireVmStateUpdatedEvent(vm);
+					Thread.sleep(500);
 				}
-				//
-				vm.setProgress(100);
-				model.fireVmStateUpdatedEvent(vm);
-			} catch (Exception e) {
-				throw new VmException("", e);
+				// rename saved state file
+				LOG.debug("VM save completed. Rename snapshot");
+				File mp = vm.getRuntimeContainer().getMountpoint();
+				ShellUtil su = new ShellUtil();
+				su.run(null, ShellUtil.NO_TIMEOUT, "mv", "-f", //
+						new File(mp, "{" + vm.getId() + "}.sav").getAbsolutePath(), //
+						new File(mp, "state.sav").getAbsolutePath());
+				// discard state or we won't be able to unregister it
+				machine = lockMachine(vm.getId(), session);
+				session.getConsole().discardSavedState(true);
+			} finally {
+				// ensure that session is unlocked
+				unlockSession(session);
 			}
+			//
+			vm.setProgress(100);
+			vm.setProgressMessage("");
+			model.fireVmStateUpdatedEvent(vm);
+		} catch (Exception e) {
+			throw new VmException("", e);
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -632,7 +664,7 @@ public class VBoxProduct implements VBoxCacheListener {
 				return machine;
 			} catch (Exception e) {
 				last = e;
-				LOG.error("Failed to lock machine [" + id + "]. Retry " + API_RETRY + " times.", e);
+				LOG.debug("Failed to lock machine [" + id + "]. Retry... " + (i + 1) + "/" + API_RETRY + " times.", e);
 				unlockSession(session);
 				Thread.sleep(500);
 			}
@@ -685,98 +717,117 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void listUsb(Vm vm, UsbDeviceEntryList list) throws VmException {
-		try {
-			// get IMachine reference
-			IMachine machine = getIMachineReference(vm.getId());
-			ISession session = mgr.getSessionObject();
-			// lock IMachine
-			machine.lockMachine(session, LockType.Shared);
-			machine = session.getMachine();
+		if (lock.tryLock()) {
 			try {
-				IConsole console = session.getConsole();
-				// get list of usb from host
-				List<IHostUSBDevice> hostDevices = vbox.getHost().getUSBDevices();
-				// get list of attached usb devices
-				HashSet<String> attachedIds = new HashSet<String>();
-				for (IUSBDevice dev : console.getUSBDevices()) {
-					attachedIds.add(dev.getAddress());
+				// get IMachine reference
+				IMachine machine = getIMachineReference(vm.getId());
+				ISession session = mgr.getSessionObject();
+				// lock IMachine
+				machine.lockMachine(session, LockType.Shared);
+				machine = session.getMachine();
+				try {
+					IConsole console = session.getConsole();
+					// get list of usb from host
+					List<IHostUSBDevice> hostDevices = vbox.getHost().getUSBDevices();
+					// get list of attached usb devices
+					HashSet<String> attachedIds = new HashSet<String>();
+					for (IUSBDevice dev : console.getUSBDevices()) {
+						attachedIds.add(dev.getAddress());
+					}
+					// populate result list
+					for (IHostUSBDevice dev : hostDevices) {
+						// exclude GemPlus product from the list in order to
+						// avoid
+						// attaching the main smart-card reader to a guest
+						if (dev.getVendorId() == 0x08e6) {
+							continue;
+						}
+						// exclude product without description
+						String p = dev.getProduct();
+						String m = dev.getManufacturer();
+						if (p == null || p.trim().length() == 0) {
+							continue;
+						}
+						// format description : use product description and
+						// include
+						// manufacturer if available
+						String fmt = p;
+						if (m != null && m.trim().length() > 0) {
+							fmt += " (" + m + ")";
+						}
+						// add to list
+						if (attachedIds.contains(dev.getAddress())) {
+							list.add(new UsbDeviceEntry(vm.getId(),//
+									new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
+									DeviceEntryState.ALREADY_ATTACHED));
+						} else {
+							list.add(new UsbDeviceEntry(vm.getId(),//
+									new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
+									DeviceEntryState.AVAILABLE));
+						}
+					}
+				} finally {
+					// ensure that session is unlocked
+					unlockSession(session);
 				}
-				// populate result list
-				for (IHostUSBDevice dev : hostDevices) {
-					// exclude GemPlus product from the list in order to avoid
-					// attaching the main smart-card reader to a guest
-					if (dev.getVendorId() == 0x08e6) {
-						continue;
-					}
-					// exclude product without description
-					String p = dev.getProduct();
-					String m = dev.getManufacturer();
-					if (p == null || p.trim().length() == 0) {
-						continue;
-					}
-					// format description : use product description and include
-					// manufacturer if available
-					String fmt = p;
-					if (m != null && m.trim().length() > 0) {
-						fmt += " (" + m + ")";
-					}
-					// add to list
-					if (attachedIds.contains(dev.getAddress())) {
-						list.add(new UsbDeviceEntry(vm.getId(),//
-								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
-								DeviceEntryState.ALREADY_ATTACHED));
-					} else {
-						list.add(new UsbDeviceEntry(vm.getId(),//
-								new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
-								DeviceEntryState.AVAILABLE));
-					}
-				}
+			} catch (Exception e) {
+				throw new VmException("Failed to list USB devices", e);
 			} finally {
-				// ensure that session is unlocked
-				unlockSession(session);
+				lock.unlock();
+				list.setUpdated(true);
 			}
-		} catch (Exception e) {
-			throw new VmException("Failed to list USB devices", e);
-		} finally {
-			list.setUpdated(true);
+		} else {
+			LOG.debug("VirtualBox webservice is busy. do not list USB.");
 		}
 	}
 
 	public void attachUsb(Vm vm, UsbDevice dev) throws VmException {
-		try {
-			// get IMachine reference
-			IMachine machine = getIMachineReference(vm.getId());
-			ISession session = mgr.getSessionObject();
-			// lock IMachine
-			machine.lockMachine(session, LockType.Shared);
-			machine = session.getMachine();
+		if (lock.tryLock()) {
 			try {
-				session.getConsole().attachUSBDevice(dev.getId());
+				// get IMachine reference
+				IMachine machine = getIMachineReference(vm.getId());
+				ISession session = mgr.getSessionObject();
+				// lock IMachine
+				machine.lockMachine(session, LockType.Shared);
+				machine = session.getMachine();
+				try {
+					session.getConsole().attachUSBDevice(dev.getId());
+				} finally {
+					// ensure that session is unlocked
+					unlockSession(session);
+				}
+			} catch (Exception e) {
+				throw new VmException("Failed to attach USB device [" + dev.getId() + "]", e);
 			} finally {
-				// ensure that session is unlocked
-				unlockSession(session);
+				lock.unlock();
 			}
-		} catch (Exception e) {
-			throw new VmException("Failed to attach USB device [" + dev.getId() + "]", e);
+		} else {
+			LOG.debug("VirtualBox webservice is busy. do not attach USB.");
 		}
 	}
 
 	public void detachUsb(Vm vm, UsbDevice dev) throws VmException {
-		try {
-			// get IMachine reference
-			IMachine machine = getIMachineReference(vm.getId());
-			ISession session = mgr.getSessionObject();
-			// lock IMachine
-			machine.lockMachine(session, LockType.Shared);
-			machine = session.getMachine();
+		if (lock.tryLock()) {
 			try {
-				session.getConsole().detachUSBDevice(dev.getId());
+				// get IMachine reference
+				IMachine machine = getIMachineReference(vm.getId());
+				ISession session = mgr.getSessionObject();
+				// lock IMachine
+				machine.lockMachine(session, LockType.Shared);
+				machine = session.getMachine();
+				try {
+					session.getConsole().detachUSBDevice(dev.getId());
+				} finally {
+					// ensure that session is unlocked
+					unlockSession(session);
+				}
+			} catch (Exception e) {
+				throw new VmException("Failed to detach USB device [" + dev.getId() + "]", e);
 			} finally {
-				// ensure that session is unlocked
-				unlockSession(session);
+				lock.unlock();
 			}
-		} catch (Exception e) {
-			throw new VmException("Failed to detach USB device [" + dev.getId() + "]", e);
+		} else {
+			LOG.debug("VirtualBox webservice is busy. do not dettach USB.");
 		}
 	}
 }

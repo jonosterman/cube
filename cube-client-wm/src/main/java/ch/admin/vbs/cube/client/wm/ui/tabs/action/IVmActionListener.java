@@ -71,8 +71,6 @@ public interface IVmActionListener {
 
 	void installGuestAdditions(VmHandle h);
 
-	void connectUsbDevice(VmHandle h);
-
 	void detachUsbDevice(VmHandle vmHandle, UsbDevice usb);
 
 	void attachUsbDevice(VmHandle vmHandle, UsbDevice usb);

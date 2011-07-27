@@ -25,27 +25,10 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IXWindowManager {
 	/**
-	 * Finds the x window with the matching name pattern for the window title
-	 * asynchronesly. When the x window was found, it will be reparent to the
-	 * binding x window and raised to the top.
-	 * 
-	 * @param vmId
-	 *            vmId of the x window to be found
-	 * @param namePattern
-	 *            the unique name pattern to find the x window
-	 * @param bindingWindow
-	 *            the parent window for the found x window
+	 * find a x-window based on its title. Useful to find the x-window of a
+	 * specific JFrame. Since it is based on its title, it may be inaccurate.
 	 */
-	public abstract void findAndBindWindowByNamePattern(final String vmId, final String namePattern, final Window bindingWindow);
-
-	/**
-	 * Returns the x11 window by the given name (title).
-	 * 
-	 * @param name
-	 *            the name/title of the window
-	 * @return the x11 window instance or null when the window can not be found
-	 */
-	public abstract Window findWindowByNamePattern(String name);
+	public abstract Window findWindowByTitle(String title);
 
 	/**
 	 * Hides all virtual machine windows in the hideWindowList and brings up all
@@ -101,22 +84,12 @@ public interface IXWindowManager {
 	 */
 	public abstract void destroy();
 
-	/**
-	 * Adjusts the children window of the parent window to the specific
-	 * dimenstion.
-	 * 
-	 * @param parentWindow
-	 *            the parent window
-	 * @param width
-	 *            the width for the children
-	 * @param height
-	 *            the height for the children
-	 */
-	public abstract void adjustScreenForChild(Window parentWindow, int width, int height);
-
 	public abstract void setWindowManagerCallBack(IWindowManagerCallback cb);
 
 	public abstract String getWindowName(Window w);
 
+	public abstract void reparentWindow(Window borderWindow, Window w);
 
+	/** unmap and reparent to root */
+	public abstract void hideAndReparentToRoot(Window window);
 }

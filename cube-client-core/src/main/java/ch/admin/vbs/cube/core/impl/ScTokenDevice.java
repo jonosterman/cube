@@ -37,7 +37,7 @@ public class ScTokenDevice implements ITokenDevice, Runnable {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(ScTokenDevice.class);
 	private static final String SC_SMARTCARDIO_LIBRARY_PROPERTY = "SCAdapter.smartcardioLibrary";
-	private static final int RETRY_COUNT = 5;
+	private static final int RETRY_COUNT = 10;
 	private String smartcardioLibraryPath;
 	private CardTerminal terminal;
 	private Thread thread;

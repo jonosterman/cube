@@ -36,6 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.common.container.SizeFormatUtil;
+import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 
 public class FileDownloader implements Runnable {
@@ -55,6 +56,7 @@ public class FileDownloader implements Runnable {
 	private long received;
 	private OutputStream dstStream;
 	private Builder builder;
+	private boolean syncThread = false;
 
 	public FileDownloader(Builder builder) {
 		this.builder = builder;
@@ -146,6 +148,27 @@ public class FileDownloader implements Runnable {
 				LOG.error("No Size found in header [{}]", header);
 			}
 			// download file
+			syncThread = true;
+			new Thread(new Runnable() {
+				/**
+				 * We need to sync disk or under ubuntu 11.4, intensive disk
+				 * writes in a dmcrypt volume hang. We also add a flush and a
+				 * sleep in writing loop.
+				 */
+				@Override
+				public void run() {
+					try {
+						ShellUtil su = new ShellUtil();
+						while (syncThread) {
+							LOG.debug("sync disks during download.");
+							Thread.sleep(15000);
+							su.run(null, ShellUtil.NO_TIMEOUT, "sync");
+						}
+					} catch (Exception e) {
+						LOG.error("Failed to execute 'sync'");
+					}
+				}
+			}).start();
 			received = 0;
 			byte[] buffer = new byte[1024 * 100];
 			int cnt = bi.read(buffer);
@@ -153,9 +176,10 @@ public class FileDownloader implements Runnable {
 			long last = 0;
 			while (cnt > 0) {
 				received += cnt;
-				if ((received / 1048576000) != last) {
-					last = received / 1048576000;
+				if ((received / 104857600) != last) {
+					last = received / 104857600;
 					bo.flush();
+					Thread.sleep(1000);// small pause to allow writing on disk
 					LOG.debug("Download progress [{}]", SizeFormatUtil.format(received));
 				}
 				bo.write(buffer, 0, cnt);
@@ -167,6 +191,7 @@ public class FileDownloader implements Runnable {
 			state = State.FAILED;
 			return;
 		} finally {
+			syncThread = false;
 			try {
 				sk.close();
 			} catch (IOException e) {

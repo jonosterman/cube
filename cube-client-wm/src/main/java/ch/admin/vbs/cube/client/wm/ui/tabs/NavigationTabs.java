@@ -124,8 +124,9 @@ public class NavigationTabs extends JideTabbedPane {
 								Object o = getComponentAt(tabIndex);
 								if (o instanceof TabComponent) {
 									TabComponent comp = (TabComponent) getComponentAt(tabIndex);
-									if (comp != null) {
-										vmCtrl.showVm(comp.getVmHandle());
+									VmHandle h = comp.getVmHandle();
+									if (comp != null && h != null) {
+										vmCtrl.showVm(h);
 									} else {
 										vmCtrl.hideAllVms(NavigationTabs.this.monitorId);
 									}
@@ -139,7 +140,6 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		});
 		// add header logo
-		// if (monitorIdx == 0) {
 		LogoPanel logo = new LogoPanel();
 		logo.addMouseListener(new MouseAdapter() {
 			@Override
@@ -148,7 +148,6 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		});
 		setTabLeadingComponent(logo);
-		// }
 		
 		
 	}

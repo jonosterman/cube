@@ -17,7 +17,6 @@
 package ch.admin.vbs.cube.client.wm.client;
 
 import ch.admin.vbs.cube.common.RelativeFile;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * This interface is used to control the UI: if it should show a specific dialog
@@ -59,16 +58,6 @@ public interface IUserInterface {
 	 * @param requestId 
 	 */
 	void showConfirmationDialog(String messageKey, String requestId);
-
-	/**
-	 * Display a dialog where user could pick an already connected USB device to
-	 * bind it to the selected VM.
-	 * @param list 
-	 * 
-	 * @param h
-	 *            target VM.
-	 */
-	void showUsbDeviceDialog(String messageKey, UsbDeviceEntryList list, String requestId);
 
 	/** close current dialog. */
 	void closeDialog();

@@ -93,16 +93,6 @@ public class VmActionListener implements IVmActionListener {
 	}
 
 	@Override
-	public void connectUsbDevice(final VmHandle h) {
-		exec.execute(new Runnable() {
-			@Override
-			public void run() {
-				coreFacade.attachUsbDeviceRequest(h.getVmId());
-			}
-		});
-	}
-
-	@Override
 	public void attachUsbDevice(final VmHandle h, final UsbDevice usb) {
 		exec.execute(new Runnable() {
 			@Override

@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -49,14 +50,10 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.CubeInitialDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialogListener;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
-import ch.admin.vbs.cube.client.wm.ui.dialog.UsbChooserDialog;
-import ch.admin.vbs.cube.client.wm.ui.tabs.NavigationBar;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * This class is responsible to handle request for UI element (dialog, etc). It
@@ -71,20 +68,16 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private static final int WINDOW_LOCATION_X = 0;
 	private static final int BORDER_SIZE = 5;
 	/** Logger */
+	private static final ArrayList<Window> EMPTY_WINDOW_LIST = new ArrayList<Window>();
 	private static final Logger LOG = LoggerFactory.getLogger(WindowManager.class);
+	private static final String VIRTUALMACHINE_WINDOWFMT = "^%s - .*Oracle VM VirtualBox.*$";
+	private Pattern windowPatternVirtualMachine = Pattern.compile(String.format(VIRTUALMACHINE_WINDOWFMT, "(.*)"));
 	private Object lock = new Object();
 	private CubeWizard dialog;
 	private HashMap<Long, WindowCachedHandle> managedWindow = new HashMap<Long, WindowCachedHandle>();
 	private HashMap<String, VmHandle> cachedVmList = new HashMap<String, VmHandle>();
-	private HashMap<JFrame, Window> cachedWindows = new HashMap<JFrame, Window>();
 	private HashMap<String, Window> borderedWindows = new HashMap<String, Window>();
-	private Pattern windowPatternVirtualMachine = Pattern.compile("^(.*) - .*Oracle VM VirtualBox.*$");
-	private Pattern windowPatternNavigationBar = Pattern.compile("^" + NavigationBar.FRAME_TITLEPREFIX + "(.*+)$");
-	private HashMap<String, VmHandle> visibleWindows = new HashMap<String, VmHandle>();
-	private NavigationBar[] navbarFrames;
-	private JFrame[] parentFrames;
-	// private OsdFrameManager osdMgmt;
-	//
+	private VisibleWindows visibleWindows = new VisibleWindows();
 	private IXWindowManager xwm;
 	private IVmMonitor vmMon;
 	private ICubeActionListener cubeActionListener;
@@ -94,18 +87,23 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	public WindowManager() {
 	}
 
+	/**
+	 * Close current dialog (via Swing-Thread).
+	 */
 	private void closeCurrentDialog() {
 		if (dialog != null) {
+			// copy reference on current opened dialog
 			final CubeWizard tdial = dialog;
+			// use SwingUtilities to perform this action
+			// from swing thread.
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					LOG.debug("exec  [close/dispose] [{}]", tdial);
+					LOG.trace("close dialog [" + tdial.getClass() + "]");
 					tdial.setVisible(false);
 					tdial.dispose();
 				}
 			});
-			LOG.debug("close dialog [" + dialog + "]");
 			dialog = null;
 		}
 	}
@@ -115,56 +113,62 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		closeCurrentDialog();
 	}
 
+	/**
+	 * Hide navigation bar and VMs. Make the screen clean (only showing
+	 * background). Typically before displaying a dialog.
+	 */
 	private void hideNavigationBarAndVms() {
-		ArrayList<Window> show = new ArrayList<Window>();
+		// build a list of x-window we want to hide and show
 		ArrayList<Window> hide = new ArrayList<Window>();
-		// add all VMs window in hide list
+		// add all bordered windows (one per screen) into 'hide' list.
 		synchronized (lock) {
 			for (Entry<String, Window> e : borderedWindows.entrySet()) {
 				hide.add(e.getValue());
 			}
 		}
-		// add NavigationBar to hide list
+		// add also NavigationBar frames to 'hide' list
 		for (CubeScreen n : cubeUI.getScreens()) {
-			hide.add(getCachedWindow(n.getNavigationBar()));
+			LOG.trace("Hide navigation bar [{}]",n.getNavigationBar().getTitle());
+			hide.add(getXWindow(n.getNavigationBar()));
 		}
 		// hide windows
 		synchronized (xwm) {
-			xwm.showOnlyTheseWindow(hide, show);
+			xwm.showOnlyTheseWindow(hide, EMPTY_WINDOW_LIST);
 		}
-		// hide OSD
-		// osdMgmt.hideAll();
 	}
 
-	private void showNavigationBarAndVms() {
+	/** show navigation frames and bordered windows (containing VMs window). */
+	private void showNavigationBarAndVms(boolean raiseNavbar) {
 		synchronized (lock) {
-			// index visible window's IDs
-			HashSet<String> visibleIds = new HashSet<String>();
-			synchronized (visibleWindows) {
-				LOG.debug("visible windows [{}]", visibleWindows.size());
-				for (VmHandle vh : visibleWindows.values()) {
-					visibleIds.add(vh.getVmId());
-					LOG.debug("visible windows [{}]", vh.getVmId());
-				}
+			if (dialog != null) {
+				LOG.trace("Skip showNavigationBarAndVms because a dialog is opened.");
+				return;
 			}
+			// index visible window's IDs
+			Set<String> visibleIds = visibleWindows.getVisibleVmIds();
 			// show VM window
 			ArrayList<Window> show = new ArrayList<Window>();
 			ArrayList<Window> hide = new ArrayList<Window>();
 			synchronized (lock) {
 				for (Entry<String, Window> e : borderedWindows.entrySet()) {
 					if (visibleIds.contains(e.getKey())) {
+						LOG.trace("Show bordered windows of vm [{}] since it is in visible windows set", e.getKey());
 						show.add(e.getValue());
 					} else {
+						LOG.trace("Hide bordered windows of vm [{}] since it is NOT in visible windows set", e.getKey());
 						hide.add(e.getValue());
 					}
 				}
 			}
-			// add NavigationBar to show list
-			for (CubeScreen n : cubeUI.getScreens()) {
-				if (n.isActive()) {
-					show.add(getCachedWindow(n.getNavigationBar()));
-				} else {
-					hide.add(getCachedWindow(n.getNavigationBar()));
+			if (raiseNavbar) {
+				// add NavigationBar to show list
+				for (CubeScreen n : cubeUI.getScreens()) {
+					if (n.isActive()) {
+						LOG.trace("show NavigationBar");
+						show.add(getXWindow(n.getNavigationBar()));
+					} else {
+						hide.add(getXWindow(n.getNavigationBar()));
+					}
 				}
 			}
 			// show windows
@@ -184,95 +188,87 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	@Override
 	public void windowUpdated(Window w) {
-		WindowCachedHandle h = null;
+		/**
+		 * windowUpdated is called whenever a window attribute is updated. In
+		 * our case, we use it when VirtualBox set the window's name of a VM: by
+		 * parsing it, we are able to identify to which VM does this window
+		 * belongs to.
+		 */
 		synchronized (managedWindow) {
-			h = managedWindow.get(w.longValue());
-			// lazy initialized
-			if (h == null) {
-				h = new WindowCachedHandle();
+			// check if window is in cache
+			WindowCachedHandle cached = managedWindow.get(w.longValue());
+			// if not already caches, check if its name match a VM window's name
+			if (cached == null) {
+				// fetch window's name
+				String windowName = null;
 				synchronized (xwm) {
-					h.name = xwm.getWindowName(w);
+					windowName = xwm.getWindowName(w);
 				}
-				if (h.name == null) {
-					h.name = "";
-				}
-				h.type = null;
-				managedWindow.put(w.longValue(), h);
-			}
-		}
-		// update type
-		if (h.type == null) {
-			// create handle
-			h = new WindowCachedHandle();
-			synchronized (xwm) {
-				h.name = xwm.getWindowName(w);
-			}
-			if (h.name == null) {
-				h.name = "";
-			}
-			// determine window type
-			Matcher m = windowPatternVirtualMachine.matcher(h.name);
-			if (m.matches()) {
-				// this is a VirtualBox Window
-				h.vmId = m.group(1);
-				h.type = WindowType.VirtualMachine;
-				LOG.debug("Window [VirtualBox] vmId[{}] newly managed", h.vmId);
-				// reparent to bordered window (bordered windows are created in
-				// showVms method)
-				Window win = borderedWindows.get(h.vmId);
-				if (win == null) {
-					LOG.error("Failed to find corresponding bordered window");
-				} else {
-					h.borderWindow = win;
-					synchronized (xwm) {
-						xwm.findAndBindWindowByNamePattern(h.vmId, h.name, h.borderWindow);
+				if (windowName != null) {
+					// parse window's name
+					Matcher appMx = windowPatternVirtualMachine.matcher(windowName);
+					if (appMx.matches()) {
+						// This is a VirtualBox Window. create a cache entry
+						cached = new WindowCachedHandle(w, appMx.group(1));
+						managedWindow.put(w.longValue(), cached);
+						/*
+						 * re-parent to bordered window (bordered windows are
+						 * created in showVms method)
+						 */
+						cached.borderWindow = borderedWindows.get(cached.vmId);
+						if (cached.borderWindow == null) {
+							LOG.debug("A new virtual machine window [{}] has been found, but no corresponding bordered window found. Hide window in root window.",w);
+							synchronized (xwm) {
+								xwm.hideAndReparentToRoot(w);
+							}
+						} else {
+							LOG.debug("A new virtual machine window [{}]  has been found, and matching bordered window has been found, reparent them.",w);
+							// re-parent in the corresponding bordered window
+							synchronized (xwm) {
+								xwm.reparentWindow(cached.borderWindow, w);
+							}
+						}
+					} else {
+						LOG.debug("A new window [{}] has been found, but since it is not a virtual machine window, it  will not be managed [{}]", w, windowName);
 					}
+				} else {
+					LOG.trace("A new window [{}] has been found, but since it has not title it will not be managed [{}].", w, windowName);
 				}
+			} else {
+				String windowName = null;
+				synchronized (xwm) {
+					windowName = xwm.getWindowName(w);
+				}
+				// window already managed & type determined
+				LOG.trace("Window [" + w + "]["+windowName+"] already managed [{}/{}]", cached.window, cached.vmId);
+				// 
+				
 			}
-			m = windowPatternNavigationBar.matcher(h.name);
-			if (h.type == null && m.matches()) {
-				// this is a NavigationBar Window
-				h.displayId = m.group(1);
-				h.type = WindowType.NavigationBar;
-				LOG.debug("Window [NavigationBar] displayId[{}] newly managed", h.displayId);
-			}
-			if (h.type == null && h.name.length() > 0) {
-				// Other
-				h.type = WindowType.OTHER;
-				LOG.debug("Window [Other/" + h.name + "] newly managed", h.displayId);
-			}
-		} else {
-			// window already managed & type determined
-			LOG.debug("Window [{}/{}] already managed", h.type, h.name);
 		}
 	}
 
 	@Override
 	public void windowDestroyed(Window window) {
 		synchronized (managedWindow) {
-			WindowCachedHandle h = managedWindow.get(window.longValue());
+			WindowCachedHandle h = managedWindow.remove(window.longValue());
 			if (h == null) {
-				// LOG.debug("Unmanaged Window destroyed");
+				LOG.debug("Unmanaged Window destroyed [{}]", window);
 			} else {
-				// LOG.debug("Managed Window [{}/{}] destroyed", h.type,
-				// h.name);
-				managedWindow.remove(window.longValue());
+				LOG.debug("Managed Window [{}/{}] destroyed", h.window, h.vmId);
 			}
 		}
 	}
 
-	private enum WindowType {
-		VirtualMachine, NavigationBar, OTHER
-	}
-
+	/** Cache entry */
 	private class WindowCachedHandle {
+		public final Window window;
 		public Window borderWindow;
-		private WindowType type;
-		private String name;
-		// in case of VirtualMachine
-		private String vmId;
-		// in case of NavigationBar
-		private String displayId;
+		private final String vmId;
+
+		public WindowCachedHandle(Window window, String vmId) {
+			this.window = window;
+			this.vmId = vmId;
+		}
 	}
 
 	/**
@@ -291,7 +287,9 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				- WINDOW_LOCATION_Y);
 		Color borderColor = BorderColorProvider.getBackgroundColor(vmMon.getVmClassification(h));
 		synchronized (xwm) {
-			return xwm.createBorderWindow(xwm.findWindowByNamePattern(cubeFrame.getTitle()), BORDER_SIZE, borderColor, BACKGROUND_COLOR, bounds);
+			Window win = xwm.createBorderWindow(xwm.findWindowByTitle(cubeFrame.getTitle()), BORDER_SIZE, borderColor, BACKGROUND_COLOR, bounds);
+			LOG.debug("createNewBorderWindow for jframe [{}] ==> window[{}]", cubeFrame.getTitle(), win);
+			return win;
 		}
 	}
 
@@ -311,106 +309,56 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		synchronized (lock) {
 			borderWindow = borderedWindows.get(h.getVmId());
 		}
+		// reset visible window on the 'old' screen if it was showing our VM.
+		visibleWindows.set(h.getMonitorId(), h);
 		// reparent bordered windows
 		CubeScreen scr = cubeUI.getScreen(h.getMonitorId());
 		JFrame frame = scr.getBackgroundFrame();
 		Rectangle bounds = new Rectangle(WINDOW_LOCATION_X, WINDOW_LOCATION_Y, frame.getBounds().width - WINDOW_LOCATION_X - 2 * BORDER_SIZE,
 				frame.getBounds().height - WINDOW_LOCATION_Y - 2 * BORDER_SIZE);
-		LOG.debug("Move target window [{}][{}]", getCachedWindow(frame), borderWindow);
+		LOG.trace("Move target window [{}][{}]", getXWindow(frame), borderWindow);
 		synchronized (xwm) {
-			xwm.reparentWindowAndResize(getCachedWindow(frame), borderWindow, bounds);
-		}// set in foreground
+			xwm.reparentWindowAndResize(getXWindow(frame), borderWindow, bounds);
+		}
+		// set in foreground
 		scr.getNavigationBar().selectTab(h);
 	}
 
 	/**
-	 * Since some window (navigation,parents) never change. It make sense to
-	 * cache them instead of looking them up each time (using
-	 * findWindowByNamePattern()) .
+	 * Get corresponding XWindow for a given JFrame object (java). Use frame
+	 * name in order to find the right XWindow.
 	 */
-	private final Window getCachedWindow(JFrame parentFrame) {
-		if (parentFrame == null) {
+	private final Window getXWindow(JFrame jframe) {
+		if (jframe == null) {
 			throw new NullPointerException("Argument parentFrame must be none-null");
 		}
-		synchronized (cachedWindows) {
-			Window w = cachedWindows.get(parentFrame);
+		Window w;
+		synchronized (xwm) {
+			w = xwm.findWindowByTitle(jframe.getTitle());
 			if (w == null) {
-				synchronized (xwm) {
-					w = xwm.findWindowByNamePattern(parentFrame.getTitle());
-					if (w == null) {
-						LOG.error("Not XWindow found for window [{}]", parentFrame.getTitle());
-					}
-				}
-				cachedWindows.put(parentFrame, w);
+				LOG.error("Not XWindow found for window [{}]", jframe.getTitle());
 			}
-			return w;
 		}
+		return w;
 	}
 
 	@Override
-	public void showVmWindow(VmHandle vm) {
-		// update visibleWindows map
-		HashSet<String> visibleIds = new HashSet<String>();
-		synchronized (visibleWindows) {
-			if (vm != null) {
-				visibleWindows.put(vm.getMonitorId(), vm);
-			}
-			// update osds
-			// osdMgmt.update(visibleWindows.values());
-			// do not show window if a dialog is displayed
-			if (dialog != null)
-				return;
-			// index visible window's IDs
-			for (VmHandle vh : visibleWindows.values()) {
-				visibleIds.add(vh.getVmId());
-			}
-		}
-		// show VM window
-		ArrayList<Window> show = new ArrayList<Window>();
-		ArrayList<Window> hide = new ArrayList<Window>();
-		synchronized (lock) {
-			for (Entry<String, Window> e : borderedWindows.entrySet()) {
-				if (visibleIds.contains(e.getKey())) {
-					show.add(e.getValue());
-				} else {
-					hide.add(e.getValue());
-				}
-			}
-		}
-		synchronized (xwm) {
-			xwm.showOnlyTheseWindow(hide, show);
-		}// show OSD
-			// osdMgmt.showOsdFrames();
+	public void showVmWindow(VmHandle h) {
+		/*
+		 * Called by NavigationTabs -> stateChanged
+		 */
+		visibleWindows.set(h.getMonitorId(), h);
+		/*
+		 * do not show navigation bars or it will hide pop-up menu.
+		 */
+		showNavigationBarAndVms(false);
 	}
 
 	@Override
 	public void hideAllVmWindows(String monitorId) {
-		LOG.debug("Hide all VMs windows");
-		// update visibleWindows map
-		HashSet<String> visibleIds = new HashSet<String>();
-		synchronized (visibleWindows) {
-			visibleWindows.remove(monitorId);
-			// do not show/hide window if a dialog is displayed
-			if (dialog != null)
-				return;
-			// index visible window's IDs
-			for (VmHandle vh : visibleWindows.values()) {
-				visibleIds.add(vh.getVmId());
-			}
-		}
-		// show VM window
-		ArrayList<Window> show = new ArrayList<Window>();
-		ArrayList<Window> hide = new ArrayList<Window>();
-		synchronized (lock) {
-			for (Entry<String, Window> e : borderedWindows.entrySet()) {
-				if (visibleIds.contains(e.getKey())) {
-					show.add(e.getValue());
-				} else {
-					hide.add(e.getValue());
-				}
-			}
-		}
-		xwm.showOnlyTheseWindow(hide, show);
+		LOG.trace("hideAllVmWindows({})",monitorId);
+		visibleWindows.set(monitorId, null);
+		showNavigationBarAndVms(false);
 	}
 
 	// ###############################################
@@ -419,45 +367,93 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void allVmsChanged() {
 		/**
-		 * VM list has changed. We have to create bordered windows for new VMs
-		 * and dispose bordered windows for VM that are no more present in the
-		 * list.
+		 * VM list has changed. We have must ensure that all VM already has its
+		 * bordered window ready (with the right border color). It implies
+		 * creating bordered windows and eventually re-parent an existing
+		 * VirtualBox window to it and removing not more used bordered windows.
 		 */
 		synchronized (lock) {
-			// refresh cached list of VM
-			HashMap<String, VmHandle> nCache = new HashMap<String, VmHandle>();
+			// index VmHanles by VM's Ids
+			HashMap<String, VmHandle> handleIndex = new HashMap<String, VmHandle>();
 			for (VmHandle h : client.listVms()) {
-				nCache.put(h.getVmId(), h);
+				handleIndex.put(h.getVmId(), h);
 			}
-			// sync border windows: for each VM we will ensure that a X window
-			// is present. This X Window have a colored border that match the VM
-			// classification. Later, the VM window will be re-parented to it.
-			synchronized (lock) {
-				Collection<VmHandle> vmsToAdd = findVmsToAdd(cachedVmList.values(), nCache.values());
-				Collection<VmHandle> vmsToRemove = findVmToRemove(cachedVmList.values(), nCache.values());
-				// remove old
-				for (VmHandle h : vmsToRemove) {
-					Window w = borderedWindows.remove(h.getVmId());
-					synchronized (xwm) {
-						xwm.removeWindow(w);
+			Collection<VmHandle> vmsToAdd = findVmsToAdd(cachedVmList.values(), handleIndex.values());
+			Collection<VmHandle> vmsToRemove = findVmToRemove(cachedVmList.values(), handleIndex.values());
+			// remove unused bordered window
+			for (VmHandle h : vmsToRemove) {
+				LOG.trace("Remove bordered window for VM [" + h.getVmId() + "] on monitor [" + h.getMonitorId() + "]");
+				// remove from local list
+				Window borderedWindow = borderedWindows.remove(h.getVmId());
+				WindowCachedHandle mngWin = findManagedWindowByBorderedWindow(borderedWindow);
+				synchronized (xwm) {
+					/*
+					 * Unmap and re-parent VirtualBox child window if present.
+					 * If we do not do it, VirtualBox will abort the virtual
+					 * machine a soon as we deleted its parent window.
+					 */
+					if (mngWin != null) {
+						LOG.debug("Hide un-used VM window [{}] [{}]", mngWin.vmId, mngWin.window);
+						xwm.hideAndReparentToRoot(mngWin.window);
+						mngWin.borderWindow = null;
+					}
+					// remove bordered window from XServer
+					xwm.removeWindow(borderedWindow);
+				}
+			}
+			// setup bordered window for each VM
+			for (VmHandle h : vmsToAdd) {
+				LOG.debug("Create bordered window for VM [" + h.getVmId() + "] on monitor [" + h.getMonitorId() + "]");
+				Window brdWin = createNewBorderWindow(getDefaultParentFrame(), h);
+				borderedWindows.put(h.getVmId(), brdWin);
+				// look if a VirtualBox window is already managed for this
+				// VM and re-parent its virtual machine window.
+				synchronized (managedWindow) {
+					for (WindowCachedHandle c : managedWindow.values()) {
+						if (c.vmId.equals(h.getVmId())) {
+							if (c.borderWindow != null) {
+								/**
+								 * This should never append. It would implies
+								 * that another bordered window already exists
+								 * in the system for this managed window.
+								 */
+								LOG.error("CRITICAL: BorderedWindow Conflitct. Contact dev to debug this issue asap.");
+								return;
+							}
+							c.borderWindow = brdWin;
+							LOG.debug("Managed Window found for VM [{}]. Re-parent virtual machine window to this bordered window", h.getVmId());
+							synchronized (xwm) {
+								xwm.reparentWindow(c.borderWindow, c.window);
+							}
+							break;
+						}
 					}
 				}
-				// add new
-				for (VmHandle h : vmsToAdd) {
-					Window w = createNewBorderWindow(getDefaultParentFrame(), h);
-					borderedWindows.put(h.getVmId(), w);
+			}
+			cachedVmList = handleIndex;
+		}
+	}
+
+	/** Find WindowCachedHandle object that reference this bordered window. */
+	private WindowCachedHandle findManagedWindowByBorderedWindow(Window borderedWindow) {
+		synchronized (managedWindow) {
+			for (WindowCachedHandle c : managedWindow.values()) {
+				if (c.borderWindow != null && borderedWindow.longValue() == c.borderWindow.longValue()) {
+					return c;
 				}
 			}
-			cachedVmList = nCache;
 		}
-	};
+		return null;
+	}
 
+	/** Diff both list and return VM add in the new list. */
 	private final Collection<VmHandle> findVmsToAdd(Collection<VmHandle> oldList, Collection<VmHandle> newList) {
 		ArrayList<VmHandle> result = new ArrayList<VmHandle>(newList);
 		result.removeAll(oldList);
 		return result;
 	}
 
+	/** Diff both list and return VM removed in the new list. */
 	private final Collection<VmHandle> findVmToRemove(Collection<VmHandle> oldList, Collection<VmHandle> newList) {
 		ArrayList<VmHandle> result = new ArrayList<VmHandle>(oldList);
 		result.removeAll(newList);
@@ -474,8 +470,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	// ###############################################
 	@Override
 	public void showMessageDialog(String message, int options) {
+		LOG.debug("showMessageDialog()");
 		synchronized (lock) {
-			LOG.debug("enter [showMessageDialog] [{}][{}]", message, options);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// dialog is non-blocking
@@ -490,7 +486,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				dialog = msgdialog;
 				swingOpen(msgdialog);
 			}
-			LOG.debug("exit  [showMessageDialog] [{}]", message);
 		}
 	}
 
@@ -498,7 +493,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				LOG.debug("exec  [displayWizard] [{}]", msgdialog);
+				LOG.trace("exec  [displayWizard] [{}]", msgdialog);
 				msgdialog.displayWizard();
 			}
 		});
@@ -506,8 +501,9 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	@Override
 	public void showPinDialog(final String additionalMessage, final String requestId) {
+		LOG.debug("showPinDialog()");
 		synchronized (lock) {
-			LOG.debug("enter [showPinDialog] [{}]", additionalMessage);
+			LOG.trace("enter [showPinDialog] [{}]", additionalMessage);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// create dialog (non-blocking)
@@ -524,21 +520,22 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			SwingUtilities.invokeLater(new Runnable() {
 				@Override
 				public void run() {
-					LOG.debug("exec  [displayWizard] [{}]", passwordDialog);
+					LOG.debug("exec  [displayWizard] [{}]", passwordDialog.getClass());
 					passwordDialog.displayWizard(additionalMessage);
 				}
 			});
-			LOG.debug("exit  [showPinDialog] [{}]", additionalMessage);
+			LOG.trace("exit  [showPinDialog] [{}]", additionalMessage);
 		}
 	}
 
 	@Override
 	public void showTransferDialog(VmHandle h, RelativeFile file) {
-		LOG.info("[showTransferDialog()] not implemented");
+		LOG.warn("[showTransferDialog()] not implemented");
 	}
 
 	@Override
 	public void showConfirmationDialog(final String messageKey, final String requestId) {
+		LOG.debug("showConfirmationDialog()");
 		synchronized (lock) {
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
@@ -559,28 +556,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 	}
 
-	@Override
-	public void showUsbDeviceDialog(final String messageKey, UsbDeviceEntryList list, final String requestId) {
-		synchronized (lock) {
-			LOG.debug("enter [showVmChooser] [{}]", messageKey);
-			closeCurrentDialog();
-			hideNavigationBarAndVms();
-			// create dialog
-			final UsbChooserDialog dial = new UsbChooserDialog(getDefaultParentFrame(), messageKey, vmMon, list);
-			// set as active dialog
-			dialog = dial;
-			// display dialog
-			SwingUtilities.invokeLater(new Runnable() {
-				@Override
-				public void run() {
-					LOG.debug("exec  [showUsbDeviceDialog] [{}]", messageKey);
-					dial.displayWizard();
-					// return result
-					cubeActionListener.enteredUsbDevice(dial.getSelection(), requestId);
-				}
-			});
-		}
-	}
+	
 
 	private JFrame getDefaultParentFrame() {
 		return cubeUI.getDefaultScreen().getBackgroundFrame();
@@ -588,24 +564,27 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	@Override
 	public void showVms() {
+		/*
+		 * Called by ClientFacade in order to display workspace when a dialog has been closed.
+		 */
+		LOG.trace("ShowVMs()");
 		synchronized (lock) {
 			// close all dialogs
 			closeCurrentDialog();
 			// ensure that navigation bar are visible
-			showNavigationBarAndVms();
-			//
-			// osdMgmt.showOsdFrames();
+			showNavigationBarAndVms(true);
 		}
 	}
 
 	@Override
 	public void refresh() {
+		LOG.trace("refresh()");
 		synchronized (lock) {
 			if (dialog == null) {
-				LOG.debug("Refresh WM: show VMs");
-				showNavigationBarAndVms();
+				LOG.trace("Refresh WM: show VMs + navbar");
+				showNavigationBarAndVms(true);
 			} else {
-				LOG.debug("Refresh WM: show Dialog");
+				LOG.trace("Refresh WM: show Dialog");
 				ArrayList<Window> show = new ArrayList<Window>();
 				ArrayList<Window> hide = new ArrayList<Window>();
 				// hide VMs' windows
@@ -616,11 +595,11 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				}
 				// hide NavigationBar
 				for (CubeScreen n : cubeUI.getScreens()) {
-					hide.add(getCachedWindow(n.getNavigationBar()));
+					hide.add(getXWindow(n.getNavigationBar()));
 				}
 				// show dialog
 				synchronized (xwm) {
-					Window w = xwm.findWindowByNamePattern(CubeWizard.WIZARD_WINDOW_TITLE);
+					Window w = xwm.findWindowByTitle(CubeWizard.WIZARD_WINDOW_TITLE);
 					if (w != null) {
 						show.add(w);
 					}
@@ -633,35 +612,55 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 	}
 
-	// ###############################################
-	// Getter/setter methods
-	// ###############################################
-	// public void setParentFrame(JFrame[] frames) {
-	// this.parentFrames = frames;
-	// // init OSD frames
-	// if (osdMgmt == null) {
-	// OsdFrame[] osds = new OsdFrame[frames.length];
-	// for (int k = 0; k < frames.length; k++) {
-	// osds[k] = new OsdFrame(frames[k]);
-	// }
-	// osdMgmt = new OsdFrameManager(osds);
-	// osdMgmt.setVmMon(vmMon);
-	// } else {
-	// LOG.error("Could not re-initilize OSD manager.");
-	// }
-	// }
-	//
-	// private JFrame getDefaultParentFrame() {
-	// return parentFrames[0];
-	// }
-	//
-	// public JFrame[] getParentFrame() {
-	// return parentFrames;
-	// }
-	//
-	// public void setNavigationFrames(NavigationBar[] navbarFrames) {
-	// this.navbarFrames = navbarFrames;
-	// }
+	private class VisibleWindows {
+		private HashMap<String, VmHandle> layout = new HashMap<String, VmHandle>();
+		private HashMap<String, String> ilayout = new HashMap<String, String>();
+
+		private void set(String monitorId, VmHandle h) {
+			synchronized (layout) {
+				if (h == null) {
+					// if VmHanlde is null.. see if a VM was on this monitor
+					h = layout.remove(monitorId);
+					if (h != null) {
+						// remove old VM
+						ilayout.remove(h.getVmId());
+					}
+				} else {
+					// eventually remove handler from another monitor
+					String oldMon = ilayout.remove(h.getVmId());
+					if (oldMon != null) {
+						layout.remove(oldMon);
+					}
+					// put handler in new monitor
+					layout.put(monitorId, h);
+					ilayout.put(h.getVmId(), monitorId);
+				}
+				if (LOG.isTraceEnabled()) {
+					LOG.trace("VisibleWindows.set()");
+					for (Entry<String, VmHandle> e : layout.entrySet()) {
+						LOG.trace("- Visible window: [{}][{}]", e.getKey(), e.getValue());
+					}
+				}
+			}
+		}
+
+		private Set<String> getVisibleVmIds() {
+			HashSet<String> ids = new HashSet<String>();
+			synchronized (layout) {
+				for (VmHandle h : layout.values()) {
+					ids.add(h.getVmId());
+				}
+			}
+			if (LOG.isTraceEnabled()) {
+				LOG.trace("VisibleWindows.getVisibleVmIds()");
+				for (Entry<String, VmHandle> e : layout.entrySet()) {
+					LOG.trace("- Visible window: [{}][{}]", e.getKey(), e.getValue());
+				}
+			}
+			return ids;
+		}
+	}
+
 	// ###############################################
 	// Injections
 	// ###############################################

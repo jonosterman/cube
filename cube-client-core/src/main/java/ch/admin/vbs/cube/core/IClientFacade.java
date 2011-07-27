@@ -19,7 +19,6 @@ package ch.admin.vbs.cube.core;
 import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -100,6 +99,4 @@ public interface IClientFacade {
 	 * @return 1 = confirmed, 0 = cancel
 	 */
 	void askConfirmation(String messageKey, String requestId);
-
-	void showUsbDeviceChooser(UsbDeviceEntryList list, String requestId);
 }

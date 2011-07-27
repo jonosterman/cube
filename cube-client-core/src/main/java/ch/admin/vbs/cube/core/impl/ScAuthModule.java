@@ -53,7 +53,7 @@ public class ScAuthModule implements IAuthModule {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(ScAuthModule.class);
 	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
-	public static final long PKCS11_TIMEOUT = 10000;
+	public static final long PKCS11_TIMEOUT = 15000;
 	private ArrayList<IAuthModuleListener> listeners = new ArrayList<IAuthModuleListener>(2);
 	private Executor exec = Executors.newCachedThreadPool();
 	private Object lock = new Object();

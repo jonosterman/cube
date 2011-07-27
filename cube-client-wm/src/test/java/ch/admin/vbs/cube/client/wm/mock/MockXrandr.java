@@ -51,8 +51,8 @@ public class MockXrandr implements IXrandr {
 		res.add(new XRResolution(320, 200, freqs));
 		res.add(new XRResolution(640, 480, freqs));
 		res.add(new XRResolution(800, 600, freqs));
-		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(0), "50.0"));
-		screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(1), "50.0"));
+		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(1), "50.0"));
+		screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(2), "50.0"));
 		list.addElement(screens.get(0));
 		list.addElement(screens.get(1));
 	}
@@ -61,7 +61,6 @@ public class MockXrandr implements IXrandr {
 	@Override
 	public void reloadConfiguration() {
 		// TODO Auto-generated method stub
-		
 	}
 
 	@SuppressWarnings("unchecked")

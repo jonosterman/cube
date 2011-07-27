@@ -18,6 +18,7 @@ package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -44,8 +45,6 @@ import com.sun.jna.ptr.PointerByReference;
 public final class XWindowManager implements IXWindowManager {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(XWindowManager.class);
-	private static final int WAITING_TIME = 100;
-	private static final int FINDING_WINDOW_TIMEOUT = 2000;
 	private static final int CHECKING_INTERVAL_FOR_NEW_EVENTS = 10;
 	private static final int OS_32_BIT = 32;
 	private static final int OS_64_BIT = 64;
@@ -73,10 +72,12 @@ public final class XWindowManager implements IXWindowManager {
 	public void start() {
 		detectOperationSystemArchitecture();
 		detectDefaultDisplay();
+		// get Xlib reference
 		x11 = X11.INSTANCE;
+		// make it thread safe (..somewhat)
 		x11.XInitThreads();
 		eventDisplay = x11.XOpenDisplay(displayName);
-		// Event processor
+		// Start event processor thread
 		eventThread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -103,6 +104,10 @@ public final class XWindowManager implements IXWindowManager {
 		eventThread.start();
 		//
 		registerRootWindowEvents();
+		// check all existing window once at start
+		// for (Window w : listWindows()) {
+		// cb.windowUpdated(w);
+		// }
 	}
 
 	/**
@@ -119,109 +124,21 @@ public final class XWindowManager implements IXWindowManager {
 		return instance;
 	}
 
-	/**
-	 * Detectes and sets the current operation system architecture. Default is
-	 * 32Bit.
-	 */
-	private void detectOperationSystemArchitecture() {
-		String osBits = System.getProperty("os.arch");
-		LOG.debug("Detected architecture [{}]", osBits);
-		if ("amd64".equals(osBits)) {
-			osArchitectur = OS_64_BIT;
-		} else {
-			osArchitectur = OS_32_BIT;
+	@Override
+	public void reparentWindow(Window parentWindow, Window insideWindow) {
+		synchronized (XWindowManager.this) {
+			// register window for events
+			registerWindowForEvents(insideWindow);
+			// re-parent the x window and show this window alone
+			reparentWindow(parentWindow, insideWindow, 0, 0, true);
 		}
 	}
 
-	/**
-	 * Detectes and sets the display name and the screen index. Default is
-	 * ":0.0" for display name and 0 for the screen index.
-	 */
-	private void detectDefaultDisplay() {
-		// get display name from system environment
-		displayName = System.getenv("DISPLAY");
-		if (LOG.isInfoEnabled()) {
-			LOG.info("Display name is '" + displayName + "'.");
-		}
-		if (displayName != null) {
-			// displayName is something like this ":0.0"
-			int dotIndex = displayName.indexOf(".");
-			if (dotIndex < 0) {
-				screenIndex = 0;
-			} else {
-				screenIndex = Integer.parseInt(displayName.substring(dotIndex + 1));
-			}
-		} else {
-			displayName = ":0.0";
-			screenIndex = 0;
-		}
-		if (LOG.isInfoEnabled()) {
-			LOG.info("Display name is '" + displayName + "' and screen index is '" + screenIndex + "'.");
-		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * ch.admin.vbs.cube.client.wm.x.XXWindowManager#findAndBindWindowByNamePattern
-	 * (java.lang.String, java.lang.String,
-	 * ch.admin.vbs.cube.client.wm.x.X11.Window)
-	 */
-	public void findAndBindWindowByNamePattern(final String vmId, final String namePattern, final Window bindingWindow) {
-		// Starts a thread that will look for a windows with a title that match
-		// the given one (actually a VirtualBox Window with a specific UUID).
-		// Loop until this window has been found or FINDING_WINDOW_TIMEOUT has
-		// been reached.
-		Thread thread = new Thread(new Runnable() {
-			@Override
-			public void run() {
-				int timeout = 0;
-				Window insideWindow = null; // will point on the found window
-				while (insideWindow == null && timeout < FINDING_WINDOW_TIMEOUT) {
-					// search window
-					insideWindow = findWindowByNamePattern(namePattern);
-					// if no matching window has been found: wait and try again.
-					if (insideWindow == null) {
-						try {
-							Thread.sleep(WAITING_TIME);
-							timeout += WAITING_TIME;
-							if (LOG.isDebugEnabled()) {
-								LOG.debug("Looking for window {" + namePattern + "} ");
-							}
-						} catch (InterruptedException e) {
-							break;
-						}
-					}
-				}
-				if (insideWindow != null) {
-					// It founds a matching window
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Window with namePattern='" + namePattern + "' found");
-					}
-					// register window for events
-					registerWindowForEvents(insideWindow);
-					// re-parent the x window and show this window alone
-					reparentWindow(bindingWindow, insideWindow, 0, 0);
-				} else {
-					if (LOG.isDebugEnabled()) {
-						LOG.debug("Window with namePattern='" + namePattern + "' not found");
-					}
-				}
-			}
-		});
-		thread.setDaemon(true);
-		thread.start();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * ch.admin.vbs.cube.client.wm.x.XXWindowManager#findWindowByNamePattern
-	 * (java.lang.String)
-	 */
-	public synchronized Window findWindowByNamePattern(String name) {
+	@Override
+	public synchronized Window findWindowByTitle(String name) {
+		/**
+		 * Look in the root window if there is a window with this name
+		 */
 		Window foundWindow = null;
 		Display display = x11.XOpenDisplay(displayName);
 		// get the root window
@@ -238,7 +155,7 @@ public final class XWindowManager implements IXWindowManager {
 			// filter windows with attributes which our windows do not have
 			if (!attributes.override_redirect && windowTitle.value != null) {
 				// LOG.debug("Scan windows [{}] [{}]",windowTitle.value,name);
-				if (windowTitle.value.matches(name)) {
+				if (name.equals(windowTitle.value)) {
 					foundWindow = window;
 					break;
 				}
@@ -246,6 +163,9 @@ public final class XWindowManager implements IXWindowManager {
 		}
 		// close display
 		x11.XCloseDisplay(display);
+		if (foundWindow == null) {
+			LOG.error("No XWindow found that match name [{}]", name);
+		}
 		return foundWindow;
 	}
 
@@ -255,57 +175,6 @@ public final class XWindowManager implements IXWindowManager {
 		Window rootWindow = x11.XRootWindow(display, screenIndex);
 		x11.XCloseDisplay(display);
 		return rootWindow;
-	}
-
-	/**
-	 * Returns all window IDs to the given parent window.
-	 * 
-	 * @param display
-	 *            the display for better performance
-	 * @param parentWindow
-	 *            the parent window for all children
-	 * @return a list of long which are window IDs
-	 */
-	private long[] getChildrenList(Display display, Window parentWindow) {
-		long[] childrenWindowIdArray = new long[] {};
-		// prepare reference values
-		WindowByReference rootWindowRef = new WindowByReference();
-		WindowByReference parentWindowRef = new WindowByReference();
-		PointerByReference childrenPtr = new PointerByReference();
-		IntByReference childrenCount = new IntByReference();
-		// find all children to the rootWindow
-		if (x11.XQueryTree(display, parentWindow, rootWindowRef, parentWindowRef, childrenPtr, childrenCount) == 0) {
-			LOG.error("BadWindow - A value for a Window argument does not name a defined Window!");
-			// close display
-			x11.XCloseDisplay(display);
-			return childrenWindowIdArray;
-		}
-		// get all window id's from the pointer and the count
-		if (childrenCount.getValue() > 0) {
-			if (osArchitectur == OS_32_BIT) {
-				int[] intChildrenWindowIdArray = childrenPtr.getValue().getIntArray(0, childrenCount.getValue());
-				childrenWindowIdArray = new long[intChildrenWindowIdArray.length];
-				int index = 0;
-				for (int windowId : intChildrenWindowIdArray) {
-					childrenWindowIdArray[index] = windowId;
-					++index;
-				}
-			} else if (osArchitectur == OS_64_BIT) {
-				childrenWindowIdArray = childrenPtr.getValue().getLongArray(0, childrenCount.getValue());
-			} else {
-				if (LOG.isInfoEnabled()) {
-					LOG.warn("OS architecture is not supported or could not be mapped! Trying 32 bit os architecture.");
-				}
-				int[] intChildrenWindowIdArray = childrenPtr.getValue().getIntArray(0, childrenCount.getValue());
-				childrenWindowIdArray = new long[intChildrenWindowIdArray.length];
-				int index = 0;
-				for (int windowId : intChildrenWindowIdArray) {
-					childrenWindowIdArray[index] = windowId;
-					++index;
-				}
-			}
-		}
-		return childrenWindowIdArray;
 	}
 
 	/*
@@ -325,6 +194,7 @@ public final class XWindowManager implements IXWindowManager {
 				XWindowAttributes attributes = new XWindowAttributes();
 				x11.XGetWindowAttributes(display, window, attributes);
 				if (attributes.map_state != X11.IsUnmapped) {
+					LOG.error("Unmap window {}", window);
 					x11.XUnmapWindow(display, window);
 				}
 			}
@@ -332,6 +202,7 @@ public final class XWindowManager implements IXWindowManager {
 		if (showWindowList != null) {
 			// maps and sets all show window
 			for (Window window : showWindowList) {
+				LOG.error("Raise window {}", window);
 				x11.XMapWindow(display, window);
 				x11.XMapRaised(display, window);
 			}
@@ -350,16 +221,29 @@ public final class XWindowManager implements IXWindowManager {
 	 * java.awt.Rectangle)
 	 */
 	public Window createBorderWindow(Window parentWindow, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
-		// connection to the x server and set resources permanent, otherwise
-		// window would be destroyed by calling
-		// XCloseDisplay
+		/*
+		 * connection to the x server and set resources permanent, otherwise
+		 * window would be destroyed by calling XCloseDisplay
+		 */
 		Display display = x11.XOpenDisplay(displayName);
 		x11.XSetCloseDownMode(display, X11.RetainPermanent);
-		// Create window which holds the virtual machine window and paints a
-		// border. This border window is a child of
-		// the parent window.
-		Window borderWindow = x11.XCreateSimpleWindow(display, parentWindow, bounds.x, bounds.y, bounds.width - 2 * borderSize, bounds.height - 2 * borderSize,
-				borderSize, borderColor.getRGB(), backgroundColor.getRGB());
+		/*
+		 * Create window which will hold the virtual machine window and paints a
+		 * border. This border window is a child of the parent window.
+		 */
+		Window borderWindow = x11.XCreateSimpleWindow(//
+				display, //
+				parentWindow, //
+				bounds.x, //
+				bounds.y, //
+				bounds.width - 2 * borderSize, //
+				bounds.height - 2 * borderSize, //
+				borderSize, //
+				borderColor.getRGB(), //
+				backgroundColor.getRGB());
+		LOG.debug("Bordered window created [{}]", borderWindow);
+		// Register win
+		registerWindowForEvents(borderWindow);
 		x11.XMapWindow(display, borderWindow);
 		// commit changes and close display
 		x11.XFlush(display);
@@ -375,6 +259,7 @@ public final class XWindowManager implements IXWindowManager {
 	 * .cube.client.wm.x.X11.Window)
 	 */
 	public void removeWindow(Window window) {
+		LOG.debug("Remove Window [{}]", window);
 		Display display = x11.XOpenDisplay(displayName);
 		x11.XDestroyWindow(display, window);
 		// commit changes and close display
@@ -394,10 +279,13 @@ public final class XWindowManager implements IXWindowManager {
 	 * @param y
 	 *            the y positon of the child window
 	 */
-	private void reparentWindow(Window parentWindow, Window childWindow, int x, int y) {
+	private void reparentWindow(Window parentWindow, Window childWindow, int x, int y, boolean modeInsert) {
 		Display display = x11.XOpenDisplay(displayName);
 		// Map the virtual machine window as child to the border window
 		x11.XReparentWindow(display, childWindow, parentWindow, x, y);
+		if (modeInsert) {
+			x11.XChangeSaveSet(display, childWindow, X11.SetModeInsert);
+		}
 		// commit changes and close display
 		x11.XFlush(display);
 		x11.XCloseDisplay(display);
@@ -405,15 +293,22 @@ public final class XWindowManager implements IXWindowManager {
 				getWindowName(parentWindow), parentWindow, x, y));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * ch.admin.vbs.cube.client.wm.x.XXWindowManager#reparentWindowAndResize
-	 * (ch.admin.vbs.cube.client.wm.x.X11.Window,
-	 * ch.admin.vbs.cube.client.wm.x.X11.Window, java.awt.Rectangle)
-	 */
+	@Override
+	public void hideAndReparentToRoot(Window window) {
+		Display display = x11.XOpenDisplay(displayName);
+		// Map the virtual machine window as child to the border window
+		x11.XUnmapWindow(display, window);
+		Window rootWindow = x11.XRootWindow(display, screenIndex);
+		x11.XReparentWindow(display, window, rootWindow, 0, 0);
+		// commit changes and close display
+		x11.XFlush(display);
+		x11.XCloseDisplay(display);
+		LOG.debug("unmap and reparentWindow() - child[{} / {}]  to root\n", getWindowName(window), window);
+	}
+
+	@Override
 	public void reparentWindowAndResize(Window parentWindow, Window childWindow, Rectangle bounds) {
+		LOG.debug("Reparent window [{}] to parent [{}]", childWindow, parentWindow);
 		Display display = x11.XOpenDisplay(displayName);
 		// move border window to new CubeFrame
 		x11.XReparentWindow(display, childWindow, parentWindow, bounds.x, bounds.y);
@@ -445,11 +340,7 @@ public final class XWindowManager implements IXWindowManager {
 		x11.XCloseDisplay(display);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see ch.admin.vbs.cube.client.wm.x.XXWindowManager#destroy()
-	 */
+	@Override
 	public synchronized void destroy() {
 		if (!destroyed) {
 			destroyed = true;
@@ -470,7 +361,7 @@ public final class XWindowManager implements IXWindowManager {
 		// select the events that this window will get
 		// x11.XSelectInput(eventDisplay, window, new
 		// NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask ));
-		x11.XSelectInput(eventDisplay, window, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.ConfigureNotify));
+		x11.XSelectInput(eventDisplay, window, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask | X11.StructureNotifyMask));
 		x11.XFlush(eventDisplay);
 	}
 
@@ -480,10 +371,12 @@ public final class XWindowManager implements IXWindowManager {
 		x11.XFlush(eventDisplay);
 	}
 
-	public void registerRootWindowEvents() {
+	private void registerRootWindowEvents() {
 		Window root = findRootWindow();
 		// register for events
-		x11.XSelectInput(eventDisplay, root, new NativeLong(X11.SubstructureNotifyMask | X11.PropertyChangeMask));
+		x11.XSelectInput(eventDisplay, root, new NativeLong(X11.SubstructureNotifyMask | X11.PropertyChangeMask | X11.StructureNotifyMask));
+		// x11.XSelectInput(eventDisplay, root, new
+		// NativeLong(X11.SubstructureNotifyMask | X11.PropertyChangeMask));
 		x11.XFlush(eventDisplay);
 	}
 
@@ -549,7 +442,7 @@ public final class XWindowManager implements IXWindowManager {
 			case X11.UnmapNotify:
 			default:
 				// noisy !!
-				// LOG.error("Ignore XEvent [{}]", event.type);
+				//LOG.error("Ignore XEvent [{}]", event.type);
 				break;
 			}
 		}
@@ -614,61 +507,153 @@ public final class XWindowManager implements IXWindowManager {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * ch.admin.vbs.cube.client.wm.x.XXWindowManager#adjustScreenForChild(ch
-	 * .admin.vbs.cube.client.wm.x.X11.Window, int, int)
-	 */
-	public void adjustScreenForChild(Window parentWindow, int width, int height) {
-		Display display = x11.XOpenDisplay(displayName);
-		// find the running vm and if there is one resize it
-		long[] childrenWindowIdArray = getChildrenList(display, parentWindow);
-		for (long windowId : childrenWindowIdArray) {
-			Window window = new Window(windowId);
-			// get window attributes
-			XWindowAttributes attributes = new XWindowAttributes();
-			x11.XGetWindowAttributes(display, window, attributes);
-			// get window title
-			XTextProperty windowTitle = new XTextProperty();
-			x11.XFetchName(display, window, windowTitle);
-			// filter windows with attributes which our windows do not have
-			if (!attributes.override_redirect && windowTitle.value != null) {
-				x11.XResizeWindow(display, window, width, height);
-			}
-		}
-		// commit changes and close display
-		x11.XFlush(display);
-		x11.XCloseDisplay(display);
-	}
-
 	@Override
 	public void setWindowManagerCallBack(IWindowManagerCallback cb) {
 		this.cb = cb;
 	}
 
-//	public void list() {//DEBUG DEBUG DEBUIG
-//		Window foundWindow = null;
-//		Display display = x11.XOpenDisplay(displayName);
-//		// get the root window
-//		Window rootWindow = x11.XRootWindow(display, screenIndex);
-//		long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
-//		for (long windowId : childrenWindowIdArray) {
-//			Window window = new Window(windowId);
-//			// get window attributes
-//			XWindowAttributes attributes = new XWindowAttributes();
-//			x11.XGetWindowAttributes(display, window, attributes);
-//			// get window title
-//			XTextProperty windowTitle = new XTextProperty();
-//			x11.XFetchName(display, window, windowTitle);
-//			// filter windows with attributes which our windows do not have
-//			if (!attributes.override_redirect && windowTitle.value != null) {
-//				LOG.warn("Scan windows [{}]",windowTitle.value);
-//		
-//			}
-//		}
-//		// close display
-//		x11.XCloseDisplay(display);
-//	}
+	// private ArrayList<Window> listWindows() {
+	// ArrayList<Window> wins = new ArrayList<X11.Window>();
+	// Display display = x11.XOpenDisplay(displayName);
+	// // get the root window
+	// Window rootWindow = x11.XRootWindow(display, screenIndex);
+	// LOG.debug("---------------------------");
+	// long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
+	// for (long windowId : childrenWindowIdArray) {
+	// Window window = new Window(windowId);
+	// // get window attributes
+	// XWindowAttributes attributes = new XWindowAttributes();
+	// x11.XGetWindowAttributes(display, window, attributes);
+	// // get window title
+	// XTextProperty windowTitle = new XTextProperty();
+	// x11.XFetchName(display, window, windowTitle);
+	// // filter windows with attributes which our windows do not have
+	// if (!attributes.override_redirect && windowTitle.value != null) {
+	// wins.add(window);
+	// }
+	// }
+	// LOG.debug("---------------------------");
+	// // close display
+	// x11.XCloseDisplay(display);
+	// return wins;
+	// }
+	// private void dumpWindows() {
+	// Display display = x11.XOpenDisplay(displayName);
+	// // get the root window
+	// Window rootWindow = x11.XRootWindow(display, screenIndex);
+	// LOG.debug("---------------------------");
+	//
+	// dumpWindowsRec(display, rootWindow, 0);
+	//
+	// LOG.debug("---------------------------");
+	// // close display
+	// x11.XCloseDisplay(display);
+	// }
+	// private void dumpWindowsRec(Display display, Window parent, int stage) {
+	// // get the root window
+	// long[] childrenWindowIdArray = getChildrenList(display, parent);
+	// if (childrenWindowIdArray.length == 0) {
+	// String spaces = "";
+	// for (int i = 0; i < stage; i++) {
+	// spaces += '-';
+	// }
+	// XTextProperty windowTitle = new XTextProperty();
+	// x11.XFetchName(display, parent, windowTitle);
+	// LOG.debug("DUMP " + spaces + " => [{}] [{}]", parent, windowTitle.value);
+	// } else {
+	// for (long windowId : childrenWindowIdArray) {
+	// Window window = new Window(windowId);
+	// dumpWindowsRec(display, window, stage+1);
+	// }
+	// }
+	// }
+	/**
+	 * Detectes and sets the current operation system architecture. Default is
+	 * 32Bit.
+	 */
+	private void detectOperationSystemArchitecture() {
+		String osBits = System.getProperty("os.arch");
+		LOG.debug("Detected architecture [{}]", osBits);
+		if ("amd64".equals(osBits)) {
+			osArchitectur = OS_64_BIT;
+		} else {
+			osArchitectur = OS_32_BIT;
+		}
+	}
+
+	/**
+	 * Detect and set the display name and the screen index. Default is ":0.0"
+	 * for display name and 0 for the screen index.
+	 */
+	private void detectDefaultDisplay() {
+		// get display name from system environment
+		displayName = System.getenv("DISPLAY");
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Display name is '" + displayName + "'.");
+		}
+		if (displayName != null) {
+			// displayName is something like this ":0.0"
+			int dotIndex = displayName.indexOf(".");
+			if (dotIndex < 0) {
+				screenIndex = 0;
+			} else {
+				screenIndex = Integer.parseInt(displayName.substring(dotIndex + 1));
+			}
+		} else {
+			displayName = ":0.0";
+			screenIndex = 0;
+		}
+		if (LOG.isInfoEnabled()) {
+			LOG.info("Display name is '" + displayName + "' and screen index is '" + screenIndex + "'.");
+		}
+	}
+
+	/**
+	 * Returns all window IDs to the given parent window.
+	 * 
+	 * @param display
+	 *            the display for better performance
+	 * @param parentWindow
+	 *            the parent window for all children
+	 * @return a list of long which are window IDs
+	 */
+	private long[] getChildrenList(Display display, Window parentWindow) {
+		long[] childrenWindowIdArray = new long[] {};
+		// prepare reference values
+		WindowByReference rootWindowRef = new WindowByReference();
+		WindowByReference parentWindowRef = new WindowByReference();
+		PointerByReference childrenPtr = new PointerByReference();
+		IntByReference childrenCount = new IntByReference();
+		// find all children to the rootWindow
+		if (x11.XQueryTree(display, parentWindow, rootWindowRef, parentWindowRef, childrenPtr, childrenCount) == 0) {
+			LOG.error("BadWindow - A value for a Window argument does not name a defined Window!");
+			return childrenWindowIdArray;
+		}
+		// get all window id's from the pointer and the count
+		if (childrenCount.getValue() > 0) {
+			if (osArchitectur == OS_32_BIT) {
+				int[] intChildrenWindowIdArray = childrenPtr.getValue().getIntArray(0, childrenCount.getValue());
+				childrenWindowIdArray = new long[intChildrenWindowIdArray.length];
+				int index = 0;
+				for (int windowId : intChildrenWindowIdArray) {
+					childrenWindowIdArray[index] = windowId;
+					++index;
+				}
+			} else if (osArchitectur == OS_64_BIT) {
+				childrenWindowIdArray = childrenPtr.getValue().getLongArray(0, childrenCount.getValue());
+			} else {
+				if (LOG.isInfoEnabled()) {
+					LOG.warn("OS architecture is not supported or could not be mapped! Trying 32 bit os architecture.");
+				}
+				int[] intChildrenWindowIdArray = childrenPtr.getValue().getIntArray(0, childrenCount.getValue());
+				childrenWindowIdArray = new long[intChildrenWindowIdArray.length];
+				int index = 0;
+				for (int windowId : intChildrenWindowIdArray) {
+					childrenWindowIdArray[index] = windowId;
+					++index;
+				}
+			}
+		}
+		return childrenWindowIdArray;
+	}
 }

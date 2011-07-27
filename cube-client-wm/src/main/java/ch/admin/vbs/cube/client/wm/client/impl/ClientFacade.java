@@ -27,7 +27,6 @@ import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -90,11 +89,6 @@ public class ClientFacade implements IClientFacade {
 		} else {
 			userIface.showTransferDialog(client.getVmHandle(vm), file);
 		}
-	}
-
-	@Override
-	public void showUsbDeviceChooser(UsbDeviceEntryList list, String requestId) {
-		userIface.showUsbDeviceDialog("usbdialog.choosedestinationvm.message", list, requestId);
 	}
 
 	// @Override

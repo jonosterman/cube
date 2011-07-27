@@ -29,6 +29,7 @@ import ch.admin.vbs.cube.client.wm.client.impl.VmControl;
 import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
 import ch.admin.vbs.cube.client.wm.mock.MockXrandr;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
+import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAbstractAction;
 import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager;
@@ -98,6 +99,7 @@ public class DemoCompleteFakeScreens {
 		CubeAbstractAction.addCubeActionListener(ioc.getBean(CubeActionListener.class));
 		// object's specific initialization
 		ioc.getBean(IXrandr.class).start();
+		ioc.getBean(ICubeUI.class).start();
 		ioc.getBean(XWindowManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();

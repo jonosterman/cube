@@ -78,6 +78,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	 * Set current active session. Derergister-register event listener
 	 */
 	private void setActiveSession(ISession session) {
+		LOG.debug("Set active session [{}]",session);
 		if (actSession != null) {
 			actSession.getModel().removeModelChangeListener(this);
 			actSession.getModel().removeStateChangeListener(this);
@@ -333,18 +334,6 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		this.smanager = smanager;
 		//
 		smanager.addListener(this);
-	}
-
-	@Override
-	public void attachUsbDeviceRequest(String vmId) {
-		synchronized (uiLock) {
-			if (actSession != null && mode == Mode.SESSION) {
-				setCurrentCallback(new CallbackUsb(actSession, vmId));
-				UsbDeviceEntryList list = new UsbDeviceEntryList();
-				controlVm(vmId, VmCommand.LIST_USB, list);
-				clientFacade.showUsbDeviceChooser(list, currentCallback.getId());
-			}
-		}
 	}
 
 	@Override
