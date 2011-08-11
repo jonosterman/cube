@@ -18,7 +18,6 @@ package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 import java.awt.Color;
 import java.awt.Rectangle;
-import java.util.ArrayList;
 import java.util.Collection;
 
 import org.slf4j.Logger;
