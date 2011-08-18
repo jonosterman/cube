@@ -64,6 +64,10 @@ public class PowerOff extends AbstractCtrlTask {
 		} catch (Exception e) {
 			LOG.error("Failed to unregister VM", e);
 		}
+		try {
+			Thread.sleep(2000);
+		} catch (InterruptedException e1) {
+		}
 		// unmount containers
 		try {
 			containerFactory.unmountContainer(vm.getVmContainer());
