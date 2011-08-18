@@ -115,6 +115,13 @@ public class ShellUtil {
 		// ensure buffers are closed
 		closeStream(bufferedStdOutput);
 		closeStream(bufferedStdError);
+		// trace
+		if (LOG.isTraceEnabled() && stdOut.length() > 0) {
+			LOG.trace("\nstdout> " + stdOut.toString().trim().replaceAll("\n(.)", "\nstdout> $1"));
+		}
+		if (LOG.isTraceEnabled() && stdErr.length() > 0) {
+			LOG.trace("\nstderr> " + stdErr.toString().trim().replaceAll("\n(.)", "\nstderr> $1"));
+		}
 	}
 
 	private final void closeStream(BufferedReader br) {

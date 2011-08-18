@@ -41,10 +41,19 @@ import ch.admin.vbs.cube.common.shell.ShellUtilException;
  * 
  * All cube scripts are located in a central directory (default
  * /opt/cube/client/scripts) and some need 'sudo' rights (see documentation).
+ * 
+ * A file-based lock has been implemented in Perl script. The lock holds
+ * references to several resources used to mount the file. (because it is
+ * impossible to find them afterward since 'losetup' trunk its output). Mounting
+ * volume that has been already mounted (and a lock is present) will fail with a
+ * special code '65' at the script level and we handle it by performing an
+ * unmout-remount sequence. The lock file is remove when the volume has been
+ * successfully unmounted.
+ * 
  */
 public class DmcryptContainerFactory implements IContainerFactory {
 	private static final int EXIT_CODE_WHEN_LOCK_FILE_IS_PRESENT = 65;
-	private static final String CUBE_SCRIPT_DIR = "cube.scripts.dir";
+	private static final int EXIT_CODE_WHEN_THERE_IS_NO_MORE_FREE_LOOP_DEVICES = 45;
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(DmcryptContainerFactory.class);
 	private ScriptUtil su = new ScriptUtil();
@@ -88,15 +97,17 @@ public class DmcryptContainerFactory implements IContainerFactory {
 					}
 				}
 			}
-//			System.out.println("--------------");
-//			InputStream is = Runtime.getRuntime().exec("mount | grep 'temp-vol'").getInputStream();
-//			BufferedReader br = new BufferedReader(new InputStreamReader(is));
-//			String line = br.readLine();
-//			while (line != null) {
-//				System.out.println(line);
-//				line = br.readLine();
-//			}
-//			System.out.println("--------------");
+			// System.out.println("--------------");
+			// InputStream is =
+			// Runtime.getRuntime().exec("mount | grep 'temp-vol'").getInputStream();
+			// BufferedReader br = new BufferedReader(new
+			// InputStreamReader(is));
+			// String line = br.readLine();
+			// while (line != null) {
+			// System.out.println(line);
+			// line = br.readLine();
+			// }
+			// System.out.println("--------------");
 		} catch (Exception e) {
 			LOG.error("Failed to cleanup", e);
 		}
@@ -113,12 +124,13 @@ public class DmcryptContainerFactory implements IContainerFactory {
 				// the administrator to find that its sudo configuration smells.
 				if (shell.getStandardError().indexOf("sudo: no tty present and no askpass program specified") >= 0) {
 					LOG.error("SUDO is not correctly configured: It ask a password (interactive) in order to execute the script. Edit your sudoer file (-> visudo).");
+					throw new ContainerException("Script returned an error because SUDO is not configured correctly");
 				} else {
-					LOG.error("stdout:\n" + shell.getStandardOutput().toString());
-					LOG.error("stderr:\n" + shell.getStandardError().toString());
+					throwErrorWithShellOutput(shell, "Script returned an error [" + shell.getExitValue() + "]");
 				}
-				throw new ShellUtilException("Script returned an error [" + shell.getExitValue() + "]");
 			}
+		} catch (ContainerException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ContainerException("Failed to execute script", e);
 		}
@@ -131,10 +143,10 @@ public class DmcryptContainerFactory implements IContainerFactory {
 			ShellUtil s = su.execute("sudo", "./dmcrypt-delete-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-m", container
 					.getMountpoint().getAbsolutePath());
 			if (s.getExitValue() != 0) {
-				LOG.error("stdout:\n" + s.getStandardOutput().toString());
-				LOG.error("stderr:\n" + s.getStandardError().toString());
-				throw new RuntimeException("script returned a non-zero code [" + s.getExitValue() + "]");
+				throwErrorWithShellOutput(s, "script returned a non-zero code [" + s.getExitValue() + "]");
 			}
+		} catch (ContainerException e) {
+			throw e;
 		} catch (ShellUtilException e) {
 			throw new ContainerException("Could not delete container [" + container + "]", e);
 		}
@@ -147,12 +159,32 @@ public class DmcryptContainerFactory implements IContainerFactory {
 					.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
 			if (s.getExitValue() == 0) {
 				LOG.debug("Container successfully mounted");
+			} else if (s.getExitValue() == EXIT_CODE_WHEN_THERE_IS_NO_MORE_FREE_LOOP_DEVICES) {
+				throw new ContainerException(
+						"Failed to mount container. There is no more free loop devices. add 'options loop max_loop=256' to /etc/modprobe.d/cube.conf");
 			} else if (s.getExitValue() == EXIT_CODE_WHEN_LOCK_FILE_IS_PRESENT) {
-				LOG.debug("Container was already mounted (at least lock file is present).");
+				/*
+				 * lock file is present. perhaps it is mounted or was not
+				 * cleannly unmounted. Since it is not clear, we perform an
+				 * unmount-remount sequence.
+				 */
+				unmountContainer(container);
+				s = su.execute("sudo", "./dmcrypt-mount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-k", key.getFile()
+						.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
+				if (s.getExitValue() == 0) {
+					LOG.debug("Container successfully mounted (but unmount/remount was required)");
+				} else if (s.getExitValue() == EXIT_CODE_WHEN_LOCK_FILE_IS_PRESENT) {
+					/*
+					 * something is odd. The lock is still there, even after we
+					 * perfomred an unmount. freaky.
+					 */
+					throwErrorWithShellOutput(s, "Mounting container failed [" + s.getExitValue() + "]");
+				} else {
+					/* We failed to remove the lock. Even more freaky. */
+					throwErrorWithShellOutput(s, "Mounting container failed [" + s.getExitValue() + "]");
+				}
 			} else {
-				LOG.error("standard output:\n" + s.getStandardOutput());
-				LOG.error("standard error:\n" + s.getStandardError());
-				throw new ContainerException("Mounting container failed [" + s.getExitValue() + "]");
+				throwErrorWithShellOutput(s, "Mounting container failed [" + s.getExitValue() + "]");
 			}
 		} catch (ContainerException e) {
 			throw e;
@@ -161,18 +193,24 @@ public class DmcryptContainerFactory implements IContainerFactory {
 		}
 	}
 
+	private void throwErrorWithShellOutput(ShellUtil s, String string) throws ContainerException {
+		LOG.error("----------------------------" + "STDOUT :\n" + s.getStandardOutput() + "\nSTDERR :\n" + s.getStandardError());
+		LOG.error("----------------------------");
+		throw new ContainerException(string);
+	}
+
 	@Override
 	public void unmountContainer(Container container) throws ContainerException {
 		try {
 			ShellUtil s = su.execute("sudo", "./dmcrypt-unmount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-m", container
 					.getMountpoint().getAbsolutePath());
 			if (s.getExitValue() != 0) {
-				LOG.error("standard output:\n" + s.getStandardOutput());
-				LOG.error("standard error:\n" + s.getStandardError());
-				throw new RuntimeException("script returned a non-zero code [" + s.getExitValue() + "]");
+				throwErrorWithShellOutput(s, "script returned a non-zero code [" + s.getExitValue() + "]");
 			} else {
 				LOG.debug("Container [" + container.getContainerFile() + "] unmounted");
 			}
+		} catch (ContainerException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ContainerException("Could not unmount container [" + container + "]", e);
 		}

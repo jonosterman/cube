@@ -69,9 +69,12 @@ if ( -e $lockfile ) {
 
 # create loop device 
 $loopDev = trim(`losetup --show -f ${encFile}`);
-if ($loopDev !~/\/dev\/loop[0-9]/) {
+if ($loopDev eq '') {
+	print "[ERROR] Failed to create loop device [$loopDev]";
+	exit 45;
+} elsif ($loopDev !~/\/dev\/loop[0-9]/) {
 	print "[ERROR] device '$loopDev' not valid.";
-	exit 0;
+	exit 1;
 }
 print "[DEBUG] Loop device setup on '$loopDev'\n";
 

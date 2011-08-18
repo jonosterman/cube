@@ -25,13 +25,11 @@
 	</encoder>
   </appender>
    
-  <logger name="ch.admin.vbs.sample" level="TRACE"/>
-  <!-- <logger name="ch.admin.vbs.cube.common.shell" level="INFO"/>  -->
   <logger name="ch.admin.vbs.cube.core.transfer.TransferMonitor" level="INFO"/>
   <logger name="org.springframework" level="INFO"/>
   <logger name="org.apache.cxf" level="INFO"/>
   
-  <logger name="ch.admin.vbs.cube.common.shell" level="INFO"/>
+  <logger name="ch.admin.vbs.cube.common.shell" level="DEBUG"/>
 
   <logger name="ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater" level="INFO"/>
   

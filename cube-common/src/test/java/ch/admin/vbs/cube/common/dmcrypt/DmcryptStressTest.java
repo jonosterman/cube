@@ -3,23 +3,21 @@ package ch.admin.vbs.cube.common.dmcrypt;
 
 import java.io.File;
 import java.io.FileWriter;
-import java.security.KeyStore;
-import java.security.PrivateKey;
-import java.security.PublicKey;
-import java.security.KeyStore.Builder;
 import java.util.ArrayList;
-import java.util.Random;
 
 import ch.admin.vbs.cube.common.container.Container;
-import ch.admin.vbs.cube.common.container.ContainerException;
 import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
 import ch.admin.vbs.cube.common.keyring.EncryptionKey;
 
+/**
+ * We wrote this class in order to test container mounting/un-mounting since we
+ * observer bug in production (container left mounted, corrupted lock file,
+ * etc). It helped to improve overall code quality and error handling (java +
+ * perl).
+ * 
+ */
 public class DmcryptStressTest {
-	private static final String testKeystorePassword = "111222";
-	private static final String testKeystoreFile = "/cube-01_pwd-is-111222.p12";
 	private static DmcryptContainerFactory factory;
-	private Random rnd = new Random(System.currentTimeMillis());
 
 	public static void main(String[] args) throws Exception {
 		DmcryptStressTest d = new DmcryptStressTest();
@@ -49,9 +47,6 @@ public class DmcryptStressTest {
 	private static Container genContainer(String id) {
 		Container c = new Container();
 		c.setContainerFile(new File("/tmp/dmcrypt/containers/" + id));
-		if (c.getContainerFile().exists()) {
-			c.getContainerFile().delete();
-		}
 		c.setId(id);
 		c.setMountpoint(new File("/tmp/dmcrypt/mp/" + id));
 		c.setSize(10000000);

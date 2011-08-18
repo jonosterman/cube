@@ -139,6 +139,8 @@ sub unmountContainer {
 		if ($errors == 0) {
 			print "Remove Lock File";
 			`rm $lockfile`; 
+		} else {
+			die "Failed to completly unmount container. Do no remove lock file $lockfile";
 		}
 	} else {
 		print "No lock file found. Skip.";
