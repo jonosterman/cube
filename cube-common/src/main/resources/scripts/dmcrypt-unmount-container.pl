@@ -138,7 +138,7 @@ sub unmountContainer {
 		## evtl remove lock file
 		if ($errors == 0) {
 			print "Remove Lock File";
-			`mv $lockfile $lockfile.last`; 
+			`rm $lockfile`; 
 		}
 	} else {
 		print "No lock file found. Skip.";

@@ -56,24 +56,30 @@ if (! -e $keyfile) {
 	die "key file [$keyfile] doe not exist.";
 }
 
-# create loop device on file 
+## check no lock is set for this file
+my $lockfile = trim(`pwd`)."/../var/".trim(`echo "$encFile" | md5sum | awk '{print \$1}'`);
+if ( -e $lockfile ) {
+	print("Lockfile ------------ begin");
+	print `cat $lockfile`;
+	print("Lockfile ------------ end");
+	print("Failed to mount volume, due to lock file ($lockfile).");
+	## exit with a special code to be trapped in java
+	exit 65;		
+}
+
+# create loop device 
 $loopDev = trim(`losetup --show -f ${encFile}`);
 if ($loopDev !~/\/dev\/loop[0-9]/) {
 	print "[ERROR] device '$loopDev' not valid.";
 	exit 0;
 }
 print "[DEBUG] Loop device setup on '$loopDev'\n";
-## encryption (dm-crypt + LUKS)
+
+## define encryption volume name 
 $tempDev = "temp-volume-0x".int(rand(100000));
-## save mount/loop/file in cube
+
+## create lock file for this file to avoid remounting it
 `mkdir -p ../var/`;
-my $lockfile = trim(`pwd`)."/../var/".trim(`echo "$encFile" | md5sum | awk '{print \$1}'`);
-if ( -e $lockfile ) {
-	print("Lockfile ------------ begin");
-	print `cat $lockfile`;
-	print("Lockfile ------------ end");
-	die "Failed to mount volume, due to lock file ($lockfile).";		
-}
 `echo "
 file=$encFile
 loop=$loopDev
@@ -82,8 +88,9 @@ mountpoint=$mountpoint
 " > $lockfile;`;
 print("Lock file [$lockfile] created\n");
 
-
+## create encryption device (dm-crypt + LUKS)
 system("cryptsetup luksOpen -q --key-file $keyfile $loopDev $tempDev") == 0 or die "Failed to open LUKS volume. $?";
+
 ## mount and fix permissions
 system("mkdir -p $mountpoint") == 0 or die "Failed to mount formatted volume";
 system("mount /dev/mapper/$tempDev $mountpoint");

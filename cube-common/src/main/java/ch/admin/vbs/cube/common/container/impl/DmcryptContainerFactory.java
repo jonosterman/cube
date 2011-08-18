@@ -43,6 +43,8 @@ import ch.admin.vbs.cube.common.shell.ShellUtilException;
  * /opt/cube/client/scripts) and some need 'sudo' rights (see documentation).
  */
 public class DmcryptContainerFactory implements IContainerFactory {
+	private static final int EXIT_CODE_WHEN_LOCK_FILE_IS_PRESENT = 65;
+	private static final String CUBE_SCRIPT_DIR = "cube.scripts.dir";
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(DmcryptContainerFactory.class);
 	private ScriptUtil su = new ScriptUtil();
@@ -52,7 +54,7 @@ public class DmcryptContainerFactory implements IContainerFactory {
 		try {
 			File varDir = new File(CubeCommonProperties.getProperty("cube.scripts.dir") + "/../var/");
 			if (!varDir.exists()) {
-				LOG.debug("Cleanup skipped. Directory [{}] does not exist", varDir.getAbsolutePath());
+				LOG.debug("Cleanup skipped. Directory [{}] does not exist", varDir.getCanonicalPath());
 				return;
 			}
 			LOG.debug("Cleanup remaining containers.");
@@ -86,6 +88,15 @@ public class DmcryptContainerFactory implements IContainerFactory {
 					}
 				}
 			}
+//			System.out.println("--------------");
+//			InputStream is = Runtime.getRuntime().exec("mount | grep 'temp-vol'").getInputStream();
+//			BufferedReader br = new BufferedReader(new InputStreamReader(is));
+//			String line = br.readLine();
+//			while (line != null) {
+//				System.out.println(line);
+//				line = br.readLine();
+//			}
+//			System.out.println("--------------");
 		} catch (Exception e) {
 			LOG.error("Failed to cleanup", e);
 		}
@@ -102,6 +113,9 @@ public class DmcryptContainerFactory implements IContainerFactory {
 				// the administrator to find that its sudo configuration smells.
 				if (shell.getStandardError().indexOf("sudo: no tty present and no askpass program specified") >= 0) {
 					LOG.error("SUDO is not correctly configured: It ask a password (interactive) in order to execute the script. Edit your sudoer file (-> visudo).");
+				} else {
+					LOG.error("stdout:\n" + shell.getStandardOutput().toString());
+					LOG.error("stderr:\n" + shell.getStandardError().toString());
 				}
 				throw new ShellUtilException("Script returned an error [" + shell.getExitValue() + "]");
 			}
@@ -133,21 +147,15 @@ public class DmcryptContainerFactory implements IContainerFactory {
 					.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
 			if (s.getExitValue() == 0) {
 				LOG.debug("Container successfully mounted");
+			} else if (s.getExitValue() == EXIT_CODE_WHEN_LOCK_FILE_IS_PRESENT) {
+				LOG.debug("Container was already mounted (at least lock file is present).");
 			} else {
-				// try to unmount / remount the container
-				LOG.debug("Failed to mount the container at the first attempt. Try to unmount/remount it");
-				try {
-					unmountContainer(container);
-				} catch (Exception e) {
-				}
-				s = su.execute("sudo", "./dmcrypt-mount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-k", key.getFile()
-						.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
-			}
-			if (s.getExitValue() != 0) {
 				LOG.error("standard output:\n" + s.getStandardOutput());
 				LOG.error("standard error:\n" + s.getStandardError());
-				throw new RuntimeException("Mounting container failed [" + s.getExitValue() + "]");
+				throw new ContainerException("Mounting container failed [" + s.getExitValue() + "]");
 			}
+		} catch (ContainerException e) {
+			throw e;
 		} catch (Exception e) {
 			throw new ContainerException("Could not mount container [" + container + "]", e);
 		}
@@ -156,11 +164,14 @@ public class DmcryptContainerFactory implements IContainerFactory {
 	@Override
 	public void unmountContainer(Container container) throws ContainerException {
 		try {
-			LOG.debug("Unmount container..");
 			ShellUtil s = su.execute("sudo", "./dmcrypt-unmount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-m", container
 					.getMountpoint().getAbsolutePath());
 			if (s.getExitValue() != 0) {
+				LOG.error("standard output:\n" + s.getStandardOutput());
+				LOG.error("standard error:\n" + s.getStandardError());
 				throw new RuntimeException("script returned a non-zero code [" + s.getExitValue() + "]");
+			} else {
+				LOG.debug("Container [" + container.getContainerFile() + "] unmounted");
 			}
 		} catch (Exception e) {
 			throw new ContainerException("Could not unmount container [" + container + "]", e);
