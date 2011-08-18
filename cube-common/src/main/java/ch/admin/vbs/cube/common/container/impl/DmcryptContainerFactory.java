@@ -75,6 +75,14 @@ public class DmcryptContainerFactory implements IContainerFactory {
 						f.unmountContainer(c);
 					} catch (Exception e) {
 						LOG.error("Failed to unlock [" + lock.getAbsolutePath() + "]", e);
+					} finally {
+						if (lock.exists()) {
+							try {
+								lock.delete();
+							} catch (Exception e) {
+								LOG.error("Failed to unlock [" + lock.getAbsolutePath() + "]", e);
+							}
+						}
 					}
 				}
 			}
