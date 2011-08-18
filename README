@@ -78,6 +78,22 @@ machines.
   git remote add origin git@github.com:<YOUR USERNAME>/cube.git
   git push -u origin master
 
+## Downlaod and install VirtualBox SDK library
+Download VirtualBox SDK from :http://www.virtualbox.org/wiki/Downloads
+unzip it:
+cd ~/Downloads
+unzip VirtualBoxSDK-<correct_version>.zip
+cd sdk/bindings/webservice/java/jax-ws/
+mvn install:install-file \
+  -Dfile=./vboxjws.jar \
+  -DgroupId=virtualbox \
+  -DartifactId=virtualbox \
+  -Dversion=<correct_version> \
+  -Dpackaging=jar \
+  -DgeneratePom=true
+
+
+
 ## build cube, update eclipse project 
 ##   note: generating project must be run in cube directory
 ##         or maven will fail to include other projects as
@@ -85,10 +101,14 @@ machines.
 ##   note: "license:format" should be run on each sub-project
 ##         separately.
 
- mvn -Dmaven.test.skip=true  clean install eclipse:eclipse 
- cd cube-common
- mvn -Dmaven.test.skip=true license:format
- ...
+mvn -Dmaven.test.skip=true clean install eclipse:eclipse 
+for d in cube-common cube-client-core cube-client-wm; do
+ cd $d
+ mvn -Dmaven.test.skip=true eclipse:eclipse license:format
+ cd ..
+done
+
+
 
 ## build + test 
 

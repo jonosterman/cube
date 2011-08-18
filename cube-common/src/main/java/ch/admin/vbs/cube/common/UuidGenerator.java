@@ -46,6 +46,6 @@ public class UuidGenerator {
 	 * @return true if uuid syntaxe matche template
 	 */
 	public static boolean validate(String uuid) {
-		return regex.matcher(uuid).find();
+		return uuid!=null && regex.matcher(uuid).find();
 	}
 }

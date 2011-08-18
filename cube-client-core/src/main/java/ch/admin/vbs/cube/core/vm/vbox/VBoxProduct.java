@@ -28,36 +28,39 @@ import java.util.logging.Level;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.virtualbox_4_0.AccessMode;
-import org.virtualbox_4_0.AudioControllerType;
-import org.virtualbox_4_0.AudioDriverType;
-import org.virtualbox_4_0.BIOSBootMenuMode;
-import org.virtualbox_4_0.CPUPropertyType;
-import org.virtualbox_4_0.CleanupMode;
-import org.virtualbox_4_0.ClipboardMode;
-import org.virtualbox_4_0.DeviceType;
-import org.virtualbox_4_0.HWVirtExPropertyType;
-import org.virtualbox_4_0.IConsole;
-import org.virtualbox_4_0.IHostUSBDevice;
-import org.virtualbox_4_0.IMachine;
-import org.virtualbox_4_0.IMedium;
-import org.virtualbox_4_0.IMediumAttachment;
-import org.virtualbox_4_0.INetworkAdapter;
-import org.virtualbox_4_0.IProgress;
-import org.virtualbox_4_0.ISession;
-import org.virtualbox_4_0.IStorageController;
-import org.virtualbox_4_0.IUSBDevice;
-import org.virtualbox_4_0.IVirtualBox;
-import org.virtualbox_4_0.LockType;
-import org.virtualbox_4_0.MachineState;
-import org.virtualbox_4_0.NetworkAdapterType;
-import org.virtualbox_4_0.SessionState;
-import org.virtualbox_4_0.StorageBus;
-import org.virtualbox_4_0.StorageControllerType;
-import org.virtualbox_4_0.VBoxException;
-import org.virtualbox_4_0.VirtualBoxManager;
+import org.virtualbox_4_1.AccessMode;
+import org.virtualbox_4_1.AudioControllerType;
+import org.virtualbox_4_1.AudioDriverType;
+import org.virtualbox_4_1.BIOSBootMenuMode;
+import org.virtualbox_4_1.CPUPropertyType;
+import org.virtualbox_4_1.CleanupMode;
+import org.virtualbox_4_1.ClipboardMode;
+import org.virtualbox_4_1.DeviceType;
+import org.virtualbox_4_1.HWVirtExPropertyType;
+import org.virtualbox_4_1.IConsole;
+import org.virtualbox_4_1.IHostUSBDevice;
+import org.virtualbox_4_1.IMachine;
+import org.virtualbox_4_1.IMedium;
+import org.virtualbox_4_1.IMediumAttachment;
+import org.virtualbox_4_1.INetworkAdapter;
+import org.virtualbox_4_1.IProgress;
+import org.virtualbox_4_1.ISession;
+import org.virtualbox_4_1.IStorageController;
+import org.virtualbox_4_1.IUSBDevice;
+import org.virtualbox_4_1.IVirtualBox;
+import org.virtualbox_4_1.LockType;
+import org.virtualbox_4_1.MachineState;
+import org.virtualbox_4_1.NetworkAdapterPromiscModePolicy;
+import org.virtualbox_4_1.NetworkAdapterType;
+import org.virtualbox_4_1.NetworkAttachmentType;
+import org.virtualbox_4_1.SessionState;
+import org.virtualbox_4_1.StorageBus;
+import org.virtualbox_4_1.StorageControllerType;
+import org.virtualbox_4_1.VBoxException;
+import org.virtualbox_4_1.VirtualBoxManager;
 
 import ch.admin.vbs.cube.common.CubeException;
+import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.container.SizeFormatUtil;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
@@ -222,6 +225,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			cfg.setOption(VBoxOption.OsType, InstanceParameterHelper.getInstanceParameter("vbox.operatingSystem", config));
 			cfg.setOption(VBoxOption.IoApic, InstanceParameterHelper.getInstanceParameter("vbox.ioApic", config));
 			cfg.setOption(VBoxOption.Acpi, InstanceParameterHelper.getInstanceParameter("vbox.acpi", config));
+			cfg.setOption(VBoxOption.HwUuid, InstanceParameterHelper.getInstanceParameter("vbox.hwUuid", config));
 			cfg.setOption(VBoxOption.Pae, InstanceParameterHelper.getInstanceParameter("vbox.paenx", config));
 			cfg.setOption(VBoxOption.BaseMemory, InstanceParameterHelper.getInstanceParameter("vbox.baseMemory", config));
 			cfg.setOption(VBoxOption.VideoMemory, InstanceParameterHelper.getInstanceParameter("vbox.videoMemory", config));
@@ -366,6 +370,10 @@ public class VBoxProduct implements VBoxCacheListener {
 			// register VM (using web service)
 			LOG.debug("Register VM [{}].", vm.getId());
 			machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
+			String hwUuid = cfg.getOption(VBoxOption.HwUuid); 
+			if (UuidGenerator.validate(hwUuid)) {
+				machine.setHardwareUUID(hwUuid);
+			}
 			// configure VM
 			LOG.debug("Configure VM [{}].", vm.getId());
 			machine.getBIOSSettings().setIOAPICEnabled(cfg.getOptionAsBoolean(VBoxOption.IoApic));
@@ -406,8 +414,14 @@ public class VBoxProduct implements VBoxCacheListener {
 				//
 				IStorageController store = machine.addStorageController(CONTROLLER_NAME, StorageBus.IDE);
 				store.setControllerType(StorageControllerType.PIIX4);
+				/*
+				 * in SDK 4.1, they had a 'forceNewUuid' option (boolean).
+				 * Setting it to 'false' should be OK since we strictly control
+				 * medium after use and they should be no risk to re-usethe same
+				 * HDD.
+				 */
 				IMedium medium = vbox.openMedium(new File(vm.getVmContainer().getMountpoint(), cfg.getOption(VBoxOption.Disk1File)).getAbsolutePath(),
-						DeviceType.HardDisk, AccessMode.ReadWrite);
+						DeviceType.HardDisk, AccessMode.ReadWrite, false);
 				machine.attachDevice(CONTROLLER_NAME, 0, 0, DeviceType.HardDisk, medium);
 				machine.attachDevice(CONTROLLER_NAME, 1, 0, DeviceType.DVD, null);
 				machine.saveSettings();
@@ -451,30 +465,38 @@ public class VBoxProduct implements VBoxCacheListener {
 			// use pre-configured mac + bridge
 			INetworkAdapter na = machine.getNetworkAdapter(id);
 			na.setAdapterType(NetworkAdapterType.I82540EM);
-			na.attachToBridgedInterface();
-			na.setHostInterface(bridge);
+			na.setAttachmentType(NetworkAttachmentType.Bridged);
+			na.setBridgedInterface(bridge);
 			na.setMACAddress(mac);
+			na.setCableConnected(true);
+			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(true);
 		} else if ("disabled".equals(nic)) {
 			// Do not use it
 			INetworkAdapter na = machine.getNetworkAdapter(id);
 			na.setAdapterType(NetworkAdapterType.I82540EM);
-			na.detach();
+			na.setAttachmentType(NetworkAttachmentType.Null);
+			na.setCableConnected(false);
+			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(false);
 		} else if ("bridged".equals(nic)) {
 			// use pre-configured mac + bridge
 			INetworkAdapter na = machine.getNetworkAdapter(id);
 			na.setAdapterType(NetworkAdapterType.I82540EM);
-			na.attachToBridgedInterface();
-			na.setHostInterface(bridge);
+			na.setAttachmentType(NetworkAttachmentType.Bridged);
+			na.setBridgedInterface(bridge);
 			na.setMACAddress(mac);
+			na.setCableConnected(true);
+			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(true);
 		} else if ("disconnected".equals(nic)) {
 			// use pre-configured mac
 			INetworkAdapter na = machine.getNetworkAdapter(id);
 			na.setAdapterType(NetworkAdapterType.I82540EM);
-			na.detach();
+			na.setAttachmentType(NetworkAttachmentType.Null);
 			na.setMACAddress(mac);
+			na.setCableConnected(true);
+			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(true);
 		} else {
 			LOG.error("unsupported nic [{}]", nic);

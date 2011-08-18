@@ -18,9 +18,9 @@ package ch.admin.vbs.cube.core.vbox;
 
 import java.util.List;
 
-import org.virtualbox_4_0.IMachine;
-import org.virtualbox_4_0.IVirtualBox;
-import org.virtualbox_4_0.VirtualBoxManager;
+import org.virtualbox_4_1.IMachine;
+import org.virtualbox_4_1.IVirtualBox;
+import org.virtualbox_4_1.VirtualBoxManager;
 
 /**
  * This demo program try to configure a VM in VirtualBox using the web service

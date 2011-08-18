@@ -201,7 +201,7 @@
 		<dependency>
 			<groupId>virtualbox</groupId>
 			<artifactId>virtualbox</artifactId>
-			<version>4.0</version>
+			<version>4.1.2</version>
 		</dependency>
 
 	</dependencies>

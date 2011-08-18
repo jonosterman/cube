@@ -54,7 +54,9 @@ public class VBoxConfig extends VmConfig {
 		Nic1Bridge("vbox.nic1Bridge"), //
 		Nic2Bridge("vbox.nic2Bridge"), //
 		Nic3Bridge("vbox.nic3Bridge"), //
-		Nic4Bridge("vbox.nic4Bridge"); //
+		Nic4Bridge("vbox.nic4Bridge"), 
+		HwUuid("vbox.hwUuid");//
+		 //
 		private String name;
 
 		VBoxOption(String name) {
