@@ -121,13 +121,24 @@ public class DmcryptContainerFactory implements IContainerFactory {
 	@Override
 	public void mountContainer(Container container, EncryptionKey key) throws ContainerException {
 		try {
-			LOG.debug("Mount container..");
 			ShellUtil s = su.execute("sudo", "./dmcrypt-mount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-k", key.getFile()
 					.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
+			if (s.getExitValue() == 0) {
+				LOG.debug("Container successfully mounted");
+			} else {
+				// try to unmount / remount the container
+				LOG.debug("Failed to mount the container at the first attempt. Try to unmount/remount it");
+				try {
+					unmountContainer(container);
+				} catch (Exception e) {
+				}
+				s = su.execute("sudo", "./dmcrypt-mount-container.pl", "-f", container.getContainerFile().getAbsolutePath(), "-k", key.getFile()
+						.getAbsolutePath(), "-m", container.getMountpoint().getAbsolutePath());
+			}
 			if (s.getExitValue() != 0) {
 				LOG.error("standard output:\n" + s.getStandardOutput());
 				LOG.error("standard error:\n" + s.getStandardError());
-				throw new RuntimeException("script returned a non-zero code [" + s.getExitValue() + "]");
+				throw new RuntimeException("Mounting container failed [" + s.getExitValue() + "]");
 			}
 		} catch (Exception e) {
 			throw new ContainerException("Could not mount container [" + container + "]", e);
