@@ -163,8 +163,8 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 			queueTansistion(StateTransition.AUTH_SUCCEED);
 			break;
 		case FAILED_CARDTIMEOUT:
+		case FAILED_USERTIMEOUT:
 		case FAILED:
-		case FAILED_CANCELED:
 		case FAILED_WRONGPIN:
 			failureReason = event.getType();
 			queueTansistion(StateTransition.AUTH_FAILED);
@@ -265,6 +265,9 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 			case FAILED_CARDTIMEOUT:
 				loginUI.showDialog(bundle.getString("login.remove_smartcard_carderror"), LoginDialogType.NO_OPTION);
 				break;
+			case FAILED_USERTIMEOUT:
+				loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
+				break;
 			default:
 				loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
 				break;
@@ -304,7 +307,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 				break;
 			case AUTH_FAILED:
 				authAttempts++;
-				if (authAttempts >= MAX_AUTH_ATTEMPTS || failureReason == AuthEventType.FAILED_CARDTIMEOUT) {
+				if (authAttempts >= MAX_AUTH_ATTEMPTS || failureReason == AuthEventType.FAILED_CARDTIMEOUT || failureReason == AuthEventType.FAILED_USERTIMEOUT) {
 					// force the user to remove smart-card
 					setState(stateLockedTokenIn);
 				} else {

@@ -55,6 +55,7 @@ public class JMockLoginUI implements ILoginUI {
 				//
 				final JPasswordField pfield = new JPasswordField(10);
 				panel.add(pfield);
+				pfield.setText("111222");
 				JLabel label = new JLabel("Enter Pin  (message:'" + message + "')");
 				panel.add(label);
 				final JButton loginBt = new JButton("Login");

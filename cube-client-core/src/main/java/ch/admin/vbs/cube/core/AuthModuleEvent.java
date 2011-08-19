@@ -29,7 +29,7 @@ public class AuthModuleEvent {
 	private final Builder builder;
 
 	public enum AuthEventType {
-		SUCCEED, FAILED, FAILED_CARDTIMEOUT, FAILED_WRONGPIN, FAILED_CANCELED
+		SUCCEED, FAILED, FAILED_CARDTIMEOUT, FAILED_WRONGPIN, FAILED_USERTIMEOUT
 	}
 
 	public AuthModuleEvent(AuthEventType type, KeyStore keystore, Builder builder, char[] pwd) {
