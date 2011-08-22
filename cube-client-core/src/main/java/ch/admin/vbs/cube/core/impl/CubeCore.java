@@ -19,6 +19,9 @@ package ch.admin.vbs.cube.core.impl;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +55,9 @@ import ch.admin.vbs.cube.core.vm.VmModel;
  * It react to VM events of the active session (model, state) and trigger UI
  * refresh.
  * 
+ * Almost all method in this class use a lock in order to avoid concurrency
+ * issue in the state-less UI and ensure consistency.
+ * 
  */
 public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionManagerListener, IVmModelChangeListener, IVmStateChangeListener {
 	/*
@@ -59,8 +65,9 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	 * displayed. In 'session' mode, VM and session generated message are
 	 * displayed to user.
 	 * 
-	 * In shutdown mode, no UI update are allowed aymore. Only CallbackShutdown,
-	 * which have a direct reference to IClientFacade, may display messages.
+	 * In shutdown mode, no UI update are allowed anymore. Only
+	 * CallbackShutdown, which have a direct reference to IClientFacade, may
+	 * display messages.
 	 */
 	private enum Mode {
 		LOGIN, SESSION, SHUTDOWN
@@ -68,29 +75,36 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(CubeCore.class);
+	private static final long CALL_TIMEOUT = 1;// 1 second
 	private IClientFacade clientFacade;
-	private ISessionManager smanager;
-	private ISession actSession; // active session
+	private ISessionManager sessionManager;
+	private ISession activeSession; // active session
 	private Mode mode = Mode.LOGIN;
 	private IUICallback currentCallback;
-	private Object uiLock = new Object();
+	private Lock uiLock = new ReentrantLock(true);
+	private long lockTimestamp;
 
 	/**
 	 * Set current active session. Derergister-register event listener
+	 * 
+	 * This method MUST be called from a synchronized block.
 	 */
 	private void setActiveSession(ISession session) {
-		LOG.debug("Set active session [{}]",session);
-		if (actSession != null) {
-			actSession.getModel().removeModelChangeListener(this);
-			actSession.getModel().removeStateChangeListener(this);
+		LOG.debug("Set active session [{}]", session);
+		if (activeSession != null) {
+			activeSession.getModel().removeModelChangeListener(this);
+			activeSession.getModel().removeStateChangeListener(this);
 		}
-		actSession = session;
+		activeSession = session;
 		if (session != null) {
 			session.getModel().addModelChangeListener(this);
 			session.getModel().addStateChangeListener(this);
 		}
 	}
 
+	/**
+	 * This method MUST be called from a synchronized block.
+	 */
 	private void setCurrentCallback(IUICallback callback) {
 		if (currentCallback != null) {
 			LOG.debug("Abort overwritten callback [{}]", currentCallback);
@@ -105,36 +119,43 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		currentCallback = callback;
 	}
 
-
-
 	// ==============================================
 	// ISessionManagerListener
 	// ==============================================
 	@Override
 	public void sessionOpened(ISession session) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			// set the new opened session the active one
 			setActiveSession(session);
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void sessionClosed(ISession session) {
-		synchronized (uiLock) {
-			if (actSession != null && actSession == session) {
+		lock();
+		try {
+			if (activeSession != null && activeSession == session) {
 				setActiveSession(null);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void sessionLocked(ISession session) {
-		synchronized (uiLock) {
-			if (actSession != null && actSession == session) {
+		lock();
+		try {
+			if (activeSession != null && activeSession == session) {
 				LOG.debug("active session [{}] locked", session.getId());
 				clientFacade.displayTabs(new ArrayList<Vm>(0));
 				setActiveSession(null);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -143,10 +164,13 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	// ==============================================
 	@Override
 	public void vmStateUpdated(Vm vm) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (mode == Mode.SESSION) {
 				refreshSingleVmUI(vm);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -155,7 +179,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	// ==============================================
 	@Override
 	public void enteredPassword(char[] password, String requestId) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (currentCallback != null && currentCallback.getId().equals(requestId) && currentCallback instanceof CallbackPin) {
 				CallbackPin cb = (CallbackPin) currentCallback;
 				if (password == null || password.length == 0) {
@@ -171,12 +196,15 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				LOG.warn("Invalid callback [{}] [{}]", requestId, currentCallback);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void enteredConfirmation(int result, String requestId) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (currentCallback != null && currentCallback.getId().equals(requestId)) {
 				if (result > 0) {
 					if (currentCallback instanceof CallbackShutdown) {
@@ -191,12 +219,15 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				LOG.warn("Invalid callback got[{}]  expected[{}]", requestId, currentCallback);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void enteredUsbDevice(UsbDevice device, String requestId) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (currentCallback != null && currentCallback.getId().equals(requestId) && currentCallback instanceof CallbackUsb) {
 				CallbackUsb cb = (CallbackUsb) currentCallback;
 				if (device == null) {
@@ -212,6 +243,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				LOG.warn("Invalid callback [{}] [{}]", requestId, currentCallback);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -220,56 +253,57 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	}
 
 	private void controlVm(String vmId, VmCommand cmd, IOption option) {
-		if (actSession != null && mode == Mode.SESSION) {
-			if (cmd == VmCommand.DELETE) {
-				// ask confirmation first (handler will execute the command)
-				setCurrentCallback(new CallbackDeleteVm(vmId, actSession));
-				clientFacade.askConfirmation("messagedialog.confirmation.deleteVmConfirmation", currentCallback.getId());
-			} else {
-				// execute command
-				actSession.controlVm(vmId, cmd, option);
+		lock();
+		try {
+			if (activeSession != null && mode == Mode.SESSION) {
+				if (cmd == VmCommand.DELETE) {
+					// ask confirmation first (handler will execute the
+					// command)
+					setCurrentCallback(new CallbackDeleteVm(vmId, activeSession));
+					clientFacade.askConfirmation("messagedialog.confirmation.deleteVmConfirmation", currentCallback.getId());
+				} else {
+					// execute command
+					activeSession.controlVm(vmId, cmd, option);
+				}
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void startVm(String vmId) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.START);
-		}
+		controlVm(vmId, VmCommand.START);
 	}
 
 	@Override
 	public void standByVm(String vmId) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.SAVE);
-		}
+		controlVm(vmId, VmCommand.SAVE);
 	}
 
 	@Override
 	public void powerOffVm(String vmId) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.POWER_OFF);
-		}
+		controlVm(vmId, VmCommand.POWER_OFF);
 	}
 
 	@Override
 	public void stageVm(String vmId, URL location) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.STAGE);
-		}
+		controlVm(vmId, VmCommand.STAGE);
 	}
 
 	@Override
 	public void logoutUser() {
-		synchronized (uiLock) {
-			if (actSession != null && mode == Mode.SESSION) {
+		lock();
+		try {
+			if (activeSession != null && mode == Mode.SESSION) {
 				LOG.debug("Set Logout callback");
-				setCurrentCallback(new CallbackLogout(actSession, smanager));
+				setCurrentCallback(new CallbackLogout(activeSession, sessionManager));
 				clientFacade.askConfirmation("messagedialog.confirmation.closeSessionConfirmation", currentCallback.getId());
 			} else {
 				LOG.warn("invalid session or mode");
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -285,16 +319,12 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 
 	@Override
 	public void deleteVm(String vmId) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.DELETE);
-		}
+		controlVm(vmId, VmCommand.DELETE);
 	}
 
 	@Override
 	public void installGuestAdditions(String vmId) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.INSTALL_GUESTADDITIONS);
-		}
+		controlVm(vmId, VmCommand.INSTALL_GUESTADDITIONS);
 	}
 
 	@Override
@@ -304,44 +334,37 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 
 	@Override
 	public void shutdownMachine() {
-		synchronized (uiLock) {
+		lock();
+		try {
 			// ask confirmation first (handler will execute the command)
-			setCurrentCallback(new CallbackShutdown(smanager, clientFacade));
+			setCurrentCallback(new CallbackShutdown(sessionManager, clientFacade));
 			clientFacade.askConfirmation("messagedialog.confirmation.shutdownCubeConfirmation", currentCallback.getId());
+		} finally {
+			unlock();
 		}
 	}
 
 	public void attachUsbDevice(String vmId, UsbDevice usbDevice) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.ATTACH_USB, usbDevice);
-		}
+		controlVm(vmId, VmCommand.ATTACH_USB, usbDevice);
 	}
 
 	public void detachUsbDevice(String vmId, UsbDevice usbDevice) {
-		synchronized (uiLock) {
-			controlVm(vmId, VmCommand.DETACH_USB, usbDevice);
-		}
+		controlVm(vmId, VmCommand.DETACH_USB, usbDevice);
 	}
 
-	// public List<UsbDeviceEntry> getUsbDevices(String vmId) {
-	// synchronized (uiLock) {
-	// UsbDeviceEntryList list = new UsbDeviceEntryList();
-	// controlVm(vmId, VmCommand.LIST_USB, list);
-	// return list;
-	// }
-	// }
 	public void setup(IClientFacade clientFacade, ISessionManager smanager) {
 		this.clientFacade = clientFacade;
-		this.smanager = smanager;
+		this.sessionManager = smanager;
 		//
 		smanager.addListener(this);
 	}
 
 	@Override
 	public UsbDeviceEntryList getUsbDeviceList(String vmId) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			UsbDeviceEntryList list = new UsbDeviceEntryList();
-			if (actSession != null && mode == Mode.SESSION) {
+			if (activeSession != null && mode == Mode.SESSION) {
 				controlVm(vmId, VmCommand.LIST_USB, list);
 				long to = System.currentTimeMillis() + 1000;
 				while (!list.isUpdated() && to > System.currentTimeMillis()) {
@@ -356,6 +379,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				LOG.debug("Core locked or no session active.");
 				return list;
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -364,7 +389,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	// ==============================================
 	@Override
 	public void closeDialog() {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (mode == Mode.LOGIN || mode == Mode.SESSION) {
 				setCurrentCallback(null);
 				// set UI in 'session' mode
@@ -372,12 +398,15 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				// display current session VMs
 				displayVmsOfActiveSession();
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void showDialog(String message, LoginDialogType type) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (mode == Mode.LOGIN || mode == Mode.SESSION) {
 				setCurrentCallback(null);
 				// set UI in 'login' mode
@@ -397,12 +426,15 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			} else {
 				LOG.debug("Do not show ILogin dialog [{}]", mode);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void showPinDialog(String message, CallbackPin cb) {
-		synchronized (uiLock) {
+		lock();
+		try {
 			if (mode == Mode.LOGIN || mode == Mode.SESSION) {
 				// set UI in 'login' mode
 				mode = Mode.LOGIN;
@@ -410,22 +442,29 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				setCurrentCallback(cb);
 				clientFacade.showGetPIN(message, cb.getId());
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void setVmProperty(String vmId, String key, String value, boolean refreshAllVms) {
 		// do not synchronize on uiLock since we do not change the UI directly.
-		if (actSession != null && mode == Mode.SESSION) {
-			VmModel m = actSession.getModel();
-			Vm vm = m.findByInstanceUid(vmId);
-			if (vm != null) {
-				vm.getDescriptor().getLocalCfg().setPropertie(key, value);
-				m.fireVmUpdatedEvent(vm);
-				if (refreshAllVms) {
-					m.fireModelUpdatedEvent();
+		lock();
+		try {
+			if (activeSession != null && mode == Mode.SESSION) {
+				VmModel m = activeSession.getModel();
+				Vm vm = m.findByInstanceUid(vmId);
+				if (vm != null) {
+					vm.getDescriptor().getLocalCfg().setPropertie(key, value);
+					m.fireVmUpdatedEvent(vm);
+					if (refreshAllVms) {
+						m.fireModelUpdatedEvent();
+					}
 				}
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -434,38 +473,50 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	// ==============================================
 	@Override
 	public void showDialog(String message, ISession session) {
-		synchronized (uiLock) {
-			// only allow active session to do this and only if login do not
+		lock();
+		try {
+			// only allow active session to do this and only if login do
+			// not
 			// use the UI.
-			if (mode == Mode.SESSION && session == actSession) {
+			if (mode == Mode.SESSION && session == activeSession) {
 				setCurrentCallback(null);
 				clientFacade.showMessage(message, IClientFacade.OPTION_NONE);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
 	@Override
 	public void showWorkspace(ISession session) {
-		synchronized (uiLock) {
-			// only allow active session to do this and only if login do not
+		lock();
+		try {
+			// only allow active session to do this and only if login do
+			// not
 			// use the UI.
-			if (mode == Mode.SESSION && session == actSession) {
+			if (mode == Mode.SESSION && session == activeSession) {
 				setCurrentCallback(null);
 				displayVmsOfActiveSession();
 			}
+		} finally {
+			unlock();
 		}
 	}
-	
+
 	@Override
 	public void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO) {
-		synchronized (uiLock) {
-			// only allow active session to do this and only if login do not
+		lock();
+		try {
+			// only allow active session to do this and only if login do
+			// not
 			// use the UI.
-			if (mode == Mode.SESSION && session == actSession) {
+			if (mode == Mode.SESSION && session == activeSession) {
 				setCurrentCallback(null);
 				clientFacade.notifySessionStateUpdate(sessionStateDTO);
 			}
-		}	
+		} finally {
+			unlock();
+		}
 	}
 
 	// ==============================================
@@ -474,7 +525,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	public void listUpdated() {
 		// this event comes of the active session !!
 		// @see setActiveSession()
-		synchronized (uiLock) {
+		lock();
+		try {
 			/*
 			 * display the list of VM of the active session only if no dialog
 			 * are actually displayed.
@@ -482,6 +534,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			if (mode == Mode.SESSION && currentCallback == null) {
 				displayVmsOfActiveSession();
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -489,7 +543,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	public void vmUpdated(Vm vm) {
 		// this event comes of the active session !!
 		// @see setActiveSession()
-		synchronized (uiLock) {
+		lock();
+		try {
 			/*
 			 * update VM details of the active session only if no dialog is
 			 * actually displayed.
@@ -497,6 +552,8 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			if (mode == Mode.SESSION && currentCallback == null) {
 				refreshSingleVmUI(vm);
 			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -504,7 +561,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		// actSession shall not be null (but let test it anyway) and also
 		// check that the given VM is referenced in the active session's
 		// model.
-		if (actSession != null && actSession.getModel().findByInstanceUid(vm.getId()) != null) {
+		if (activeSession != null && activeSession.getModel().findByInstanceUid(vm.getId()) != null) {
 			LOG.debug("REFRESH UI [1 vm: " + vm.getDescriptor().getRemoteCfg().getName() + " / " + vm.getVmStatus() + "] (but refresh all tabs)");
 			clientFacade.notifiyVmUpdated(vm);
 		} else {
@@ -517,12 +574,29 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	 */
 	private void displayVmsOfActiveSession() {
 		setCurrentCallback(null);
-		if (actSession == null) {
+		if (activeSession == null) {
 			LOG.debug("No active session (null). Do not refresh VM list");
 		} else {
-			LOG.debug("Update VM list for active session [" + actSession + "]");
-			List<Vm> vms = actSession.getModel().getVmList();
+			LOG.debug("Update VM list for active session [" + activeSession + "]");
+			List<Vm> vms = activeSession.getModel().getVmList();
 			clientFacade.displayTabs(vms);
 		}
+	}
+
+	private void lock() {
+		uiLock.lock();
+		lockTimestamp = System.currentTimeMillis();
+	}
+
+	private void unlock() {
+		final long delta = System.currentTimeMillis() - lockTimestamp;
+		if (delta > CALL_TIMEOUT) {
+			/**
+			 * Method call SHOULD be fast in order to guarantee a godd user
+			 * experience (avoid freezing UI)
+			 */
+			LOG.error("Method call duration timeout [" + delta + " ms].", new RuntimeException("Method call duration timeout [" + delta + " ms]."));
+		}
+		uiLock.unlock();
 	}
 }
