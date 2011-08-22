@@ -75,7 +75,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(CubeCore.class);
-	private static final long CALL_TIMEOUT = 1;// 1 second
+	private static final long CALL_TIMEOUT = 1000;// 1 second
 	private IClientFacade clientFacade;
 	private ISessionManager sessionManager;
 	private ISession activeSession; // active session
