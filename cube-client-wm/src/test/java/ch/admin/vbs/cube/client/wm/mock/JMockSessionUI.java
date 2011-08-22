@@ -27,6 +27,7 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.CubeMessageDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionUI;
+import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
 
 public class JMockSessionUI implements ISessionUI {
 	/** Logger */
@@ -61,7 +62,11 @@ public class JMockSessionUI implements ISessionUI {
 		});
 	}
 
-	
+	@Override
+	public void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO) {
+		// TODO Auto-generated method stub
+		
+	}
 	
 	@Override
 	public void showWorkspace(ISession session) {

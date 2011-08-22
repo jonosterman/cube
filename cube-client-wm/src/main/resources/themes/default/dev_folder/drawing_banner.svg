@@ -16,7 +16,7 @@
    version="1.1"
    inkscape:version="0.48.1 r9760"
    sodipodi:docname="drawing_banner.svg"
-   inkscape:export-filename="/home/dreier/workspaces/workspace-cube-cno/cube-client-wm/src/main/resources/themes/cno/cube_banner_x58.png"
+   inkscape:export-filename="/src/main/resources/themes/cno/cube_banner_x58.png"
    inkscape:export-xdpi="7.1743646"
    inkscape:export-ydpi="7.1743646">
   <sodipodi:namedview
@@ -684,7 +684,7 @@
     </g>
     <g
        id="g3831"
-       inkscape:export-filename="/home/manhattan/dev/github/cube/cube-client-wm/src/main/resources/themes/default/cube_banner_x58.png"
+       inkscape:export-filename="/src/main/resources/themes/default/cube_banner_x58.png"
        inkscape:export-xdpi="193.2141"
        inkscape:export-ydpi="193.2141">
       <rect
@@ -849,7 +849,7 @@
        width="398.15674"
        id="rect2892-5"
        style="fill:url(#linearGradient2979);fill-opacity:1;stroke:none"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852" />
     <text
@@ -897,7 +897,7 @@
     <rect
        inkscape:export-ydpi="111.43852"
        inkscape:export-xdpi="111.43852"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        style="fill:url(#radialGradient2963);fill-opacity:1;stroke:none"
        id="rect3851"
        width="398.15674"
@@ -910,7 +910,7 @@
        x="165.71506"
        style="font-size:7.20557116999999980px;font-style:normal;font-weight:normal;text-align:start;text-anchor:start;fill:#ffffff;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans;filter:url(#filter3787)"
        xml:space="preserve"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852"><tspan
          id="tspan3769"
@@ -921,7 +921,7 @@
        id="g3016"
        style="fill:#ffffff"
        transform="matrix(0.36224791,0,0,0.36224791,-214.21057,-179.17416)"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852">
       <g
@@ -943,7 +943,7 @@
     <g
        id="g3006"
        transform="matrix(0.36224791,0,0,0.36224791,-214.21057,-179.17416)"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852">
       <text
@@ -1009,7 +1009,7 @@
        x="232.80577"
        y="595.53516"
        id="text3757"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852"><tspan
          sodipodi:role="line"
@@ -1026,7 +1026,7 @@
        sodipodi:ry="23.738585"
        d="m 309.61175,583.65143 a 73.993675,23.738585 0 1 1 -147.98735,0 73.993675,23.738585 0 1 1 147.98735,0 z"
        transform="translate(-1.9356461,-12.024666)"
-       inkscape:export-filename="/home/manhattan/dev/git/cube/cube-client-wm/src/main/resources/themes/default/frame_bg.png"
+       inkscape:export-filename="/src/main/resources/themes/default/frame_bg.png"
        inkscape:export-xdpi="111.43852"
        inkscape:export-ydpi="111.43852" />
   </g>

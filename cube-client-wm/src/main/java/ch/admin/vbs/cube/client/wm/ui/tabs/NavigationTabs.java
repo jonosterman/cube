@@ -82,6 +82,7 @@ public class NavigationTabs extends JideTabbedPane {
 	private ICoreFacade core;
 	private ICubeClient client;
 	private ICubeUI cubeUI;
+	private LogoPanel logo;
 
 	public NavigationTabs(String monitorId) {
 		this.monitorId = monitorId;
@@ -140,7 +141,7 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		});
 		// add header logo
-		LogoPanel logo = new LogoPanel();
+		logo = new LogoPanel();
 		logo.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mousePressed(MouseEvent e) {
@@ -148,8 +149,10 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		});
 		setTabLeadingComponent(logo);
-		
-		
+	}
+	
+	public void setLogo(String iconName) {
+		logo.setIcon(IconManager.getInstance().getIcon(iconName));
 	}
 
 	/**

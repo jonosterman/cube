@@ -64,4 +64,6 @@ public interface IUserInterface {
 	
 	/** display dialog if necessary or VMs */
 	void refresh();
+
+	void setSessionStateIcon(boolean online);
 }

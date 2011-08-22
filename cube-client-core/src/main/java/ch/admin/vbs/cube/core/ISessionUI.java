@@ -16,6 +16,8 @@
 
 package ch.admin.vbs.cube.core;
 
+import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
+
 /**
  * Define a simplistic session UI where only one dialog could be displayed at
  * time. If no dialog is opened, then the VM list is displayed at the top of the
@@ -25,5 +27,9 @@ public interface ISessionUI {
 	void showDialog(String message, ISession session);
 
 	void showWorkspace(ISession session);
+
+	void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO);
+	
+
 	
 }

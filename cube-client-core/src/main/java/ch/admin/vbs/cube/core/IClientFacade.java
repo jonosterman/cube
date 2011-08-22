@@ -19,6 +19,7 @@ package ch.admin.vbs.cube.core;
 import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
+import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -64,7 +65,7 @@ public interface IClientFacade {
 	 * @param additionalMessage
 	 *            message shown in the password dialog along with the standard
 	 *            message.
-	 * @param string 
+	 * @param string
 	 */
 	void showGetPIN(String additionalMessage, String requestId);
 
@@ -95,8 +96,10 @@ public interface IClientFacade {
 	 * Request a user confirmation
 	 * 
 	 * @param messageKey
-	 * @param string 
+	 * @param string
 	 * @return 1 = confirmed, 0 = cancel
 	 */
 	void askConfirmation(String messageKey, String requestId);
+
+	void notifySessionStateUpdate(ISessionStateDTO state);
 }

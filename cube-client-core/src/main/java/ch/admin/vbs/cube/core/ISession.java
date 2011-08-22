@@ -39,6 +39,11 @@ public interface ISession {
 		START, POWER_OFF, SAVE, STAGE, DELETE, TRANSFER_FILE, INSTALL_GUESTADDITIONS, ATTACH_USB, DETACH_USB, LIST_USB
 	}
 
+	//
+	public enum State {
+		open, close, lock, idle, error
+	};
+
 	IIdentityToken getId();
 
 	void setId(IIdentityToken id);
@@ -54,8 +59,13 @@ public interface ISession {
 	VmModel getModel();
 
 	void controlVm(String vmId, VmCommand cmd, IOption option);
-	
+
 	public static interface IOption {
-		
+	}
+
+	public interface ISessionStateDTO {
+		IIdentityToken getId();
+		State getState();
+		boolean isOnline();
 	}
 }

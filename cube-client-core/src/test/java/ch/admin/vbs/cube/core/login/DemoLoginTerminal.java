@@ -16,19 +16,18 @@
 
 package ch.admin.vbs.cube.core.login;
 
-import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
-import ch.admin.vbs.cube.core.impl.ScAuthModule;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
+import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
 import ch.admin.vbs.cube.core.mock.JMockLoginUI;
 
 public class DemoLoginTerminal {
-	public static void main(String[] args) throws CubeException {
+	public static void main(String[] args) throws Exception {
 		DemoLoginTerminal d = new DemoLoginTerminal();
 		d.start();
 	}
 
-	private void start() throws CubeException {
+	private void start() throws Exception {
 		LoginMachine loginMachine = new LoginMachine();
 		ScTokenDevice tokenDevice = new ScTokenDevice();
 		ScAuthModule authModule = new ScAuthModule();

@@ -128,7 +128,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 		// add also NavigationBar frames to 'hide' list
 		for (CubeScreen n : cubeUI.getScreens()) {
-			LOG.trace("Hide navigation bar [{}]",n.getNavigationBar().getTitle());
+			LOG.trace("Hide navigation bar [{}]", n.getNavigationBar().getTitle());
 			hide.add(getXWindow(n.getNavigationBar()));
 		}
 		// hide windows
@@ -217,12 +217,14 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 						 */
 						cached.borderWindow = borderedWindows.get(cached.vmId);
 						if (cached.borderWindow == null) {
-							LOG.debug("A new virtual machine window [{}] has been found, but no corresponding bordered window found. Hide window in root window.",w);
+							LOG.debug(
+									"A new virtual machine window [{}] has been found, but no corresponding bordered window found. Hide window in root window.",
+									w);
 							synchronized (xwm) {
 								xwm.hideAndReparentToRoot(w);
 							}
 						} else {
-							LOG.debug("A new virtual machine window [{}]  has been found, and matching bordered window has been found, reparent them.",w);
+							LOG.debug("A new virtual machine window [{}]  has been found, and matching bordered window has been found, reparent them.", w);
 							// re-parent in the corresponding bordered window
 							synchronized (xwm) {
 								xwm.reparentWindow(cached.borderWindow, w);
@@ -240,9 +242,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					windowName = xwm.getWindowName(w);
 				}
 				// window already managed & type determined
-				LOG.trace("Window [" + w + "]["+windowName+"] already managed [{}/{}]", cached.window, cached.vmId);
-				// 
-				
+				LOG.trace("Window [" + w + "][" + windowName + "] already managed [{}/{}]", cached.window, cached.vmId);
+				//
 			}
 		}
 	}
@@ -356,7 +357,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	@Override
 	public void hideAllVmWindows(String monitorId) {
-		LOG.trace("hideAllVmWindows({})",monitorId);
+		LOG.trace("hideAllVmWindows({})", monitorId);
 		visibleWindows.set(monitorId, null);
 		showNavigationBarAndVms(false);
 	}
@@ -556,8 +557,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 	}
 
-	
-
 	private JFrame getDefaultParentFrame() {
 		return cubeUI.getDefaultScreen().getBackgroundFrame();
 	}
@@ -565,7 +564,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void showVms() {
 		/*
-		 * Called by ClientFacade in order to display workspace when a dialog has been closed.
+		 * Called by ClientFacade in order to display workspace when a dialog
+		 * has been closed.
 		 */
 		LOG.trace("ShowVMs()");
 		synchronized (lock) {
@@ -573,6 +573,13 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			closeCurrentDialog();
 			// ensure that navigation bar are visible
 			showNavigationBarAndVms(true);
+		}
+	}
+
+	@Override
+	public void setSessionStateIcon(boolean online) {
+		for (CubeScreen n : cubeUI.getScreens()) {
+			n.getNavigationBar().setIcon(online ? "swiss_small.png":"offline_small.png");
 		}
 	}
 

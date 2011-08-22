@@ -46,9 +46,9 @@ import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.impl.CubeCore;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
-import ch.admin.vbs.cube.core.impl.ScAuthModule;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
+import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
 
 /**
  * This class is the entry point to start the cube secure client.

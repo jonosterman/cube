@@ -25,7 +25,7 @@ import javax.swing.JOptionPane;
 
 import ch.admin.vbs.cube.core.AuthModuleEvent;
 import ch.admin.vbs.cube.core.IAuthModuleListener;
-import ch.admin.vbs.cube.core.impl.ScAuthModule;
+import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
 
 public class DemoDumpSC {
 	public static void main(String[] args) {

@@ -234,6 +234,10 @@ public class WSDescriptorUpdater implements Runnable {
 		}
 		return map;
 	}
+	
+	public boolean isConnected() {
+		return srv != null;
+	}
 
 	private void connectWebService() {
 		if (srv == null) {

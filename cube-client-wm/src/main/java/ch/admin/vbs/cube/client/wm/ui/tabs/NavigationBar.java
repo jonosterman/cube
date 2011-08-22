@@ -64,6 +64,9 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 		this.monitorId = monitorLabel;
 		initUI();
 	}
+	public void setIcon(String iconName) {
+		tabs.setLogo(iconName);
+	}
 
 	// ################################################
 	// ## Implements IVmChangeListener

@@ -29,6 +29,7 @@ import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.ILoginUI;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISession.IOption;
+import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener;
@@ -453,6 +454,18 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				displayVmsOfActiveSession();
 			}
 		}
+	}
+	
+	@Override
+	public void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO) {
+		synchronized (uiLock) {
+			// only allow active session to do this and only if login do not
+			// use the UI.
+			if (mode == Mode.SESSION && session == actSession) {
+				setCurrentCallback(null);
+				clientFacade.notifySessionStateUpdate(sessionStateDTO);
+			}
+		}	
 	}
 
 	// ==============================================

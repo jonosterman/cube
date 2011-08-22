@@ -36,7 +36,7 @@ import com.jidesoft.swing.JideTabbedPane;
  */
 public class LogoPanel extends JideLabel implements UIResource {
 	private static final long serialVersionUID = 1L;
-	private static final String SWISS_ICON_IMAGE_NAME = "swiss_small.png";
+	private static final String SWISS_ICON_IMAGE_NAME = "offline_small.png";
 
 	/**
 	 * Creates the Panel with the swiss icon on it.

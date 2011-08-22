@@ -57,12 +57,6 @@ public class Session implements Runnable, ISession {
 	private IIdentityToken id;
 	private Thread thread;
 	private int stateCnt = 0;
-
-	//
-	public enum State {
-		open, close, lock, idle, error
-	};
-
 	private State state = State.idle;
 	private long timestamp;
 	private Object lock = new Object();
@@ -87,6 +81,13 @@ public class Session implements Runnable, ISession {
 		bundle = I18nBundleProvider.getBundle();
 		thread = new Thread(this, "Session-(" + id.getSubjectName() + ")");
 		thread.start();
+	}
+
+	/**
+	 * @return true is Web Service is started and connected.
+	 */
+	public boolean isSessionOnline() {
+		return descWs == null ? false : descWs.isConnected();
 	}
 
 	@Override
@@ -115,6 +116,7 @@ public class Session implements Runnable, ISession {
 
 	@Override
 	public void run() {
+		boolean online = false;
 		while (true) {
 			State s = state;
 			timestamp = System.currentTimeMillis();
@@ -123,12 +125,19 @@ public class Session implements Runnable, ISession {
 			switch (s) {
 			case idle:
 			case error:
+				//
 				synchronized (lock) {
+					// check online/offline
+					if (online != isSessionOnline()) {
+						online = isSessionOnline();
+						sessionUI.notifySessionState(this, new SessionStateDTO(id, state, online));
+					}
+					// wait
 					try {
 						// it may have changed since switch statement (->
 						// deadlock);
 						if (state == s)
-							lock.wait();
+							lock.wait(1000);
 					} catch (InterruptedException e) {
 						LOG.error("Failure", e);
 					}
@@ -329,5 +338,29 @@ public class Session implements Runnable, ISession {
 			}
 		}
 		LOG.error("Not all VMs have been saved during logout");
+	}
+
+	public static class SessionStateDTO implements ISessionStateDTO {
+		private final boolean online;
+		private final IIdentityToken id;
+		private final State state;
+
+		public SessionStateDTO(IIdentityToken id, State state, boolean online) {
+			this.id = id;
+			this.state = state;
+			this.online = online;
+		}
+
+		public boolean isOnline() {
+			return online;
+		}
+
+		public IIdentityToken getId() {
+			return id;
+		}
+
+		public State getState() {
+			return state;
+		}
 	}
 }
