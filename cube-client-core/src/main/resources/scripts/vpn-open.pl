@@ -45,6 +45,9 @@ sub vpnopen() {
 	if ( ! -e $key ) { die "file [$key] does not exists"; }
 	if ( ! -e $cert ) { die "file [$cert] does not exists."; }
 	if ( ! -e $ca ) { die "file [$ca] does not exists."; }
+
+	## remove '-' from tap name since iface name seems to have been reduced in openvpn 2.1
+	$tap =~ s/-//;
 	
 	## check if vpn is still running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-open" | wc -l`);
@@ -85,11 +88,17 @@ sub vpnopen() {
 			print "[DEBUG] Kill openvpn process [$pid]\n";
 			runCmd("kill -9 $pid");
 		}		
-	} else {
-		print "[DEBUG] set interface $tap UP\n";			
-		## bring tap up
-		runCmd("ifconfig $tap 0.0.0.0 up");
+	 } else {
+		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) != 0) {
+			print "[DEBUG] set interface $tap UP\n";
+			# bring tap up
+			runCmd("ifconfig $tap 0.0.0.0 up");
+		} else {
+			print "[ERROR] Failed to setup VPN\n";
+			print `cat /tmp/openvpn-${tap}.log`;
+		}
 	}
+	
 			
 }
 

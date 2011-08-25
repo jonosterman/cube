@@ -116,6 +116,8 @@ sub unmountContainer {
 			if ($isMounted != 0) {
 				## try to unmount
 			  if (execCmd("umount $lock{'mountpoint'}") !=0) {print "[WARN ] could not unmount directory $lock{'mountpoint'}\n";$errors++;}	
+			} else {
+			  print "Mount point [$lock{'mountpoint'}] does not seems in use.";
 			}
 			## try to delete mount point
 			if (execCmd("rmdir $lock{'mountpoint'}") != 0) {print "[WARN ] could not remove mountpoint directory $lock{'mountpoint'}\n";$errors++;}

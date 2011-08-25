@@ -29,8 +29,14 @@ sub vpnclose() {
 	GetOptions(
 		'tap=s'          => \$tap
 	) or die "parameters error. $?";
+	
+	
 	## parameters validation // unquoting
 	if ( ! ($tap =~ m/^tap-[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
+
+	## remove '-' from tap name since iface name seems to have been reduced in openvpn 2.1
+	$tap =~ s/-//;
+
 	
 	## check if running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-close" | wc -l`);

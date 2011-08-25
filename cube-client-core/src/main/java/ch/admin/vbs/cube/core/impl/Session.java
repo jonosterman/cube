@@ -121,7 +121,9 @@ public class Session implements Runnable, ISession {
 			State s = state;
 			timestamp = System.currentTimeMillis();
 			int flag = stateCnt;
-			LOG.debug("Proceed state [{}]", s);
+			if (s != State.idle) {
+				LOG.debug("Proceed state [{}]", s);
+			}
 			switch (s) {
 			case idle:
 			case error:
@@ -236,7 +238,9 @@ public class Session implements Runnable, ISession {
 			default:
 				break;
 			}
-			LOG.debug("State [{}] completed in [{} sec]", s, String.format("%.3f", (System.currentTimeMillis() - timestamp) / 1000f));
+			if (s != State.idle) {
+				LOG.debug("State [{}] completed in [{} sec]", s, String.format("%.3f", (System.currentTimeMillis() - timestamp) / 1000f));
+			}
 		}
 	}
 
