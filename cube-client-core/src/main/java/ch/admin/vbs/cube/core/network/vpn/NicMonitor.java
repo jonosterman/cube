@@ -54,7 +54,7 @@ public class NicMonitor implements Runnable {
 				Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces();
 				while (en.hasMoreElements()) {
 					NetworkInterface ni = en.nextElement();
-					if (ni.getDisplayName().startsWith("eth")) {
+					if (ni.getDisplayName().startsWith("eth") || ni.getDisplayName().startsWith("tap-cube")) {
 						sb.append(ni.getDisplayName()).append('#');
 						sb.append(ni.isUp()).append('{');
 						Enumeration<InetAddress> adds = ni.getInetAddresses();

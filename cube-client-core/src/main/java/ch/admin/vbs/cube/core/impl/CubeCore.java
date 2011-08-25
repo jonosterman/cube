@@ -507,6 +507,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	public void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO) {
 		lock();
 		try {
+			LOG.debug("notifySessionState("+session+")["+sessionStateDTO.getState()+"]");
 			// only allow active session to do this and only if login do
 			// not
 			// use the UI.

@@ -397,10 +397,10 @@ public class VBoxProduct implements VBoxCacheListener {
 			machine.getAudioAdapter().setAudioDriver(AudioDriverType.Pulse);
 			machine.getAudioAdapter().setEnabled(true);
 			// configure network interfaces
-			addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), null, machine);
-			addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), null, machine);
-			addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), null, machine);
-			addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), null, machine);
+			addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), cfg.getOption(VBoxOption.Nic1Mac), machine);
+			addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), machine);
+			addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), machine);
+			addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), machine);
 			LOG.debug("Save VM settings [{}].", vm.getId());
 			machine.saveSettings();
 			vbox.registerMachine(machine);
@@ -460,7 +460,8 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine) {
-		LOG.debug("configure nic [{}]", id + " / " + nic);
+		LOG.debug("configure nic [{}]", id + " / " + nic +" / mac:"+mac);
+		mac = mac == null ? null : mac.replaceAll(":", "").toLowerCase();
 		if ("vpn".equals(nic)) {
 			// use pre-configured mac + bridge
 			INetworkAdapter na = machine.getNetworkAdapter(id);

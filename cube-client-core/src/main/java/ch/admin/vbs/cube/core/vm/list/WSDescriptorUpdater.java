@@ -52,7 +52,7 @@ public class WSDescriptorUpdater implements Runnable {
 	private MachineUuid machineId;
 	private boolean running;
 	private WebServiceFactory factory;
-
+	private boolean connected;
 	/**
 	 * @param model
 	 *            model to update
@@ -117,6 +117,7 @@ public class WSDescriptorUpdater implements Runnable {
 							}
 						}
 					}
+					connected = true;
 					// VM on the server and not locally available
 					for (Object o : remoteIndex.values()) {
 						// not on local side
@@ -126,6 +127,7 @@ public class WSDescriptorUpdater implements Runnable {
 					}
 				}
 			} catch (Exception e) {
+				connected = false;
 				srv = null; // ensure reconnect next time
 				if (running) {
 					LOG.error("Failed to update model with webservice", e);
@@ -236,7 +238,7 @@ public class WSDescriptorUpdater implements Runnable {
 	}
 	
 	public boolean isConnected() {
-		return srv != null;
+		return connected;
 	}
 
 	private void connectWebService() {
@@ -245,6 +247,7 @@ public class WSDescriptorUpdater implements Runnable {
 				factory = new WebServiceFactory(builder);
 				srv = factory.createCubeManagerService();
 			} catch (Exception e) {
+				connected = false;
 				srv = null;
 				LOG.error("Failed to init webservice client. Server probably unreachable.", e);
 			}

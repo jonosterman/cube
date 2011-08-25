@@ -578,6 +578,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	@Override
 	public void setSessionStateIcon(boolean online) {
+		LOG.debug("setSessionStateIcon(online:"+online+")");
+		
 		for (CubeScreen n : cubeUI.getScreens()) {
 			n.getNavigationBar().setIcon(online ? "swiss_small.png":"offline_small.png");
 		}
