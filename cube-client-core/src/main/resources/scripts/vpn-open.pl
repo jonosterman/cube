@@ -46,8 +46,6 @@ sub vpnopen() {
 	if ( ! -e $cert ) { die "file [$cert] does not exists."; }
 	if ( ! -e $ca ) { die "file [$ca] does not exists."; }
 
-	## remove '-' from tap name since iface name seems to have been reduced in openvpn 2.1
-	$tap =~ s/-//;
 	
 	## check if vpn is still running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-open" | wc -l`);
