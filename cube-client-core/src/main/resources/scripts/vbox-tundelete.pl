@@ -22,12 +22,25 @@ use Getopt::Long;
 
 ## registervbox --tun <tun name>
 sub tundelete() {
-	my ( $tun );
+	my ( $tap );
 	## Parse arguments
-	GetOptions( 'tun=s' => \$tun ) or die "parameters error. $?";
-	runCmd("pkill -f $tun");
-	runCmd("ifconfig $tun down");
-	runCmd("tunctl -d $tun");
+	GetOptions( 'tun=s' => \$tap ) or die "parameters error. $?";
+	runCmd("pkill -f $tap");
+	runCmd("ifconfig $tap down");
+	#runCmd("tunctl -d $tun");
+	runCmd("openvpn --rmtun $tap");
+	
+	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
+	## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
+	## add an intermediate bridge
+	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
+	my $bridge = $tap;
+	$bridge =~ s/^tap/br/;
+	`ifconfig $bridge 0.0.0.0 down`;
+	`brctl delbr $bridge`;
+	## end of vbox_hack
+	
+	
 }
 
 ###################################################

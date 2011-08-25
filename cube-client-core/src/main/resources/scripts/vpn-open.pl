@@ -35,7 +35,7 @@ sub vpnopen() {
 		'ca=s'          => \$ca
 	) or die "parameters error. $?";
 	## parameters validation // unquoting
-	if ( ! ($tap =~ m/^tap-[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
+	if ( ! ($tap =~ m/^tap[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
 	if ( ! ($hostname =~ m/^[\d\w][-\._\w\d]+$/) ) { die "wrong --hostname format [$hostname]"; }
 	if ( ! ($port =~ m/^[\d]+$/) ) { die "wrong --port format [$port]"; }
 	if ( $key eq '' || ! ($key =~ m/^(\/[-=\._a-zA-z0-9]+)+\/?$/) ) { die "invalid value for option --key [$key]"; }
@@ -46,6 +46,16 @@ sub vpnopen() {
 	if ( ! -e $cert ) { die "file [$cert] does not exists."; }
 	if ( ! -e $ca ) { die "file [$ca] does not exists."; }
 
+
+	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
+	## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
+	## add an intermediate bridge
+	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
+	my $tapvbox = $tap;
+	my $bridge = $tap;
+	$tap =~ s/^tap/tapX/;
+	$bridge =~ s/^tap/br/;
+	## end of vbox_hack
 	
 	## check if vpn is still running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-open" | wc -l`);
@@ -97,6 +107,15 @@ sub vpnopen() {
 		}
 	}
 	
+	## vbox_hack (continue): bridge to vpn
+	`brctl addbr $bridge`;
+	`brctl stp $bridge off`;
+	`brctl addif $bridge $tap`;
+	`brctl addif $bridge $tapvbox`;
+	`ifconfig $tap 0.0.0.0 up`;
+	`ifconfig $tapvbox 0.0.0.0 up`;
+	`ifconfig $bridge 0.0.0.0 up`;
+	## end of vbox_hack
 			
 }
 

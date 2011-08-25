@@ -32,9 +32,17 @@ sub vpnclose() {
 	
 	
 	## parameters validation // unquoting
-	if ( ! ($tap =~ m/^tap-[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
-
-
+	if ( ! ($tap =~ m/^tap[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
+	
+	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
+	## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
+	## add an intermediate bridge
+	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
+	my $tapvbox = $tap;
+	my $bridge = $tap;
+	$tap =~ s/^tap/tapX/;
+	$bridge =~ s/^tap/br/;
+	## end of vbox_hack
 	
 	## check if running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-close" | wc -l`);
@@ -49,6 +57,13 @@ sub vpnclose() {
 	}
 	## remove tap (sometime the command hang and never ends: uninterruptible sleep state. Therefore we fork this command with '&')
 	`tunctl -d $tap &`;
+	
+	
+	## vbox_hack (continue): bridge to vpn
+	`ifconfig $bridge 0.0.0.0 down`;
+	`brctl delbr $bridge`;
+	## end of vbox_hack
+	
 }
 
 ###################################################
