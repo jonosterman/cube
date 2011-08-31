@@ -370,7 +370,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			// register VM (using web service)
 			LOG.debug("Register VM [{}].", vm.getId());
 			machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
-			String hwUuid = cfg.getOption(VBoxOption.HwUuid); 
+			String hwUuid = cfg.getOption(VBoxOption.HwUuid);
 			if (UuidGenerator.validate(hwUuid)) {
 				machine.setHardwareUUID(hwUuid);
 			}
@@ -460,7 +460,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine) {
-		LOG.debug("configure nic [{}]", id + " / " + nic +" / mac:"+mac);
+		LOG.debug("configure nic [{}]", id + " / " + nic + " / mac:" + mac);
 		mac = mac == null ? null : mac.replaceAll(":", "").toLowerCase();
 		if ("vpn".equals(nic)) {
 			// use pre-configured mac + bridge
@@ -651,10 +651,18 @@ public class VBoxProduct implements VBoxCacheListener {
 				// rename saved state file
 				LOG.debug("VM save completed. Rename snapshot");
 				File mp = vm.getRuntimeContainer().getMountpoint();
-				ShellUtil su = new ShellUtil();
-				su.run(null, ShellUtil.NO_TIMEOUT, "mv", "-f", //
-						new File(mp, "{" + vm.getId() + "}.sav").getAbsolutePath(), //
-						new File(mp, "state.sav").getAbsolutePath());
+				for (File f : mp.listFiles()) {
+					if (f.getName().endsWith(".sav")) {
+						LOG.debug("Rename [{}]",f.getAbsolutePath());
+						ShellUtil su = new ShellUtil();
+						su.run(null, ShellUtil.NO_TIMEOUT, "mv", "-f", //
+								f.getAbsolutePath(), //
+								new File(mp, "state.sav").getAbsolutePath());
+						break;
+					} else {
+						LOG.debug("Skip [{}]",f.getAbsolutePath());
+					}
+				}
 				// discard state or we won't be able to unregister it
 				machine = lockMachine(vm.getId(), session);
 				session.getConsole().discardSavedState(true);
