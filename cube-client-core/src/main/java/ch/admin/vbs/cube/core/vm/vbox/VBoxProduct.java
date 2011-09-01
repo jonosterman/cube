@@ -861,4 +861,33 @@ public class VBoxProduct implements VBoxCacheListener {
 			LOG.debug("VirtualBox webservice is busy. do not dettach USB.");
 		}
 	}
+
+	public void connectNic(Vm vm, boolean connected) throws VmException {
+		if (lock.tryLock()) {
+			try {
+				// get IMachine reference
+				IMachine machine = getIMachineReference(vm.getId());
+				ISession session = mgr.getSessionObject();
+				// lock IMachine
+				machine.lockMachine(session, LockType.Shared);
+				machine = session.getMachine();
+				try {
+					INetworkAdapter nic = machine.getNetworkAdapter(1L);
+					if (nic.getEnabled()) {
+						nic.setCableConnected(connected);
+					}
+				} finally {
+					// ensure that session is unlocked
+					unlockSession(session);
+				}
+			} catch (Exception e) {
+				throw new VmException("Failed to connect/disconnect NIC", e);
+			} finally {
+				lock.unlock();
+			}
+		} else {
+			LOG.debug("VirtualBox webservice is busy. do connect/disconnect NIC.");
+		}
+		
+	}
 }

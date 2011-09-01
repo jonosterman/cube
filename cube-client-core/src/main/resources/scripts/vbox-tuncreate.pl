@@ -29,7 +29,6 @@ sub tuncreate() {
 	print "[DEBUG] Create tap device\n";
 	#runCmd("tunctl -t $tap");
 	runCmd("openvpn --mktun --dev $tap"); 
-	runCmd("ifconfig $tap 0.0.0.0 up");
 	
 	
 	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
@@ -38,10 +37,10 @@ sub tuncreate() {
 	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
 	my $bridge = $tap;
 	$bridge =~ s/^tap/br/;
-	`ifconfig $bridge 0.0.0.0 up`;
-	`ifconfig $tap 0.0.0.0 up`;
 	`brctl addbr $bridge`;
 	`brctl addif $bridge $tap`;
+	`ifconfig $bridge 0.0.0.0 up`;
+	`ifconfig $tap 0.0.0.0 up`;
 	## end of vbox_hack
 }
 

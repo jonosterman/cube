@@ -42,6 +42,8 @@ sub vpnclose() {
 	my $bridge = $tap;
 	$tap =~ s/^tap/tapX/;
 	$bridge =~ s/^tap/br/;
+	`ifconfig $bridge 0.0.0.0 down`;
+	`brctl delbr $bridge`;
 	## end of vbox_hack
 	
 	## check if running
@@ -59,10 +61,6 @@ sub vpnclose() {
 	`tunctl -d $tap &`;
 	
 	
-	## vbox_hack (continue): bridge to vpn
-	`ifconfig $bridge 0.0.0.0 down`;
-	`brctl delbr $bridge`;
-	## end of vbox_hack
 	
 }
 

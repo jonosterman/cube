@@ -28,9 +28,11 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
+import ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
+import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.VmStatus;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
@@ -73,7 +75,25 @@ public class Start extends AbstractCtrlTask {
 			vm.getExportFolder().mkdirs();
 			//
 			product.registerVm(vm); // register VM
-			vpnManager.openVpn(vm, keyring); // open vpn
+			vpnManager.openVpn(vm, keyring, new VpnListener() {
+				@Override
+				public void opened() {
+					try {
+						product.connectNic(vm, true);
+					} catch (VmException e) {
+						LOG.error("Failed to connect NIC", e);
+					}
+				}
+
+				@Override
+				public void failed() {
+					try {
+						product.connectNic(vm, false);
+					} catch (VmException e) {
+						LOG.error("Failed to disconnect NIC", e);
+					}
+				}
+			}); // open vpn
 			product.startVm(vm); // start VM
 			/*
 			 * wait that the VM reach the state RUNNING. If it fails within the

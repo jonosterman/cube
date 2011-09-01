@@ -27,8 +27,10 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
+import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.core.network.vpn.NicMonitor.NicChangeListener;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
+import ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.webservice.InstanceParameterHelper;
@@ -53,7 +55,7 @@ public class VpnManager {
 				for (CacheEntry e : vpns) {
 					if (e.keyring.isOpen()) {
 						try {
-							openVpn(e.vm, e.keyring);
+							openVpn(e.vm, e.keyring, e.listener);
 						} catch (VmException e1) {
 							LOG.error("Failed to re-open VPN");
 						}
@@ -106,7 +108,7 @@ public class VpnManager {
 		}
 	}
 
-	public void openVpn(final Vm vm, final IKeyring keyring) throws VmException {
+	public void openVpn(final Vm vm, final IKeyring keyring, final VpnListener l) throws VmException {
 		exs.execute(new Runnable() {
 			/*
 			 * vpn-open.pl block until tunnel opening succeed or fail. Therefor
@@ -130,21 +132,28 @@ public class VpnManager {
 						throw new VmException("Cert/keys have not been decrypted correctly");
 					// open VPN tunnel
 					ScriptUtil script = new ScriptUtil();
-					script.execute("sudo", "./vpn-open.pl", //
+					ShellUtil su = script.execute("sudo", "./vpn-open.pl", //
 							"--tap", cfg.getOption(VpnOption.Tap),//
 							"--hostname", cfg.getOption(VpnOption.Hostname),//
 							"--port", cfg.getOption(VpnOption.Port),//
 							"--ca", tmpCa.getAbsolutePath(),//
 							"--cert", tmpCert.getAbsolutePath(),//
-							"--key", tmpKey.getAbsolutePath(), //
-							"--vm", vm.getId() //
+							"--key", tmpKey.getAbsolutePath() //
 					);
 					// shred keys since they are no more needed
 					tmpKey.shred();
 					tmpCa.shred();
 					tmpCert.shred();
+					//
+					if (su.getExitValue() == 0) {
+						// VPN opening succeed
+						l.opened();
+					} else {
+						// VPN failed
+						l.failed();
+					}
 					synchronized (vpnCache) {
-						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring));
+						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring, l));
 					}
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
@@ -176,12 +185,18 @@ public class VpnManager {
 	}
 
 	private class CacheEntry {
+		private VpnListener listener;
 		private Vm vm;
 		private IKeyring keyring;
 
-		public CacheEntry(Vm vm, IKeyring keyring) {
+		public CacheEntry(Vm vm, IKeyring keyring, VpnListener listener) {
 			this.vm = vm;
 			this.keyring = keyring;
 		}
+	}
+	
+	public static interface VpnListener  {
+		void opened();
+		void failed();
 	}
 }
