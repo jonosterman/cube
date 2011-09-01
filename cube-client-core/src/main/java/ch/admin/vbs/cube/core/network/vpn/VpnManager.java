@@ -30,7 +30,6 @@ import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.core.network.vpn.NicMonitor.NicChangeListener;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
-import ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.webservice.InstanceParameterHelper;
@@ -146,9 +145,11 @@ public class VpnManager {
 					tmpCert.shred();
 					//
 					if (su.getExitValue() == 0) {
+						LOG.debug("VPN opened");
 						// VPN opening succeed
 						l.opened();
 					} else {
+						LOG.warn("VPN failed");
 						// VPN failed
 						l.failed();
 					}

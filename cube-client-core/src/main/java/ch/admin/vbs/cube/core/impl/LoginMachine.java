@@ -258,19 +258,23 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 
 		@Override
 		public void refreshUI() {
-			switch (failureReason) {
-			case FAILED_WRONGPIN:
-				loginUI.showDialog(bundle.getString("login.remove_smartcard_wrongpin"), LoginDialogType.NO_OPTION);
-				break;
-			case FAILED_CARDTIMEOUT:
-				loginUI.showDialog(bundle.getString("login.remove_smartcard_carderror"), LoginDialogType.NO_OPTION);
-				break;
-			case FAILED_USERTIMEOUT:
+			if (failureReason != null) {
+				switch (failureReason) {
+				case FAILED_WRONGPIN:
+					loginUI.showDialog(bundle.getString("login.remove_smartcard_wrongpin"), LoginDialogType.NO_OPTION);
+					break;
+				case FAILED_CARDTIMEOUT:
+					loginUI.showDialog(bundle.getString("login.remove_smartcard_carderror"), LoginDialogType.NO_OPTION);
+					break;
+				case FAILED_USERTIMEOUT:
+					loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
+					break;
+				default:
+					loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
+					break;
+				}
+			} else {
 				loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
-				break;
-			default:
-				loginUI.showDialog(bundle.getString("login.remove_smartcard"), LoginDialogType.NO_OPTION);
-				break;
 			}
 			failureReason = null;
 		}

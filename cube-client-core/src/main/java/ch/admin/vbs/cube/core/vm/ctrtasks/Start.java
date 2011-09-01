@@ -79,8 +79,11 @@ public class Start extends AbstractCtrlTask {
 				@Override
 				public void opened() {
 					try {
+						// disconnect / connect cable to trigger host's network manager
+						product.connectNic(vm, false);
+						Thread.sleep(200);
 						product.connectNic(vm, true);
-					} catch (VmException e) {
+					} catch (Exception e) {
 						LOG.error("Failed to connect NIC", e);
 					}
 				}

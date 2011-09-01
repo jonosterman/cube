@@ -469,7 +469,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			na.setAttachmentType(NetworkAttachmentType.Bridged);
 			na.setBridgedInterface(bridge);
 			na.setMACAddress(mac);
-			na.setCableConnected(true);
+			na.setCableConnected(false); // will be set by VpnListener
 			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(true);
 		} else if ("disabled".equals(nic)) {
@@ -653,14 +653,14 @@ public class VBoxProduct implements VBoxCacheListener {
 				File mp = vm.getRuntimeContainer().getMountpoint();
 				for (File f : mp.listFiles()) {
 					if (f.getName().endsWith(".sav")) {
-						LOG.debug("Rename [{}]",f.getAbsolutePath());
+						LOG.debug("Rename [{}]", f.getAbsolutePath());
 						ShellUtil su = new ShellUtil();
 						su.run(null, ShellUtil.NO_TIMEOUT, "mv", "-f", //
 								f.getAbsolutePath(), //
 								new File(mp, "state.sav").getAbsolutePath());
 						break;
 					} else {
-						LOG.debug("Skip [{}]",f.getAbsolutePath());
+						LOG.debug("Skip [{}]", f.getAbsolutePath());
 					}
 				}
 				// discard state or we won't be able to unregister it
@@ -872,9 +872,14 @@ public class VBoxProduct implements VBoxCacheListener {
 				machine.lockMachine(session, LockType.Shared);
 				machine = session.getMachine();
 				try {
-					INetworkAdapter nic = machine.getNetworkAdapter(1L);
-					if (nic.getEnabled()) {
-						nic.setCableConnected(connected);
+					for (long i = 0L; i < 4L; i++) {
+						INetworkAdapter nic = machine.getNetworkAdapter(i);
+						if (nic.getEnabled()) {
+							LOG.debug("Set nic [{}] CableConnected({})", nic.getSlot(), connected);
+							nic.setCableConnected(connected);
+						} else {
+							LOG.debug("Ignore disabled nic [{}] CableConnected({})", nic.getSlot(), connected);
+						}
 					}
 				} finally {
 					// ensure that session is unlocked
@@ -888,6 +893,5 @@ public class VBoxProduct implements VBoxCacheListener {
 		} else {
 			LOG.debug("VirtualBox webservice is busy. do connect/disconnect NIC.");
 		}
-		
 	}
 }
