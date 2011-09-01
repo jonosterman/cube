@@ -23,7 +23,7 @@ use Getopt::Long;
 ## 
 sub vpnopen() {
 	my (
-		$tap,$hostname,$port,$key,$cert,$ca
+		$tap,$hostname,$port,$key,$cert,$ca,$vm
 	);
 	## Parse arguments
 	GetOptions(
@@ -32,6 +32,7 @@ sub vpnopen() {
 		'port=s'          => \$port,
 		'key=s'          => \$key,
 		'cert=s'          => \$cert,
+		'vm=s'          => \$vm,
 		'ca=s'          => \$ca
 	) or die "parameters error. $?";
 	## parameters validation // unquoting
@@ -47,15 +48,15 @@ sub vpnopen() {
 	if ( ! -e $ca ) { die "file [$ca] does not exists."; }
 
 
-	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
-	## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
+	## vbox_hack : OpenVPN and VirtualBox seems to have some conflicts: If we start VirtualBox 
+	## before OpenVPN, it locks the TAP and OpenVPN fails to open its tunnel. Therefore we
 	## add an intermediate bridge
 	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
 	my $tapvbox = $tap;
 	my $bridge = $tap;
 	$tap =~ s/^tap/tapX/;
 	$bridge =~ s/^tap/br/;
-	## end of vbox_hack
+	## end of vbox_hack (see below for the rest of the hack)
 	
 	## check if vpn is still running
 	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-open" | wc -l`);
@@ -68,6 +69,18 @@ sub vpnopen() {
 			runCmd("kill -9 $pid");
 		}
 	}
+	## disconnect vbox NIC (it will force guest to query a new dhcp address as soon it will reconnect)
+	my $nicId = `su $ENV{SUDO_USER} -c "VBoxManage showvminfo $vm | grep "NIC" | grep "$tapvbox" | awk '{print 1}'"`;
+	if ($nicId =~ /(\d+):/) {
+		$nicId = int($1);
+		print "[DEBUG] disconnect vbox NIC [$nicId]";
+			  runCmd("su $ENV{SUDO_USER} -c \"VBoxManage modifyvm $vm --cableconnected$nicId off\"");				
+	} else {
+		print "[ERROR] invalid NIC : [$nicId]";
+		$nicId = -1;
+		exit 1; # exit with error
+	}
+	
 	## open VPN
 	print "[DEBUG] Start new openvpn process [setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log]\n";
 	runCmd("setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &");
@@ -98,10 +111,17 @@ sub vpnopen() {
 		}		
 	 } else {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) != 0) {
+			## VPN is open
 			print "[DEBUG] set interface $tap UP\n";
-			# bring tap up
+			## bring tap up
 			runCmd("ifconfig $tap 0.0.0.0 up");
+			## connect VM nic
+			if ($nicId >= 0) {
+			  print "[DEBUG] connect VM's NIC [$nicId]\n";
+			  runCmd("su $ENV{SUDO_USER} -c \"VBoxManage modifyvm $vm --cableconnected$nicId on\"");				
+			}
 		} else {
+			## VPN opening failed
 			print "[ERROR] Failed to setup VPN\n";
 			print `cat /tmp/openvpn-${tap}.log`;
 		}

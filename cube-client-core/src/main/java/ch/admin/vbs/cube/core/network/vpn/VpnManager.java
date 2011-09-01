@@ -39,7 +39,7 @@ public class VpnManager {
 	private ExecutorService exs = Executors.newCachedThreadPool();
 	private NicMonitor nicMonitor;
 	private HashMap<String, CacheEntry> vpnCache = new HashMap<String, CacheEntry>();
-	
+
 	public void start() {
 		nicMonitor = new NicMonitor();
 		nicMonitor.addListener(new NicChangeListener() {
@@ -108,6 +108,10 @@ public class VpnManager {
 
 	public void openVpn(final Vm vm, final IKeyring keyring) throws VmException {
 		exs.execute(new Runnable() {
+			/*
+			 * vpn-open.pl block until tunnel opening succeed or fail. Therefor
+			 * we start it in another thread.
+			 */
 			@Override
 			public void run() {
 				try {
@@ -132,14 +136,15 @@ public class VpnManager {
 							"--port", cfg.getOption(VpnOption.Port),//
 							"--ca", tmpCa.getAbsolutePath(),//
 							"--cert", tmpCert.getAbsolutePath(),//
-							"--key", tmpKey.getAbsolutePath()//
+							"--key", tmpKey.getAbsolutePath(), //
+							"--vm", vm.getId() //
 					);
 					// shred keys since they are no more needed
 					tmpKey.shred();
 					tmpCa.shred();
 					tmpCert.shred();
 					synchronized (vpnCache) {
-						vpnCache.put(vm.getId(), new CacheEntry(vm,keyring));
+						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring));
 					}
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
@@ -169,10 +174,11 @@ public class VpnManager {
 			throw new VmException("Failed to close VPN.", e);
 		}
 	}
-	
+
 	private class CacheEntry {
 		private Vm vm;
 		private IKeyring keyring;
+
 		public CacheEntry(Vm vm, IKeyring keyring) {
 			this.vm = vm;
 			this.keyring = keyring;
