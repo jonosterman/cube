@@ -20,12 +20,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.admin.vbs.cube.common.CubeException;
 
 /**
  * The VM model maintains a list of VM for a given session.
  */
 public class VmModel {
+	private static final Logger LOG = LoggerFactory.getLogger(VmModel.class);
 	private ArrayList<Vm> vmList = new ArrayList<Vm>();
 	private HashMap<String, Vm> vmListIndex = new HashMap<String, Vm>();
 	private ArrayList<IVmModelChangeListener> modelListeners = new ArrayList<IVmModelChangeListener>(2);
@@ -110,7 +114,12 @@ public class VmModel {
 	public void fireVmStateUpdatedEvent(Vm vm) {
 		synchronized (stateListeners) {
 			for (IVmStateChangeListener l : stateListeners) {
-				l.vmStateUpdated(vm);
+				try {
+					l.vmStateUpdated(vm);
+				} catch (Exception e) {
+					// may failed due to Timeout in CubeCore
+					LOG.error("Failed to process event");
+				}
 			}
 		}
 	}
