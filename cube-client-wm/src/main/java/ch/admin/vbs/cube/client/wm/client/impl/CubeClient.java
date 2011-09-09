@@ -21,6 +21,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +60,7 @@ public class CubeClient implements ICubeClient {
 	private HashMap<String, VmHandle> vmsRev = new HashMap<String, VmHandle>();
 	private ArrayList<IVmChangeListener> listeners = new ArrayList<IVmChangeListener>();
 	private ICubeUI cubeUI;
+	private Executor exec = Executors.newCachedThreadPool();
 
 	public CubeClient() {
 	}
@@ -130,42 +133,62 @@ public class CubeClient implements ICubeClient {
 		// notify UI for changes
 		notifyVmChanged(h);
 	}
-	
+
 	// #######################################################
 	// Events methods
 	// #######################################################
 	@Override
 	public void notifyAllVmChanged() {
-		synchronized (listeners) {
-			for (IVmChangeListener l : listeners) {
-				l.allVmsChanged();
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					for (IVmChangeListener l : listeners) {
+						l.allVmsChanged();
+					}
+				}
 			}
-		}
+		});
 	}
 
 	@Override
-	public void notifyVmChanged(VmHandle h) {
-		synchronized (listeners) {
-			for (IVmChangeListener l : listeners) {
-				l.vmChanged(new VmChangeEvent(h));
+	public void notifyVmChanged(final VmHandle h) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					for (IVmChangeListener l : listeners) {
+						l.vmChanged(new VmChangeEvent(h));
+					}
+				}
 			}
-		}
+		});
 	}
 
 	@Override
-	public void addListener(IVmChangeListener l) {
-		synchronized (listeners) {
-			listeners.add(l);
-		}
+	public void addListener(final IVmChangeListener l) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					listeners.add(l);
+				}
+			}
+		});
 	}
 
 	@Override
-	public void removeListener(IVmChangeListener l) {
-		synchronized (listeners) {
-			listeners.remove(l);
-		}
+	public void removeListener(final IVmChangeListener l) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				synchronized (listeners) {
+					listeners.remove(l);
+				}
+			}
+		});
 	}
-	
+
 	public void setup(ICubeUI cubeUI) {
 		this.cubeUI = cubeUI;
 	}

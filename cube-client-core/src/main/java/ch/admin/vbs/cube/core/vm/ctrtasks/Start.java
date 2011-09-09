@@ -79,6 +79,10 @@ public class Start extends AbstractCtrlTask {
 				@Override
 				public void opened() {
 					try {
+						// could not connect when starting or restoring. wait
+						while (product.getProductState(vm) == VmProductState.STARTING) {
+							Thread.sleep(500);
+						}
 						// disconnect / connect cable to trigger host's network manager
 						product.connectNic(vm, false);
 						Thread.sleep(200);

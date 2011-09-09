@@ -593,10 +593,10 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		final long delta = System.currentTimeMillis() - lockTimestamp;
 		if (delta > CALL_TIMEOUT) {
 			/**
-			 * Method call SHOULD be fast in order to guarantee a godd user
+			 * Method call SHOULD be fast in order to guarantee a good user
 			 * experience (avoid freezing UI)
 			 */
-			LOG.error("Method call duration timeout [" + delta + " ms].", new RuntimeException("Method call duration timeout [" + delta + " ms]."));
+			LOG.warn("Method call duration timeout [" + delta + " ms].", new RuntimeException("Method call duration timeout [" + delta + " ms]."));
 		}
 		uiLock.unlock();
 	}

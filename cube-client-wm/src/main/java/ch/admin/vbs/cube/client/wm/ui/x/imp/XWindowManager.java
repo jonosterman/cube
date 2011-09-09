@@ -186,6 +186,14 @@ public final class XWindowManager implements IXWindowManager {
 	public synchronized void showOnlyTheseWindow(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
 		// connection to the x server)
 		Display display = x11.XOpenDisplay(displayName);
+		if (showWindowList != null) {
+			// maps and sets all show window
+			for (Window window : showWindowList) {
+				LOG.error("Raise window {}", window);
+				x11.XMapWindow(display, window);
+				x11.XMapRaised(display, window);
+			}
+		}
 		if (hideWindowList != null) {
 			// set all visible window hidden
 			for (Window window : hideWindowList) {
@@ -196,14 +204,6 @@ public final class XWindowManager implements IXWindowManager {
 					LOG.error("Unmap window {}", window);
 					x11.XUnmapWindow(display, window);
 				}
-			}
-		}
-		if (showWindowList != null) {
-			// maps and sets all show window
-			for (Window window : showWindowList) {
-				LOG.error("Raise window {}", window);
-				x11.XMapWindow(display, window);
-				x11.XMapRaised(display, window);
 			}
 		}
 		// commit changes and close display
