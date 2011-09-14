@@ -23,7 +23,6 @@ import java.security.Security;
 import java.util.GregorianCalendar;
 import java.util.logging.Logger;
 
-
 import sun.security.pkcs11.SunPKCS11;
 import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;

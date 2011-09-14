@@ -54,6 +54,10 @@ public class XRScreen {
 			this.freqs = freqs;
 			this.height = height;
 		}
+
+		public List<String> getFreqs() {
+			return freqs;
+		}
 	}
 
 	public String getId() {

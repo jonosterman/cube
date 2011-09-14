@@ -25,13 +25,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
 
 public class BackgroundFrame extends JFrame {
-	private static final Logger LOG = LoggerFactory.getLogger(BackgroundFrame.class);
 	private static final long serialVersionUID = 1L;
 	public static final String TITLE_PREFIX = "Cube.BackgroundFrame#";
 

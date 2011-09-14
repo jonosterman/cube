@@ -26,8 +26,8 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeMessageDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
 import ch.admin.vbs.cube.core.ISession;
-import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
+import ch.admin.vbs.cube.core.ISessionUI;
 
 public class JMockSessionUI implements ISessionUI {
 	/** Logger */

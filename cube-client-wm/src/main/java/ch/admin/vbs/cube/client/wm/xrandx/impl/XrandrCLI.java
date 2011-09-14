@@ -35,7 +35,6 @@ import ch.admin.vbs.cube.common.shell.ShellUtilException;
 public class XrandrCLI implements IXrandr {
 	private static final Logger LOG = LoggerFactory.getLogger(XrandrCLI.class);
 	private ShellUtil su = new ShellUtil();
-	private boolean running;
 	private HashMap<String, XRScreen> screenCache = new HashMap<String, XRScreen>();
 	private Object lock = new Object();
 
@@ -147,6 +146,7 @@ public class XrandrCLI implements IXrandr {
 			LOG.debug("[{}] screens found.", screens.size());
 			// check for new/removed/modified screens
 			synchronized (screenCache) {
+				@SuppressWarnings("unchecked")
 				HashMap<String, XRScreen> screenCacheCopy = (HashMap<String, XRScreen>) screenCache.clone();
 				for (XRScreen s : screens) {
 					XRScreen c = screenCacheCopy.remove(s.getId());

@@ -32,6 +32,7 @@ public class IoC {
 		beans.add(o);
 	}
 	
+	@SuppressWarnings("unchecked")
 	public <T> T getBean(Class<T> clazz) {
 		for(Object o : beans) {
 			if (clazz.isInstance(o)) {
