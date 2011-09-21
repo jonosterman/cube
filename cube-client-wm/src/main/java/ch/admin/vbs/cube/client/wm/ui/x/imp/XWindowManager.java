@@ -189,7 +189,7 @@ public final class XWindowManager implements IXWindowManager {
 		if (showWindowList != null) {
 			// maps and sets all show window
 			for (Window window : showWindowList) {
-				LOG.error("Raise window {}", window);
+				LOG.debug("Raise window {}", window);
 				x11.XMapWindow(display, window);
 				x11.XMapRaised(display, window);
 			}
@@ -201,7 +201,7 @@ public final class XWindowManager implements IXWindowManager {
 				XWindowAttributes attributes = new XWindowAttributes();
 				x11.XGetWindowAttributes(display, window, attributes);
 				if (attributes.map_state != X11.IsUnmapped) {
-					LOG.error("Unmap window {}", window);
+					LOG.debug("Unmap window {}", window);
 					x11.XUnmapWindow(display, window);
 				}
 			}
