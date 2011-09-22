@@ -54,7 +54,10 @@ machines.
 #  link script in /opt/cube/client/scripts:
  ln -s /home/<YOUR USERNAME>/xxxx/cube/cube-common/src/main/resources/scripts/container-cleanup /opt/cube/client/scripts/container-cleanup
  ...
+
+
 #  update /etc/sudo.d/cube:
+
 ###############
 ## CUBE
 ###############
