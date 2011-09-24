@@ -22,8 +22,10 @@
 
 	<properties>
 		<mainClass>ch.admin.vbs.cube.client.wm.apps.Cube</mainClass>
-		<slf4j.version>1.6.1</slf4j.version>
-		<logback.version>0.9.28</logback.version>
+		<slf4j.version>1.6.2</slf4j.version>
+		<logback.version>0.9.30</logback.version>
+		<junit.version>4.8.1</junit.version>
+		<jide.version>2.10.2</jide.version>
 	</properties>
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
@@ -138,7 +140,7 @@
 		<dependency>
 			<groupId>com.jidesoft</groupId>
 			<artifactId>jide-oss</artifactId>
-			<version>2.9.7</version>
+			<version>${jide.version}</version>
 		</dependency>
 
 		<dependency>
@@ -154,7 +156,7 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 

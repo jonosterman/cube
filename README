@@ -97,6 +97,16 @@ mvn install:install-file \
   -DgeneratePom=true
 
 ## Download and install JNA library
+Download jna.jar from http://java.net/projects/jna/downloads
+cd ~/Downloads
+mvn install:install-file \
+  -Dfile=./jna.jar \
+  -DgroupId=com.sun.jna \
+  -DartifactId=jna \
+  -Dversion=<correct_version> \
+  -Dpackaging=jar \
+  -DgeneratePom=true
+
 TODO
 
 

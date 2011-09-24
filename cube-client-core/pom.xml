@@ -22,9 +22,12 @@
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
 	<properties>
-		<cxf.version>2.3.0</cxf.version>
-		<slf4j.version>1.6.1</slf4j.version>
-		<logback.version>0.9.28</logback.version>
+		<cxf.version>2.4.2</cxf.version>
+		<slf4j.version>1.6.2</slf4j.version>
+		<logback.version>0.9.30</logback.version>
+		<commonslang.version>2.6</commonslang.version>
+		<virtualbox.version>4.1.2</virtualbox.version>
+		<junit.version>4.8.1</junit.version>
 		<mainClass>ch.admin.vbs.cube.common.DumpProperties</mainClass>
 	</properties>
 
@@ -156,13 +159,13 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
+			<version>${junit.version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>commons-lang</groupId>
 			<artifactId>commons-lang</artifactId>
-			<version>2.4</version>
+			<version>${commonslang.version}</version>
 		</dependency>
 
 
@@ -201,7 +204,7 @@
 		<dependency>
 			<groupId>virtualbox</groupId>
 			<artifactId>virtualbox</artifactId>
-			<version>4.1.2</version>
+			<version>${virtualbox.version}</version>
 		</dependency>
 
 	</dependencies>
