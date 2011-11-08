@@ -22,6 +22,7 @@
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
 	<properties>
+		<dbus.version>2.7</dbus.version>
 		<cxf.version>2.4.2</cxf.version>
 		<slf4j.version>1.6.2</slf4j.version>
 		<logback.version>0.9.30</logback.version>
@@ -201,10 +202,20 @@
 			<artifactId>cxf-rt-transports-http</artifactId>
 			<version>${cxf.version}</version>
 		</dependency>
-		<dependency>
+		<dependency><!--  Should be manually installed. See project's README -->
 			<groupId>virtualbox</groupId>
 			<artifactId>virtualbox</artifactId>
 			<version>${virtualbox.version}</version>
+		</dependency>
+		<dependency><!--  Should be manually installed. See project's README -->
+			<groupId>org.freedesktop.dbus</groupId>
+			<artifactId>dbus</artifactId>
+			<version>${dbus.version}</version>
+		</dependency>
+		<dependency><!--  Should be manually installed. See project's README -->
+			<groupId>org.freedesktop.dbus</groupId>
+			<artifactId>dbus-bin</artifactId>
+			<version>${dbus.version}</version>
 		</dependency>
 
 	</dependencies>
