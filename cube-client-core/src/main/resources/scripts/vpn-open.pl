@@ -70,8 +70,9 @@ sub vpnopen() {
 	}
 	
 	## open VPN
-	print "[DEBUG] Start new openvpn process [setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log]\n";
-	runCmd("setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &");
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persit-key --persist-tun --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &";
+	print "[DEBUG] Start new openvpn process [$ocmd]\n";
+	runCmd($ocmd);
 	## wait tap to be defined
 	my $timeout = 15; 
 	while (int(`ifconfig -a | grep "$tap"| wc -l`) == 0 && $timeout-- > 0) {

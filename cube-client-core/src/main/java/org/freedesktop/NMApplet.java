@@ -1,28 +1,35 @@
 
 package org.freedesktop;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Vector;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.freedesktop.DBus.Properties;
-import org.freedesktop.NetworkManager.VPN.Connection;
+import org.freedesktop.NetworkManagerSettings.Connection;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
+import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xml.sax.SAXException;
+
+import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
 
 /**
  * @see http://projects.gnome.org/NetworkManager//developers/api/08/spec-08.html
  */
 public class NMApplet {
 	private static final String NM_DBUS_OBJECT = "/org/freedesktop/NetworkManager";
-	private static final String NM_DBUS_ADDRESS = "org.freedesktop.NetworkManager";
+	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
+	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
 	private static final Logger LOG = LoggerFactory.getLogger(NMApplet.class);
 
 	public enum NmState {
@@ -41,48 +48,41 @@ public class NMApplet {
 		NM_VPN_CONNECTION_STATE_REASON_UNKNOWN, NM_VPN_CONNECTION_STATE_REASON_NONE, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED, NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED
 	}
 
-	private DBusConnection conn;
-	private NetworkManager networkManager;
-	private Properties properties;
+	public enum DeviceState {
+		NM_DEVICE_STATE_STATE_UNKNOWN, NM_DEVICE_STATE_UNMNAGED, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_FAILED
+	}
 
+	private DBusConnection sysConn; // system dbus
+	private DBusConnection sesConn; // session dbus
+	private DBusExplorer explo;
+
+	public NMApplet() {
+	}
+
+	/**
+	 * Connect DBUS
+	 * 
+	 * @throws DBusException
+	 */
 	public void connect() throws DBusException {
-		// Connect system's dbus
-		conn = DBusConnection.getConnection(DBusConnection.SYSTEM);
-		networkManager = (NetworkManager) conn.getRemoteObject(NM_DBUS_ADDRESS, NM_DBUS_OBJECT, NetworkManager.class);
-		properties = (Properties) conn.getRemoteObject(NM_DBUS_ADDRESS, NM_DBUS_OBJECT, Properties.class);
-		// Add signal handlers to react on connections changes
-		conn.addSigHandler(NetworkManager.StateChanged.class, new Client());
-		conn.addSigHandler(Connection.VpnStateChanged.class, new VpnClient());
-		//
-		LOG.debug("NMApplet Connected");
+		sysConn = DBusConnection.getConnection(DBusConnection.SYSTEM);
+		sesConn = DBusConnection.getConnection(DBusConnection.SESSION);
+		explo = new DBusExplorer();
 	}
 
-	private class VpnClient implements DBusSigHandler<Connection.VpnStateChanged> {
-		public VpnClient() {
-		}
-
-		@Override
-		public void handle(Connection.VpnStateChanged signal) {
-			VpnConnectionState sig = getEnumConstant(signal.state.intValue(), VpnConnectionState.class);
-			VpnConnectionReason res = getEnumConstant(signal.reason.intValue(), VpnConnectionReason.class);
-			System.out.println("Signal(Connection.VpnStateChanged) [" + sig + "][" + res + "]");
+	public <T extends DBusSignal> void addSignalHanlder(int scope, Class<T> type, DBusSigHandler<T> h) throws DBusException {
+		switch (scope) {
+		case DBusConnection.SESSION:
+			sesConn.addSigHandler(type, h);
+			break;
+		case DBusConnection.SYSTEM:
+		default:
+			sysConn.addSigHandler(type, h);
+			break;
 		}
 	}
 
-	private class Client implements DBusSigHandler<NetworkManager.StateChanged> {
-		@Override
-		public void handle(NetworkManager.StateChanged signal) {
-			NmState sig = getEnumConstant(signal.state.intValue(), NmState.class);
-			System.out.println("Signal(NetworkManager.StateChanged) [" + sig + "]");
-		}
-	}
-
-	public NmState getState() {
-		int s = networkManager.state().intValue();
-		return getEnumConstant(s, NmState.class);
-	}
-
-	private <E> E getEnumConstant(int stateId, Class<E> x) {
+	public <E> E getEnumConstant(int stateId, Class<E> x) {
 		if (stateId < 0 || stateId >= x.getEnumConstants().length) {
 			return null;
 		} else {
@@ -90,133 +90,179 @@ public class NMApplet {
 		}
 	}
 
-	public List<Path> getDevices() {
-		return networkManager.GetDevices();
-	}
-
-	public NmDevice getDevice(Path p) throws DBusException {
-		Properties devProps = (Properties) conn.getRemoteObject(NM_DBUS_ADDRESS, p.toString(), Properties.class);
-		Map<String, Variant> x = devProps.GetAll("");
-		NmDevice d = new NmDevice(p, (Boolean) x.get("Carrier").getValue(), (String) x.get("HwAddress").getValue(),
-				((UInt32) x.get("Speed").getValue()).intValue());
-		return d;
-	}
-
-	public ActiveConnection getActiveConnection(Path p) throws DBusException {
-		Properties devProps = (Properties) conn.getRemoteObject(NM_DBUS_ADDRESS, p.toString(), Properties.class);
-		return new ActiveConnection(p, devProps.GetAll(""));
-	}
-
-	public boolean isWirelessEnabled() {
-		return "true".equalsIgnoreCase(properties.Get(NM_DBUS_ADDRESS, "WirelessEnabled").toString());
-	}
-
-	public boolean isWirelessHardwareEnabled() {
-		return "true".equalsIgnoreCase(properties.Get(NM_DBUS_ADDRESS, "WirelessHardwareEnabled").toString());
-	}
-
-	public List<Path> getActiveConnections() {
-		return properties.Get(NM_DBUS_ADDRESS, "ActiveConnections");
-	}
-
-	
-	public class ActiveConnection {
-		private final Path path;
-		private final boolean def;
-		private final List<NmDevice> devices;
-		private final String servicename;
-		private final ActiveConnectionState state;
-		private final boolean vpn;
-		private final VpnConnectionState vpnState;
-
-		@SuppressWarnings("unchecked")
-		public ActiveConnection(Path path, Map<String, Variant> map) {
-			this.path = path;
-			this.def = (Boolean) map.get("Default").getValue();
-			this.devices = new ArrayList<NmDevice>();
-			for (Path x : (Vector<Path>) map.get("Devices").getValue()) {
-				try {
-					devices.add(getDevice(x));
-				} catch (DBusException e) {
-					LOG.error("Failed to retrieve device [" + x + "]", e);
+	public boolean isIpReachable(String ip) {
+		// convert ip to int
+		int uip = ipToInt(ip);
+		// find all active IP for system connections
+		try {
+			Vector<Path> activeConnections = explo.getProperty(sysConn, //
+					NM_DBUS_BUSNAME, //
+					NM_DBUS_OBJECT, //
+					NM_DBUS_NMIFACE, //
+					"ActiveConnections");
+			for (Path ac : activeConnections) {
+				Vector<Path> devices = explo.getProperty(sysConn, //
+						NM_DBUS_BUSNAME, //
+						ac.getPath(), //
+						"org.freedesktop.NetworkManager.Connection.Active", //
+						"Devices");
+				for (Path device : devices) {
+					Path ip4config = explo.getProperty(sysConn, //
+							NM_DBUS_BUSNAME, //
+							device.getPath(), //
+							"org.freedesktop.NetworkManager.Device", //
+							"Ip4Config");
+					Vector<Vector<UInt32>> addresses = explo.getProperty(sysConn, //
+							NM_DBUS_BUSNAME, //
+							ip4config.getPath(), //
+							"org.freedesktop.NetworkManager.IP4Config", //
+							"Addresses");
+					for (Vector<UInt32> address : addresses) {
+						boolean match = checkIp(address.get(0), address.get(1).intValue(), uip);
+						if (match)
+							return true;
+					}
 				}
 			}
-			this.servicename = (String) map.get("ServiceName").getValue();
-			this.state = getEnumConstant(((UInt32) map.get("State").getValue()).intValue(), ActiveConnectionState.class);
-			this.vpn = (Boolean) map.get("Vpn").getValue();
-			this.vpnState = map.containsKey("VpnState") ? //
-			getEnumConstant( //
-					((UInt32) map.get("VpnState").getValue()).intValue() //
-					, VpnConnectionState.class //
-			) //
-					: null;
+		} catch (Exception e) {
+			LOG.error("Failed to check IP reachibility", e);
 		}
+		return false;
+	}
 
-		public Path getPath() {
-			return path;
-		}
+	/** check if both IP are in the same network */
+	private boolean checkIp(UInt32 uInt32, int mask, int uip) {
+		int umask = maskToInt(mask);
+		return (uint32ToInt(uInt32) & umask) == (uip & umask);
+	}
 
-		public boolean isDef() {
-			return def;
-		}
+	public static final int maskToInt(int mask) {
+		return ((1 << mask) - 1) << (32 - mask);
+	}
 
-		public List<NmDevice> getDevices() {
-			return devices;
-		}
+	/**
+	 * Revert uint32 since NetworkManager deliver the result inverted
+	 */
+	public static final int uint32ToInt(UInt32 uint32) {
+		int uint = uint32.intValue();
+		return (uint & 0xff) << 24 | //
+				(uint & 0xff00) << 8 | //
+				(uint & 0xff0000) >> 8 | //
+				(uint & 0xff000000) >> 24;
+	}
 
-		public String getServicename() {
-			return servicename;
-		}
+	/**
+	 * convert IP to int. (10.11.1.2 --> 0x0a0b0102)
+	 */
+	public static final int ipToInt(String ip) {
+		String[] split = ip.split("\\.");
+		return ((Integer.parseInt(split[0]) & 0xFF) << 24) | //
+				((Integer.parseInt(split[1]) & 0xFF) << 16) | //
+				((Integer.parseInt(split[2]) & 0xFF) << 8) //
+				| (Integer.parseInt(split[3]) & 0xFF);
+	}
 
-		public ActiveConnectionState getState() {
-			return state;
-		}
-
-		public boolean isVpn() {
-			return vpn;
-		}
-
-		public VpnConnectionState getVpnState() {
-			return vpnState;
-		}
-
-		@Override
-		public String toString() {
-			return String.format("ActiveConnection [path:%s, vpn:%b, (vpn)state:%s]", path.getPath(), vpn, vpn ? vpnState : state);
+	public Path startVpn() {
+		try {
+			/*
+			 * get active connection (not a VPN) that will be used as base
+			 * connection. If there is more than one active connection we will
+			 * have to choose one (uncertain output)
+			 */
+			Path base = getBaseConnection();
+			if (base == null) {
+				LOG.debug("No valid base connection found. Do not start VPN.");
+				return null;
+			}
+			// get CubeVpn settings
+			Path cubeVpnConnectionPath = getCubeVpnConnectionPath();
+			if (cubeVpnConnectionPath == null) {
+				LOG.error("No valid Cube VPN defined in user settings.");
+				return null;
+			}
+			// start CubeVpn
+			NetworkManager nm = sysConn.getRemoteObject("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager",
+					org.freedesktop.NetworkManager.class);
+			LOG.debug("Activate VPN [{}]",cubeVpnConnectionPath.getPath());
+			nm.ActivateConnection( //
+					"org.freedesktop.NetworkManagerUserSettings", //
+					cubeVpnConnectionPath, //
+					new Path("/"), // ignored for VPN
+					base); // peek a connection
+			// get corresponding Active and monitor it
+//			monitorCubeVPN(cubeVpnConnectionPath, hanlder);
+			
+			return cubeVpnConnectionPath;
+		} catch (Exception e) {
+			LOG.error("Failed to start VPN", e);
+			return null;
 		}
 	}
 
-	public class NmDevice {
-		private final int speed;
-		private final String mac;
-		private final boolean carrier;
-		private final Path path;
+//	private void monitorCubeVPN(Path path, DBusSigHandler<VpnStateChanged> handler) throws Exception {
+//		Vector<Path> activeConnections = explo.getProperty(sysConn, //
+//				NM_DBUS_BUSNAME, //
+//				NM_DBUS_OBJECT, //
+//				NM_DBUS_NMIFACE, //
+//				"ActiveConnections");
+//		// filter VPNs (do not use CubeVPN to open CubeVPN....)
+//		for (Path p : activeConnections) {
+//			Properties properties = explo.getProperties(sysConn, NM_DBUS_BUSNAME, p.getPath());
+//			boolean pVpn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
+//			Path conn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Connection");
+//			if (pVpn && conn.getPath().equals(path.getPath())) {
+//				// found the connection
+//				LOG.debug("Add signal handler for VPN.");
+//				sysConn.addSigHandler(VpnStateChanged.class, handler);		
+//			}
+//		}
+//	}
 
-		public NmDevice(Path path, boolean carrier, String mac, int speed) {
-			this.path = path;
-			this.carrier = carrier;
-			this.mac = mac;
-			this.speed = speed;
+	private Path getCubeVpnConnectionPath() throws DBusException {
+		NetworkManagerSettings settings = sysConn.getRemoteObject("org.freedesktop.NetworkManagerUserSettings", "/org/freedesktop/NetworkManagerSettings",
+				org.freedesktop.NetworkManagerSettings.class);
+		// list VPN connections in user settings
+		for (Path connectionPath : settings.ListConnections()) {
+			Connection connection = sysConn.getRemoteObject("org.freedesktop.NetworkManagerUserSettings", connectionPath.getPath(),
+					org.freedesktop.NetworkManagerSettings.Connection.class);
+			Map<String, Variant<?>> connCfg = connection.GetSettings().get("connection");
+			boolean isVpn = "vpn".equals(connCfg.get("type").getValue());
+			// debug: select test VPN only
+			if (!"test-system-vpn".equals(connCfg.get("id").getValue())) {
+				return connectionPath;
+			}
 		}
+		return null;
+	}
 
-		public int getSpeed() {
-			return speed;
+	public Path getBaseConnection() throws DBusException, SAXException, IOException, ParserConfigurationException {
+		Vector<Path> activeConnections = explo.getProperty(sysConn, //
+				NM_DBUS_BUSNAME, //
+				NM_DBUS_OBJECT, //
+				NM_DBUS_NMIFACE, //
+				"ActiveConnections");
+		// filter VPNs (do not use CubeVPN to open CubeVPN....)
+		ArrayList<Path> noVpn = new ArrayList<Path>();
+		for (Path p : activeConnections) {
+			Properties properties = explo.getProperties(sysConn, NM_DBUS_BUSNAME, p.getPath());
+			ActiveConnectionState pState = getEnumConstant(((UInt32) properties.Get("org.freedesktop.NetworkManager.Connection.Active", "State")).intValue(),
+					ActiveConnectionState.class);
+			boolean pVpn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
+			if (!pVpn && pState == ActiveConnectionState.NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
+				noVpn.add(p);
+			} else {
+				LOG.debug("Exclude connection [{}]", p.getPath());
+			}
 		}
-
-		public String getMac() {
-			return mac;
-		}
-
-		public boolean isCarrier() {
-			return carrier;
-		}
-
-		public String toString() {
-			return String.format("Device[carrier:%b, mac:%s, speed:%d, path:%s]", carrier, mac, speed, path.toString());
-		}
-
-		public Path getPath() {
-			return path;
+		// return a valid connection
+		if (noVpn.size() == 1) {
+			return noVpn.get(0);
+		} else if (noVpn.size() < 1) {
+			LOG.debug("No active connection to connect a VPN");
+			return null;
+		} else {
+			LOG.debug("More than 1 active connection to connect a VPN. Use the first one.");
+			return noVpn.get(0);
 		}
 	}
 }

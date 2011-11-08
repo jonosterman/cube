@@ -110,7 +110,7 @@ public class VpnManager {
 	public void openVpn(final Vm vm, final IKeyring keyring, final VpnListener l) throws VmException {
 		exs.execute(new Runnable() {
 			/*
-			 * vpn-open.pl block until tunnel opening succeed or fail. Therefor
+			 * vpn-open.pl block until tunnel opening succeed or fail. Therefore
 			 * we start it in another thread.
 			 */
 			@Override
@@ -119,7 +119,7 @@ public class VpnManager {
 					// load configuration
 					VpnConfig cfg = new VpnConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 					cfg.load();
-					// check if vpn is enabled
+					// check if VPN is enabled
 					if (!cfg.getOptionAsBoolean(VpnOption.Enabled)) {
 						return;
 					}
