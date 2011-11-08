@@ -123,6 +123,10 @@ public class VpnManager {
 					if (!cfg.getOptionAsBoolean(VpnOption.Enabled)) {
 						return;
 					}
+					// hold in cache in order to be able to restart it later.
+					synchronized (vpnCache) {
+						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring, l));
+					}
 					// retrieve keys from keyring
 					SafeFile tmpKey = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientKey.getName());
 					SafeFile tmpCert = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientCert.getName());
@@ -153,9 +157,7 @@ public class VpnManager {
 						// VPN failed
 						l.failed();
 					}
-					synchronized (vpnCache) {
-						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring, l));
-					}
+		
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
 				}
