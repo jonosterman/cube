@@ -30,6 +30,10 @@ import ch.admin.vbs.cube.core.ILoginListener;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionUI;
+import ch.admin.vbs.cube.core.ISessionUI.ConnectionState;
+import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkManagerState;
+import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 import ch.admin.vbs.cube.core.vm.VmController;
 
 public class SessionManager implements ISessionManager, ILoginListener {
@@ -41,6 +45,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	private IContainerFactory containerFactory;
 	private VmController vmController;
 	private ArrayList<ISessionManagerListener> listeners = new ArrayList<ISessionManager.ISessionManagerListener>(2);
+	private CNMStateMachine networkManager;
 
 	public SessionManager() {
 	}
@@ -48,6 +53,28 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	@Override
 	public void start() {
 		vmController = new VmController();
+		networkManager =  new CNMStateMachine();
+		vmController.setNetworkManager(networkManager);
+		networkManager.addListener(new Listener() {
+			@Override
+			public void stateChanged(NetworkManagerState old, NetworkManagerState state) {
+				switch (state) {
+				case CONNECTED:
+					sessionUI.notifyConnectionState(ConnectionState.CONNECTED);
+					break;
+				case CONNECTING_VPN:
+					sessionUI.notifyConnectionState(ConnectionState.CONNECTING_VPN);
+					break;
+				case CONNECTING:
+					sessionUI.notifyConnectionState(ConnectionState.CONNECTING);
+					break;
+				case NOT_CONNECTED:
+					sessionUI.notifyConnectionState(ConnectionState.NOT_CONNECTED);
+					break;
+				}
+			}
+		});
+		networkManager.start();
 		vmController.start();
 	}
 

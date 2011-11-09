@@ -74,6 +74,12 @@ public class JMockSessionUI implements ISessionUI {
 		
 	}
 	
+	@Override
+	public void notifyConnectionState(ConnectionState connectingVpn) {
+		// TODO Auto-generated method stub
+		
+	}
+	
 	
 
 }

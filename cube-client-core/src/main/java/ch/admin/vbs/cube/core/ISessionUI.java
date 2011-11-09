@@ -24,11 +24,16 @@ import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
  * UI (tabs).
  */
 public interface ISessionUI {
+	
+	enum ConnectionState { CONNECTED, CONNECTING, NOT_CONNECTED, CONNECTING_VPN }
+	
 	void showDialog(String message, ISession session);
 
 	void showWorkspace(ISession session);
 
 	void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO);
+
+	void notifyConnectionState(ConnectionState connectingVpn);
 	
 
 	

@@ -518,6 +518,17 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			unlock();
 		}
 	}
+	
+	@Override
+	public void notifyConnectionState(ConnectionState state) {
+		lock();
+		try {
+			LOG.debug("notifyConnectionState("+state+"]");
+			clientFacade.notifyConnectionStateUpdate(state);
+		} finally {
+			unlock();
+		}
+	}
 
 	// ==============================================
 	// IVmModelListener (of active session only)

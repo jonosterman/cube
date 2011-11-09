@@ -577,11 +577,26 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	}
 
 	@Override
-	public void setSessionStateIcon(boolean online) {
-		LOG.debug("setSessionStateIcon(online:"+online+")");
-		
+	public void setSessionStateIcon(ConnectionIcon icon) {
+		LOG.debug("setSessionStateIcon(:" + icon + ")");
 		for (CubeScreen n : cubeUI.getScreens()) {
-			n.getNavigationBar().setIcon(online ? "swiss_small.png":"offline_small.png");
+			switch (icon) {
+			case CONNECTED:
+				n.getNavigationBar().setIcon("connected_small.png");
+				break;
+			case CONNECTED_VPN:
+				n.getNavigationBar().setIcon("connectedvpn_small.png");
+				break;
+			case CONNECTING:
+				n.getNavigationBar().setIcon("connecting_small.gif");
+				break;
+			case CONNECTING_VPN:
+				n.getNavigationBar().setIcon("connectingvpn_small.gif");
+				break;
+			case NOT_CONNECTED:
+				n.getNavigationBar().setIcon("offline_small.png");
+				break;
+			}
 		}
 	}
 

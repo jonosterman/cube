@@ -24,6 +24,9 @@ import ch.admin.vbs.cube.common.RelativeFile;
  * content (use IVmChangeListener).
  */
 public interface IUserInterface {
+	
+	enum ConnectionIcon { CONNECTED, NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED_VPN };
+	
 	/**
 	 * Display message dialog.
 	 * 
@@ -65,5 +68,5 @@ public interface IUserInterface {
 	/** display dialog if necessary or VMs */
 	void refresh();
 
-	void setSessionStateIcon(boolean online);
+	void setSessionStateIcon(ConnectionIcon icon);
 }

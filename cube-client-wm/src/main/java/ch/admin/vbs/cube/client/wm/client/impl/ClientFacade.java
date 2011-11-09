@@ -24,10 +24,12 @@ import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.client.ICubeClient;
 import ch.admin.vbs.cube.client.wm.client.IUserInterface;
+import ch.admin.vbs.cube.client.wm.client.IUserInterface.ConnectionIcon;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
+import ch.admin.vbs.cube.core.ISessionUI.ConnectionState;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -91,10 +93,29 @@ public class ClientFacade implements IClientFacade {
 			userIface.showTransferDialog(client.getVmHandle(vm), file);
 		}
 	}
-	
+
 	@Override
 	public void notifySessionStateUpdate(ISessionStateDTO state) {
-		userIface.setSessionStateIcon(state.isOnline());
+		// userIface.setSessionStateIcon(state.isOnline());
+		// TODO remove??? or combine with connection icon??
+	}
+
+	@Override
+	public void notifyConnectionStateUpdate(ConnectionState state) {
+		switch (state) {
+		case CONNECTED:
+			userIface.setSessionStateIcon(ConnectionIcon.CONNECTED);
+			break;
+		case NOT_CONNECTED:
+			userIface.setSessionStateIcon(ConnectionIcon.NOT_CONNECTED);
+			break;
+		case CONNECTING_VPN:
+			userIface.setSessionStateIcon(ConnectionIcon.CONNECTING_VPN);
+			break;
+		case CONNECTING:
+			userIface.setSessionStateIcon(ConnectionIcon.CONNECTING);
+			break;
+		}
 	}
 
 	// @Override

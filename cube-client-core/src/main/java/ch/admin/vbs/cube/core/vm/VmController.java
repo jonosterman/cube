@@ -32,6 +32,7 @@ import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
@@ -60,6 +61,11 @@ public class VmController implements IVmProductListener {
 	public VmController() {
 		// eventually there is only one supported product: VirtualBox
 		product = new VBoxProduct();
+		vpnManager = new VpnManager();
+	}
+	
+	public void setNetworkManager(INetworkManager networkManager) {
+		vpnManager.setNetworkManager(networkManager);
 	}
 
 	public void setTempStatus(Vm vm, VmStatus temp) {
@@ -129,7 +135,7 @@ public class VmController implements IVmProductListener {
 
 	public void start() {
 		stagger = new Stager(this, product);
-		vpnManager = new VpnManager();
+	
 		vpnManager.start();
 		try {
 			containerFactory = ContainerFactoryProvider.getFactory();

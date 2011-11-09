@@ -29,6 +29,7 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
 import ch.admin.vbs.cube.core.network.INetworkManager.NetworkManagerState;
 import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
@@ -42,12 +43,10 @@ public class VpnManager {
 	private static final Logger LOG = LoggerFactory.getLogger(VpnManager.class);
 	private ExecutorService exs = Executors.newCachedThreadPool();
 	private HashMap<String, CacheEntry> vpnCache = new HashMap<String, CacheEntry>();
-	private CNMStateMachine nm;
+	private INetworkManager networkManager;
 
 	public void start() {
-		nm = new CNMStateMachine();
-		nm.start();
-		nm.addListener(new Listener() {
+		networkManager.addListener(new Listener() {
 			@Override
 			public void stateChanged(NetworkManagerState old, NetworkManagerState state) {
 				// copy of cache
@@ -209,6 +208,11 @@ public class VpnManager {
 		}
 	}
 
+	public void setNetworkManager(INetworkManager networkManager) {
+		this.networkManager = networkManager;
+	}
+
+
 	private class CacheEntry {
 		private VpnListener listener;
 		private Vm vm;
@@ -222,7 +226,6 @@ public class VpnManager {
 
 	public static interface VpnListener {
 		void opened();
-
 		void failed();
 	}
 }
