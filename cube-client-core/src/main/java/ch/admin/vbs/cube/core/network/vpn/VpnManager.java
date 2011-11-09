@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.core.network.vpn;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +29,9 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
-import ch.admin.vbs.cube.core.network.vpn.NicMonitor.NicChangeListener;
+import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkManagerState;
+import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
@@ -38,34 +41,54 @@ import cube.cubemanager.services.InstanceConfigurationDTO;
 public class VpnManager {
 	private static final Logger LOG = LoggerFactory.getLogger(VpnManager.class);
 	private ExecutorService exs = Executors.newCachedThreadPool();
-	private NicMonitor nicMonitor;
 	private HashMap<String, CacheEntry> vpnCache = new HashMap<String, CacheEntry>();
+	private CNMStateMachine nm;
 
 	public void start() {
-		nicMonitor = new NicMonitor();
-		nicMonitor.addListener(new NicChangeListener() {
+		nm = new CNMStateMachine();
+		nm.start();
+		nm.addListener(new Listener() {
 			@Override
-			public void nicChanged() {
-				LOG.debug("NIC changed. Restart VPNs.");
-				ArrayList<CacheEntry> vpns = new ArrayList<VpnManager.CacheEntry>();
+			public void stateChanged(NetworkManagerState old, NetworkManagerState state) {
+				// copy of cache
+				Collection<CacheEntry> vpns = new ArrayList<VpnManager.CacheEntry>();
 				synchronized (vpnCache) {
 					vpns.addAll(vpnCache.values());
 				}
-				for (CacheEntry e : vpns) {
-					if (e.keyring.isOpen()) {
+				switch (state) {
+				case CONNECTED:
+					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs.");
+					for (CacheEntry e : vpns) {
+						if (e.keyring.isOpen()) {
+							try {
+								openVpn(e.vm, e.keyring, e.listener);
+							} catch (VmException e1) {
+								LOG.error("Failed to re-open VPN");
+							}
+						} else {
+							// keyring has been closed in the mean time
+							LOG.error("Failed to re-open VPN because Keyring is closed.");
+						}
+					}
+					break;
+				case CONNECTING:
+					break;
+				case CONNECTING_VPN:
+					break;
+				case NOT_CONNECTED:
+					for (CacheEntry e : vpns) {
 						try {
-							openVpn(e.vm, e.keyring, e.listener);
+							closeVpn(e.vm);
 						} catch (VmException e1) {
 							LOG.error("Failed to re-open VPN");
 						}
-					} else {
-						// keyring has been closed in the mean time
-						LOG.error("Failed to re-open VPN because Keyring is closed.");
 					}
+					break;
+				default:
+					break;
 				}
 			}
 		});
-		nicMonitor.start();
 	}
 
 	/**
@@ -142,7 +165,7 @@ public class VpnManager {
 							"--ca", tmpCa.getAbsolutePath(),//
 							"--cert", tmpCert.getAbsolutePath(),//
 							"--key", tmpKey.getAbsolutePath() //
-					);
+							);
 					// shred keys since they are no more needed
 					tmpKey.shred();
 					tmpCa.shred();
@@ -157,7 +180,6 @@ public class VpnManager {
 						// VPN failed
 						l.failed();
 					}
-		
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
 				}
@@ -197,9 +219,10 @@ public class VpnManager {
 			this.keyring = keyring;
 		}
 	}
-	
-	public static interface VpnListener  {
+
+	public static interface VpnListener {
 		void opened();
+
 		void failed();
 	}
 }

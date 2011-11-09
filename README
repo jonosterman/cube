@@ -107,25 +107,6 @@ mvn install:install-file \
   -Dpackaging=jar \
   -DgeneratePom=true
 
-## Download and install DBUS library
-
-apt-get install dbus-java-bin
-
-mvn install:install-file \
-  -Dfile=/usr/share/java/dbus.jar \
-  -DgroupId=org.freedesktop.dbus \
-  -DartifactId=dbus \
-  -Dversion=2.7 \
-  -Dpackaging=jar \
-  -DgeneratePom=true
-mvn install:install-file \
-  -Dfile=/usr/share/java/dbus-bin.jar \
-  -DgroupId=org.freedesktop.dbus \
-  -DartifactId=dbus-bin \
-  -Dversion=2.7 \
-  -Dpackaging=jar \
-  -DgeneratePom=true
-
 
 ## build cube, update eclipse project 
 ##   note: generating project file (eclipse:eclipse) must be run in 
