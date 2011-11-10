@@ -259,4 +259,10 @@ public class NMApplet {
 			return noVpn.get(0);
 		}
 	}
+
+	public void enable(boolean b) throws DBusException {
+		NetworkManager nm = sysConn.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT,
+				org.freedesktop.NetworkManager.class);
+		nm.Enable(b);
+	}
 }

@@ -78,6 +78,9 @@ public final class Cube {
 			LOG.info(" Machine UUID: " + MachineUuid.getMachineUuid().getUuidAsString());
 			LOG.info("");
 			LOG.info("================================================================");
+			for (Object k : System.getProperties().keySet()) {
+				LOG.info(String.format("%s = %s\n",k, System.getProperty((String)k)));
+			}
 			// #########################
 			// Start application
 			// #########################

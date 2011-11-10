@@ -98,4 +98,6 @@ public interface NetworkManager extends DBusInterface {
 		}
 	}
 
+	void Enable(boolean b);
+
 }

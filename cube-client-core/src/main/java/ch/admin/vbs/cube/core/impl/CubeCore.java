@@ -38,6 +38,7 @@ import ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.IUICallback;
 import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
@@ -83,6 +84,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	private IUICallback currentCallback;
 	private Lock uiLock = new ReentrantLock(true);
 	private long lockTimestamp;
+	private NetworkConnectionState lastConnectionState;
 
 	/**
 	 * Set current active session. Derergister-register event listener
@@ -524,6 +526,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	public void notifyConnectionState(INetworkManager.NetworkConnectionState state) {
 		lock();
 		try {
+			lastConnectionState = state;
 			if (mode == Mode.SESSION) {
 				LOG.debug("notifyConnectionState(" + state + "]");
 				clientFacade.notifyConnectionStateUpdate(state);
@@ -594,6 +597,10 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			LOG.debug("Update VM list for active session [" + activeSession + "]");
 			List<Vm> vms = activeSession.getModel().getVmList();
 			clientFacade.displayTabs(vms);
+			// update icon
+			if (lastConnectionState != null) {
+				clientFacade.notifyConnectionStateUpdate(lastConnectionState);
+			}
 		}
 	}
 

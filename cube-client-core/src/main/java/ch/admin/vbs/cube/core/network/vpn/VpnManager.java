@@ -55,18 +55,24 @@ public class VpnManager {
 				}
 				switch (state) {
 				case CONNECTED:
+					/* repoen all VM's VPNs. (in separated theads) */
 					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs.");
-					for (CacheEntry e : vpns) {
-						if (e.keyring.isOpen()) {
-							try {
-								openVpn(e.vm, e.keyring, e.listener);
-							} catch (VmException e1) {
-								LOG.error("Failed to re-open VPN");
+					for (final CacheEntry e : vpns) {
+						exs.execute(new Runnable() {
+							@Override
+							public void run() {
+								if (e.keyring.isOpen()) {
+									try {
+										openVpn(e.vm, e.keyring, e.listener);
+									} catch (VmException e1) {
+										LOG.error("Failed to re-open VPN");
+									}
+								} else {
+									// keyring has been closed in the mean time
+									LOG.error("Failed to re-open VPN because Keyring is closed.");
+								}
 							}
-						} else {
-							// keyring has been closed in the mean time
-							LOG.error("Failed to re-open VPN because Keyring is closed.");
-						}
+						});
 					}
 					break;
 				case CONNECTING:
@@ -74,12 +80,19 @@ public class VpnManager {
 				case CONNECTING_VPN:
 					break;
 				case NOT_CONNECTED:
-					for (CacheEntry e : vpns) {
-						try {
-							closeVpn(e.vm);
-						} catch (VmException e1) {
-							LOG.error("Failed to re-open VPN");
-						}
+					for (final CacheEntry e : vpns) {
+						exs.execute(new Runnable() {
+							@Override
+							public void run() {
+								// TODO Auto-generated method stub
+								try {
+									closeVpn(e.vm);
+								} catch (VmException e1) {
+									LOG.error("Failed to re-open VPN");
+								}
+								
+							}
+						});
 					}
 					break;
 				default:
@@ -213,7 +226,6 @@ public class VpnManager {
 		this.networkManager = networkManager;
 	}
 
-
 	private class CacheEntry {
 		private VpnListener listener;
 		private Vm vm;
@@ -227,7 +239,9 @@ public class VpnManager {
 
 	public static interface VpnListener {
 		void connecting();
+
 		void opened();
+
 		void failed();
 	}
 }

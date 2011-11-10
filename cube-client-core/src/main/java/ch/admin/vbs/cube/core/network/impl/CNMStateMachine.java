@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ch.admin.vbs.cube.core.network.impl;
 
 import java.util.ArrayList;
@@ -37,11 +38,9 @@ import ch.admin.vbs.cube.core.network.INetworkManager;
  *
  */
 public class CNMStateMachine implements INetworkManager {
-	private static final Logger LOG = LoggerFactory
-			.getLogger(CNMStateMachine.class);
+	private static final Logger LOG = LoggerFactory.getLogger(CNMStateMachine.class);
 	private NetworkConnectionState curState;
-	private ArrayList<Listener> listeners = new ArrayList<INetworkManager.Listener>(
-			2);
+	private ArrayList<Listener> listeners = new ArrayList<INetworkManager.Listener>(2);
 	private NMApplet nmApplet = new NMApplet();
 
 	private enum CNMStateEvent {
@@ -66,13 +65,16 @@ public class CNMStateMachine implements INetworkManager {
 			// create DBUS interface to NetworkManager
 			nmApplet.connect();
 			// register for signal (connections and VPN connections)
-			nmApplet.addSignalHanlder(DBusConnection.SYSTEM,
-					StateChanged.class, new StateChangedHandler());
-			nmApplet.addSignalHanlder(DBusConnection.SYSTEM,
-					VpnStateChanged.class, new VpnStateChangedHandler());
-			nmApplet.addSignalHanlder(DBusConnection.SYSTEM,
-					org.freedesktop.NetworkManager.Device.StateChanged.class,
-					new DeviceStateChangedHandler());
+			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
+			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, VpnStateChanged.class, new VpnStateChangedHandler());
+			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, org.freedesktop.NetworkManager.Device.StateChanged.class, new DeviceStateChangedHandler());
+			// initial NetworkManager stop/start in order to get its state through events
+			new Thread(new Runnable() {
+				@Override
+				public void run() {
+					try { nmApplet.enable(false); } catch (Exception e) {}
+					try { nmApplet.enable(true); } catch (Exception e) {}				}
+			});
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS", e);
 		}
@@ -98,17 +100,14 @@ public class CNMStateMachine implements INetworkManager {
 		listeners.remove(l);
 	}
 
-	public class StateChangedHandler implements
-			DBusSigHandler<NetworkManager.StateChanged> {
+	public class StateChangedHandler implements DBusSigHandler<NetworkManager.StateChanged> {
 		public StateChangedHandler() {
 		}
 
 		@Override
 		public void handle(NetworkManager.StateChanged signal) {
-			NmState sig = nmApplet.getEnumConstant(signal.state.intValue(),
-					NmState.class);
-			LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]",
-					sig);
+			NmState sig = nmApplet.getEnumConstant(signal.state.intValue(), NmState.class);
+			LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);
 			switch (sig) {
 			case NM_STATE_CONNECTED:
 				process(CNMStateEvent.NM_CONNECTED);
@@ -125,35 +124,27 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
-	public class DeviceStateChangedHandler implements
-			DBusSigHandler<NetworkManager.Device.StateChanged> {
+	public class DeviceStateChangedHandler implements DBusSigHandler<NetworkManager.Device.StateChanged> {
 		public DeviceStateChangedHandler() {
 		}
 
 		@Override
 		public void handle(NetworkManager.Device.StateChanged signal) {
-			DeviceState sigo = nmApplet.getEnumConstant(signal.ostate
-					.intValue(), DeviceState.class);
-			DeviceState sign = nmApplet.getEnumConstant(signal.nstate
-					.intValue(), DeviceState.class);
-			LOG
-					.debug(
-							"Got DBus signal [Device.StateChanged] - [{} -> {}]  (ignored)",
-							sigo, sign);
+			DeviceState sigo = nmApplet.getEnumConstant(signal.ostate.intValue(), DeviceState.class);
+			DeviceState sign = nmApplet.getEnumConstant(signal.nstate.intValue(), DeviceState.class);
+			LOG.debug("Got DBus signal [Device.StateChanged] - [{} -> {}]  (ignored)", sigo, sign);
 			// actually we do not use device StateChanged event. We only rely on
 			// NetworkManager StateChange events.
 		}
 	}
 
-	public class VpnStateChangedHandler implements
-			DBusSigHandler<VpnStateChanged> {
+	public class VpnStateChangedHandler implements DBusSigHandler<VpnStateChanged> {
 		public VpnStateChangedHandler() {
 		}
 
 		@Override
 		public void handle(VpnStateChanged signal) {
-			VpnConnectionState sig = nmApplet.getEnumConstant(signal.state
-					.intValue(), VpnConnectionState.class);
+			VpnConnectionState sig = nmApplet.getEnumConstant(signal.state.intValue(), VpnConnectionState.class);
 			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);
 			switch (sig) {
 			case NM_VPN_CONNECTION_STATE_ACTIVATED:
@@ -201,10 +192,8 @@ public class CNMStateMachine implements INetworkManager {
 	}
 
 	private void checkVpnNeeded() {
-
 		if (nmApplet.isIpReachable("172.20.0.5")) {
-			LOG
-					.debug("We are connected to cube network. No need to open CubeVPN.");
+			LOG.debug("We are connected to cube network. No need to open CubeVPN.");
 			// we may connect cube server directly.
 			setCurrentState(NetworkConnectionState.CONNECTED);
 		} else {
@@ -213,11 +202,9 @@ public class CNMStateMachine implements INetworkManager {
 			// we have to start CubeVPN
 			Path vpn = nmApplet.startVpn();
 			if (vpn == null) {
-				LOG
-						.debug("VPN not connected. Will wait network manager to reconnect.");
+				LOG.debug("VPN not connected. Will wait network manager to reconnect.");
 				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 			}
 		}
 	}
-
 }
