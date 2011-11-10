@@ -29,7 +29,7 @@ import ch.admin.vbs.cube.common.CubeClassification;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 
 public class TransferWizardDemo {
@@ -48,7 +48,7 @@ public class TransferWizardDemo {
 		descriptor.getRemoteCfg().setType("VirtualBox");
 		descriptor.getLocalCfg().setVmContainerUid(UuidGenerator.generate());
 		Vm vm = new Vm(descriptor);
-		vm.setVmStatus(VmStatus.RUNNING);
+		vm.setVmState(VmState.RUNNING);
 		return vm;
 	}
 

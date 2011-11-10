@@ -115,7 +115,7 @@ mvn install:install-file \
 ##   note: "license:format" should be run on each sub-project
 ##         separately.
 
-mvn -Dmaven.test.skip=true clean install eclipse:eclipse 
+mvn -Dmaven.test.skip=true clean eclipse:clean eclipse:eclipse install 
 for d in cube-common cube-client-core cube-client-wm; do
  cd $d
  mvn -Dmaven.test.skip=true license:format

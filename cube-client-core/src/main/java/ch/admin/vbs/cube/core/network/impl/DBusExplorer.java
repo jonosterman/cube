@@ -1,13 +1,26 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package ch.admin.vbs.cube.core.network.impl;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.util.Iterator;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpression;
@@ -15,31 +28,28 @@ import javax.xml.xpath.XPathFactory;
 
 import org.freedesktop.DBus.Introspectable;
 import org.freedesktop.DBus.Properties;
-import org.freedesktop.NetworkManagerSettings;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusInterface;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 public class DBusExplorer {
-	private DocumentBuilder db;
+//	private DocumentBuilder db;
 
 	public DBusExplorer() {
-		try {
-			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-			dbf.setValidating(false);
-			dbf.setFeature("http://xml.org/sax/features/namespaces", false);
-			dbf.setFeature("http://xml.org/sax/features/validation", false);
-			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-			db = dbf.newDocumentBuilder();
-		} catch (ParserConfigurationException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try {
+//			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+//			dbf.setValidating(false);
+//			dbf.setFeature("http://xml.org/sax/features/namespaces", false);
+//			dbf.setFeature("http://xml.org/sax/features/validation", false);
+//			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+//			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+//			db = dbf.newDocumentBuilder();
+//		} catch (ParserConfigurationException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	public <A> A getProperty(DBusConnection connection, String busname, String objectPath, String ifaceName, String property) throws DBusException  {

@@ -36,7 +36,7 @@ import ch.admin.vbs.cube.common.CubeTransferType;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmHumanComparator;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 
 import com.jidesoft.dialog.ButtonPanel;
 
@@ -87,7 +87,7 @@ public class FileTransferWizard extends CubeWizard {
 		// update to model
 		dstModel.removeAllElements();
 		for (Vm v : sorted) {
-			if (VmStatus.RUNNING.equals(v.getVmStatus())) {
+			if (VmState.RUNNING.equals(v.getVmState())) {
 				if (!srcVm.getId().equals(v.getId())) {
 					dstModel.addElement(v);
 				}

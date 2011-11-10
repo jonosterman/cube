@@ -28,6 +28,7 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
 import ch.admin.vbs.cube.core.ISessionUI;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 
 public class JMockSessionUI implements ISessionUI {
 	/** Logger */
@@ -75,11 +76,10 @@ public class JMockSessionUI implements ISessionUI {
 	}
 	
 	@Override
-	public void notifyConnectionState(ConnectionState connectingVpn) {
+	public void notifyConnectionState(NetworkConnectionState state) {
 		// TODO Auto-generated method stub
 		
 	}
-	
 	
 
 }

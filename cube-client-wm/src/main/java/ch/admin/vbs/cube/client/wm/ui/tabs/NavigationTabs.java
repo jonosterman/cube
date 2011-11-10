@@ -63,7 +63,7 @@ import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 
 import com.jidesoft.swing.JideMenu;
 import com.jidesoft.swing.JidePopupMenu;
@@ -191,7 +191,7 @@ public class NavigationTabs extends JideTabbedPane {
 		if (h == null)
 			return;
 		ResourceBundle resourceBundle = I18nBundleProvider.getBundle();
-		VmStatus state = vmMon.getVmState(h);
+		VmState state = vmMon.getVmState(h);
 		// prepare popup menu
 		// JidePopupMenu popupMenu = new JidePopupMenu();
 		// @03032010: JidePopupMenu is to slow (openjdk6) replace with
@@ -232,7 +232,7 @@ public class NavigationTabs extends JideTabbedPane {
 			return;
 		}
 		// add USB menu
-		if (state == VmStatus.RUNNING) {
+		if (state == VmState.RUNNING) {
 			vmPopupMenu.addSeparator();
 			// vmPopupMenu.add(new VmConnectUsbDevice(h));
 			//
@@ -273,7 +273,7 @@ public class NavigationTabs extends JideTabbedPane {
 			}
 		}
 		// add Hide menu
-		if (state == VmStatus.STOPPED || state == VmStatus.STAGABLE) {
+		if (state == VmState.STOPPED || state == VmState.STAGABLE) {
 			vmPopupMenu.addSeparator();
 			vmPopupMenu.add(new VmHideAction(h, false));
 		}
@@ -297,7 +297,13 @@ public class NavigationTabs extends JideTabbedPane {
 				}
 			}
 		}
-		// show popup
+		//
+		
+		//
+		LOG.debug("show mouse popup at [{}:{}]", event.getX(),event.getY());
+
+				// show popup
+		JComponent comp = (JComponent) event.getSource();
 		vmPopupMenu.show(parent, event.getX(), event.getY());
 	}
 
@@ -341,7 +347,11 @@ public class NavigationTabs extends JideTabbedPane {
 			screensMenu.add(new CubeLayoutAction(cubeUI,Layout.BA,I18nBundleProvider.getBundle().getString("vm.action.screens.ba.text"), IconManager.getInstance().getIcon(
 					"screensBA_icon16.png")));
 		}
+		// hidden VMs
 		cubePopupMenu.add(showMenu);
+		//
+		vmPopupMenu.addSeparator();
+		vmPopupMenu.add(new JideMenu("WiFi Configuration..."));
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());

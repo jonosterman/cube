@@ -25,12 +25,13 @@ import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 
 public class Vm implements Cloneable {
-	private VmStatus vmStatus;
+	private VmState vmState;
 	private Container vmContainer;
 	private Container runtimeContainer;
 	private VmDescriptor descriptor;
 	private int progress;
 	private String progressMessage;
+	private VmVpnState vpnState;
 	private File exportFolder;
 	private File importFolder;
 	private File tempFolder;
@@ -38,7 +39,8 @@ public class Vm implements Cloneable {
 	public Vm(VmDescriptor descriptor) {
 		this.setDescriptor(descriptor);
 		// the current identifier of a vm is the vm name
-		this.vmStatus = VmStatus.UNKNOWN;
+		this.vmState = VmState.UNKNOWN;
+		this.setVpnState(VmVpnState.NOT_CONNECTED);
 	}
 
 	public Container getVmContainer() {
@@ -49,12 +51,12 @@ public class Vm implements Cloneable {
 		return runtimeContainer;
 	}
 
-	public VmStatus getVmStatus() {
-		return vmStatus;
+	public VmState getVmState() {
+		return vmState;
 	}
 
-	public void setVmStatus(VmStatus vmStatus) {
-		this.vmStatus = vmStatus;
+	public void setVmState(VmState vmState) {
+		this.vmState = vmState;
 	}
 
 	/**
@@ -154,5 +156,13 @@ public class Vm implements Cloneable {
 
 	public void setDescriptor(VmDescriptor descriptor) {
 		this.descriptor = descriptor;
+	}
+
+	public VmVpnState getVpnState() {
+		return vpnState;
+	}
+
+	public void setVpnState(VmVpnState vpnState) {
+		this.vpnState = vpnState;
 	}
 }

@@ -29,7 +29,8 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
-import ch.admin.vbs.cube.core.ISessionUI.ConnectionState;
+import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -43,12 +44,15 @@ public class ClientFacade implements IClientFacade {
 	private IUserInterface userIface;
 	private ICubeClient client;
 	private HashSet<String> cachedVmIds = new HashSet<String>();
+	private NetworkConnectionState lastState;
 
 	@Override
 	public void askConfirmation(String messageKey, String requestId) {
 		userIface.showConfirmationDialog(messageKey, requestId);
 	}
 
+	
+	
 	@Override
 	public void displayTabs(List<Vm> vmList) {
 		// update VM list (it will trigger a VmChangeEvent to update
@@ -101,10 +105,14 @@ public class ClientFacade implements IClientFacade {
 	}
 
 	@Override
-	public void notifyConnectionStateUpdate(ConnectionState state) {
+	public void notifyConnectionStateUpdate(INetworkManager.NetworkConnectionState state) {
 		switch (state) {
 		case CONNECTED:
-			userIface.setSessionStateIcon(ConnectionIcon.CONNECTED);
+			if (lastState == NetworkConnectionState.CONNECTING_VPN) {
+				userIface.setSessionStateIcon(ConnectionIcon.CONNECTED_VPN);
+			} else {
+				userIface.setSessionStateIcon(ConnectionIcon.CONNECTED);
+			}
 			break;
 		case NOT_CONNECTED:
 			userIface.setSessionStateIcon(ConnectionIcon.NOT_CONNECTED);
@@ -116,12 +124,9 @@ public class ClientFacade implements IClientFacade {
 			userIface.setSessionStateIcon(ConnectionIcon.CONNECTING);
 			break;
 		}
+		lastState = state;
 	}
 
-	// @Override
-	// public void closeDialog() {
-	// userIface.closeDialog();
-	// }
 	// #######################################################
 	// Injections
 	// #######################################################

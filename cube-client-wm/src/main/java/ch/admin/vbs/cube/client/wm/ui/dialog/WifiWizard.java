@@ -18,30 +18,16 @@ package ch.admin.vbs.cube.client.wm.ui.dialog;
 
 import java.awt.CardLayout;
 import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.event.ActionEvent;
-import java.util.List;
 import java.util.ResourceBundle;
-import java.util.TreeSet;
 
-import javax.swing.AbstractAction;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
-import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JPasswordField;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
-import javax.swing.SpringLayout;
 
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
-import ch.admin.vbs.cube.common.CubeTransferType;
-import ch.admin.vbs.cube.common.RelativeFile;
-import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmHumanComparator;
-import ch.admin.vbs.cube.core.vm.VmStatus;
 
 import com.jidesoft.dialog.ButtonPanel;
 

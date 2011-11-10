@@ -19,7 +19,7 @@ package ch.admin.vbs.cube.core.vm;
 /**
  * Represent the status of a {@link Vm}.
  */
-public enum VmStatus {
+public enum VmState {
 	/**
 	 * The status when the product specific status can not be match if another
 	 * status or during initial process.

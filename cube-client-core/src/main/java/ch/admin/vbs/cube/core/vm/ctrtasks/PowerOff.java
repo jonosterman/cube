@@ -28,7 +28,8 @@ import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class PowerOff extends AbstractCtrlTask {
@@ -43,9 +44,9 @@ public class PowerOff extends AbstractCtrlTask {
 	@Override
 	public void run() {
 		// set temporary status
-		ctrl.setTempStatus(vm, VmStatus.STOPPING);
+		ctrl.setTempStatus(vm, VmState.STOPPING);
 		vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.stopping"));
-		ctrl.refreshVmStatus(vm);
+		ctrl.refreshVmState(vm);
 		// stop VM
 		try {
 			product.poweroffVm(vm, vmModel);
@@ -53,6 +54,7 @@ public class PowerOff extends AbstractCtrlTask {
 			LOG.error("Failed to poweroff VM", e);
 		}
 		// stop VPN
+		vm.setVpnState(VmVpnState.NOT_CONNECTED);
 		try {
 			vpnManager.closeVpn(vm);
 		} catch (Exception e) {
@@ -80,6 +82,6 @@ public class PowerOff extends AbstractCtrlTask {
 			LOG.error("Failed to unmount VM's containers", e);
 		}
 		ctrl.clearTempStatus(vm);
-		ctrl.refreshVmStatus(vm);
+		ctrl.refreshVmState(vm);
 	}
 }

@@ -31,8 +31,7 @@ import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkManagerState;
-import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
@@ -48,7 +47,7 @@ public class VpnManager {
 	public void start() {
 		networkManager.addListener(new Listener() {
 			@Override
-			public void stateChanged(NetworkManagerState old, NetworkManagerState state) {
+			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {
 				// copy of cache
 				Collection<CacheEntry> vpns = new ArrayList<VpnManager.CacheEntry>();
 				synchronized (vpnCache) {
@@ -138,6 +137,7 @@ public class VpnManager {
 			@Override
 			public void run() {
 				try {
+					l.connecting();
 					// load configuration
 					VpnConfig cfg = new VpnConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 					cfg.load();
@@ -181,6 +181,7 @@ public class VpnManager {
 					}
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);
+					l.failed();
 				}
 			}
 		});
@@ -225,6 +226,7 @@ public class VpnManager {
 	}
 
 	public static interface VpnListener {
+		void connecting();
 		void opened();
 		void failed();
 	}

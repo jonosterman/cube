@@ -21,6 +21,7 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.common.Chronos;
 import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.EncryptionKey;
@@ -34,7 +35,8 @@ import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class Start extends AbstractCtrlTask {
@@ -53,18 +55,28 @@ public class Start extends AbstractCtrlTask {
 		EncryptionKey vmKey = null;
 		EncryptionKey rtKey = null;
 		try {
+			Chronos c = new Chronos();
+			vmModel.fireVmStateUpdatedEvent(vm);
+			c.zap("fireVmStateUpdateEvent()");
 			// set temporary status
-			ctrl.setTempStatus(vm, VmStatus.STARTING);
+			ctrl.setTempStatus(vm, VmState.STARTING);
 			//
 			vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.starting"));
-			ctrl.refreshVmStatus(vm);
+			ctrl.refreshVmState(vm);
+			c.zap("refresh vm state");
 			//
 			vmKey = keyring.getKey(vm.getVmContainer().getId());
+			c.zap("got vm's key");
 			rtKey = keyring.getKey(vm.getRuntimeContainer().getId());
+			c.zap("got runtime's key");
 			containerFactory.mountContainer(vm.getVmContainer(), vmKey);
+			c.zap("mounted vm container");
 			containerFactory.mountContainer(vm.getRuntimeContainer(), rtKey);
+			c.zap("mounted runtime container");
 			rtKey.shred(); // shred key asap
+			c.zap("shred runtime key");
 			vmKey.shred(); // shred key asap
+			c.zap("shred vm key");
 			// prepare transfer folders
 			File sessionTransferFolder = new File(transfer.getMountpoint(), vm.getId() + "_transfer");
 			vm.setTempFolder(new File(sessionTransferFolder, "temporary"));
@@ -73,8 +85,10 @@ public class Start extends AbstractCtrlTask {
 			vm.getTempFolder().mkdirs();
 			vm.getImportFolder().mkdirs();
 			vm.getExportFolder().mkdirs();
+			c.zap("configure vm object");
 			//
 			product.registerVm(vm); // register VM
+			c.zap("register vm");
 			vpnManager.openVpn(vm, keyring, new VpnListener() {
 				@Override
 				public void opened() {
@@ -85,11 +99,21 @@ public class Start extends AbstractCtrlTask {
 						}
 						// disconnect / connect cable to trigger host's network manager
 						product.connectNic(vm, false);
-						Thread.sleep(200);
+						Thread.sleep(1000);
 						product.connectNic(vm, true);
+						//
 					} catch (Exception e) {
-						LOG.error("Failed to connect NIC", e);
+						LOG.error("VM's VPN was opened but we failed to connect VM's NIC", e);
+						vm.setVpnState(VmVpnState.NOT_CONNECTED);
+						vmModel.fireVmStateUpdatedEvent(vm);
 					}
+					vm.setVpnState(VmVpnState.CONNECTED);
+					vmModel.fireVmStateUpdatedEvent(vm);
+				}
+				@Override
+				public void connecting() {	
+					vm.setVpnState(VmVpnState.CONNECTING);
+					vmModel.fireVmStateUpdatedEvent(vm);
 				}
 
 				@Override
@@ -97,11 +121,16 @@ public class Start extends AbstractCtrlTask {
 					try {
 						product.connectNic(vm, false);
 					} catch (VmException e) {
-						LOG.error("Failed to disconnect NIC", e);
+						LOG.error("VM's VPN failed and we failed to disconnect NIC", e);
 					}
+					vm.setVpnState(VmVpnState.NOT_CONNECTED);
+					vmModel.fireVmStateUpdatedEvent(vm);
 				}
 			}); // open vpn
+			c.zap("VPN opened (in another thred)");
+
 			product.startVm(vm); // start VM
+			c.zap("vm started");
 			/*
 			 * wait that the VM reach the state RUNNING. If it fails within the
 			 * timeout, remove the tempStatus flag and let VmContorller handle
@@ -113,6 +142,7 @@ public class Start extends AbstractCtrlTask {
 			while (System.currentTimeMillis() < timeout) {
 				VmProductState ps = product.getProductState(vm);
 				if (ps == VmProductState.RUNNING || ps == VmProductState.ERROR) {
+					c.zap("Reached state ["+ps+"]");
 					break;
 				} else if (ps == VmProductState.UNKNOWN) {
 					if (isUnknown) {
@@ -133,6 +163,7 @@ public class Start extends AbstractCtrlTask {
 						// just entered unknown state
 						isUnknown = true;
 						isUnknownSince = System.currentTimeMillis();
+						LOG.debug("Reached an unknown state (will break if VM stay in this state for too long).");
 					}
 				} else {
 					isUnknown = false;
@@ -140,6 +171,7 @@ public class Start extends AbstractCtrlTask {
 				LOG.debug("Wait VM to be RUNNING..");
 				Thread.sleep(500);
 			}
+			c.zap("VM reached state ["+product.getProductState(vm)+"]");
 			LOG.debug("Wait VM reached state [{}]", product.getProductState(vm));
 		} catch (Exception e) {
 			LOG.error("Failed to start VM", e);
@@ -148,9 +180,9 @@ public class Start extends AbstractCtrlTask {
 			if (rtKey != null)
 				rtKey.shred(); // just in case..
 			if (vmKey != null)
-				vmKey.shred(); // just in case..
+				vmKey.shred(); // just in case..			
 			ctrl.clearTempStatus(vm);
-			ctrl.refreshVmStatus(vm);
+			ctrl.refreshVmState(vm);
 		}
 	}
 }

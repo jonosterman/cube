@@ -86,7 +86,7 @@ public class Stager {
 	}
 
 	private boolean validateVmForStaging(Vm vm) {
-		return vm != null && vm.getVmStatus() == VmStatus.STAGABLE && !isStaging(vm.getId());
+		return vm != null && vm.getVmState() == VmState.STAGABLE && !isStaging(vm.getId());
 	}
 
 	private class StagingThead implements Runnable {
@@ -106,7 +106,7 @@ public class Stager {
 		@Override
 		public void run() {
 			LOG.debug("StagingThead: run");
-			controller.refreshVmStatus(vm);
+			controller.refreshVmState(vm);
 			String vmContUuid = UuidGenerator.generate();
 			String rtContUuid = UuidGenerator.generate();
 			EncryptionKey rtKey = null;
@@ -146,7 +146,7 @@ public class Stager {
 				sthread.remove(vm.getId());
 			}
 			LOG.debug("StaggingThead: exit");
-			controller.refreshVmStatus(vm);
+			controller.refreshVmState(vm);
 		}
 
 		private void download(InstanceConfigurationDTO cfg, Vm vm, Container vmContainer, Container rtContainer, Builder builder) throws VmException {

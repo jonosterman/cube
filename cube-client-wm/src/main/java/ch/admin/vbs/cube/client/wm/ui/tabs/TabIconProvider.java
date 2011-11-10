@@ -19,8 +19,8 @@ package ch.admin.vbs.cube.client.wm.ui.tabs;
 import javax.swing.ImageIcon;
 
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
-import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 
 /**
  * Provide status icon based on VM state and progress
@@ -36,58 +36,79 @@ public class TabIconProvider {
 	 * @return Returns the status image icon for the given vm, depending on its
 	 *         state.
 	 */
-	public static final ImageIcon getStatusIcon(Vm vm) {
-		ImageIcon icon = null;
-		if (vm != null) {
-			VmStatus vmStatus = vm.getVmStatus();
-			switch (vmStatus) {
-			case RUNNING:
-				icon = IconManager.getInstance().getIcon("vm_running.png");
-				break;
-			case STARTING:
-			case STOPPING:
-				icon = IconManager.getInstance().getIcon("vm_processing.gif");
-				break;
-			case STAGABLE:
-				icon = IconManager.getInstance().getIcon("vm_stagable.png");
-				break;
-			case STAGING:
-				int stagingProgress = vm.getProgress();
-				if (stagingProgress >= STAGING_PROGRESS_75) {
-					icon = IconManager.getInstance().getIcon("vm_staging_75.gif");
-				} else if (stagingProgress >= STAGING_PROGRESS_50) {
-					icon = IconManager.getInstance().getIcon("vm_staging_50.gif");
-				} else if (stagingProgress >= STAGING_PROGRESS_25) {
-					icon = IconManager.getInstance().getIcon("vm_staging_25.gif");
-				} else {
-					icon = IconManager.getInstance().getIcon("vm_staging_0.gif");
-				}
-				break;
-			case STOPPED:
-				icon = IconManager.getInstance().getIcon("vm_stopped.png");
-				break;
-			case ERROR:
-			case UNKNOWN:
-			default:
-				icon = IconManager.getInstance().getIcon("vm_error.png");
-				break;
-			}
-		}
-		return icon;
-	}
-
+	// public static final ImageIcon getStatusIcon(Vm vm) {
+	// ImageIcon icon = null;
+	// if (vm != null) {
+	// VmState vmState = vm.getVmState();
+	// switch (vmState) {
+	// case RUNNING:
+	// switch (vm.getVpnState()) {
+	// case CONNECTING:
+	// icon = IconManager.getInstance().getIcon("vm_running_connecting.gif");
+	// break;
+	// case NOT_CONNECTED:
+	// icon = IconManager.getInstance().getIcon("vm_running_offline.png");
+	// break;
+	// case CONNECTED:
+	// default:
+	// icon = IconManager.getInstance().getIcon("vm_running.png");
+	// break;
+	// }
+	// break;
+	// case STARTING:
+	// case STOPPING:
+	// icon = IconManager.getInstance().getIcon("vm_processing.gif");
+	// break;
+	// case STAGABLE:
+	// icon = IconManager.getInstance().getIcon("vm_stagable.png");
+	// break;
+	// case STAGING:
+	// int stagingProgress = vm.getProgress();
+	// if (stagingProgress >= STAGING_PROGRESS_75) {
+	// icon = IconManager.getInstance().getIcon("vm_staging_75.gif");
+	// } else if (stagingProgress >= STAGING_PROGRESS_50) {
+	// icon = IconManager.getInstance().getIcon("vm_staging_50.gif");
+	// } else if (stagingProgress >= STAGING_PROGRESS_25) {
+	// icon = IconManager.getInstance().getIcon("vm_staging_25.gif");
+	// } else {
+	// icon = IconManager.getInstance().getIcon("vm_staging_0.gif");
+	// }
+	// break;
+	// case STOPPED:
+	// icon = IconManager.getInstance().getIcon("vm_stopped.png");
+	// break;
+	// case ERROR:
+	// case UNKNOWN:
+	// default:
+	// icon = IconManager.getInstance().getIcon("vm_error.png");
+	// break;
+	// }
+	// }
+	// return icon;
+	// }
 	/**
 	 * @param vm
 	 *            the vm for which the icon is asked for
 	 * @return Returns the status image icon for the given vm, depending on its
 	 *         state.
 	 */
-	public static final ImageIcon getStatusIcon(VmStatus vmStatus) {
+	public static final ImageIcon getStatusIcon(VmState vmState, VmVpnState vpnState) {
 		ImageIcon icon = null;
-		if (vmStatus != null) {
-			switch (vmStatus) {
+		if (vmState != null) {
+			switch (vmState) {
 			case RUNNING:
-				icon = IconManager.getInstance().getIcon("vm_running.png");
+				switch (vpnState) {
+				case CONNECTING:
+					icon = IconManager.getInstance().getIcon("vm_running_connecting.gif");
+					break;
+				case NOT_CONNECTED:
+					icon = IconManager.getInstance().getIcon("vm_running_offline.png");
+					break;
+				case CONNECTED:
+				default:
+					icon = IconManager.getInstance().getIcon("vm_running.png");
+					break;
+				}
 				break;
 			case STARTING:
 			case STOPPING:

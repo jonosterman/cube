@@ -35,7 +35,7 @@ import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.list.DescriptorModelCache;
 import ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater;
 
@@ -304,7 +304,7 @@ public class Session implements Runnable, ISession {
 		ArrayList<Vm> vmIndex = new ArrayList<Vm>();
 		// Start 'SAVE' for all running VMs
 		for (final Vm vm : vmModel.getVmList()) {
-			if (vm.getVmStatus() == VmStatus.RUNNING) {
+			if (vm.getVmState() == VmState.RUNNING) {
 				vmIndex.add(vm);
 				LOG.debug("Save VM [{}]", vm.getDescriptor().getRemoteCfg().getName());
 				controlVm(vm.getId(), VmCommand.SAVE, null);
@@ -317,8 +317,8 @@ public class Session implements Runnable, ISession {
 		while (System.currentTimeMillis() < timeout) {
 			int remind = 0;
 			for (Vm vm : vmIndex) {
-				if (vm.getVmStatus() == VmStatus.STOPPING || vm.getVmStatus() == VmStatus.RUNNING) {
-					LOG.debug("Wait on VM [{}][{}]", vm.getDescriptor().getRemoteCfg().getName(), vm.getVmStatus());
+				if (vm.getVmState() == VmState.STOPPING || vm.getVmState() == VmState.RUNNING) {
+					LOG.debug("Wait on VM [{}][{}]", vm.getDescriptor().getRemoteCfg().getName(), vm.getVmState());
 					remind++;
 				}
 			}

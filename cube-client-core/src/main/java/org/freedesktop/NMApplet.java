@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package org.freedesktop;
 
@@ -27,6 +42,7 @@ import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
  * @see http://projects.gnome.org/NetworkManager//developers/api/08/spec-08.html
  */
 public class NMApplet {
+	private static final String CUBE_VPN_NAME = "cube-vpn";
 	private static final String NM_DBUS_OBJECT = "/org/freedesktop/NetworkManager";
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
@@ -189,34 +205,12 @@ public class NMApplet {
 					cubeVpnConnectionPath, //
 					new Path("/"), // ignored for VPN
 					base); // peek a connection
-			// get corresponding Active and monitor it
-//			monitorCubeVPN(cubeVpnConnectionPath, hanlder);
-			
 			return cubeVpnConnectionPath;
 		} catch (Exception e) {
 			LOG.error("Failed to start VPN", e);
 			return null;
 		}
 	}
-
-//	private void monitorCubeVPN(Path path, DBusSigHandler<VpnStateChanged> handler) throws Exception {
-//		Vector<Path> activeConnections = explo.getProperty(sysConn, //
-//				NM_DBUS_BUSNAME, //
-//				NM_DBUS_OBJECT, //
-//				NM_DBUS_NMIFACE, //
-//				"ActiveConnections");
-//		// filter VPNs (do not use CubeVPN to open CubeVPN....)
-//		for (Path p : activeConnections) {
-//			Properties properties = explo.getProperties(sysConn, NM_DBUS_BUSNAME, p.getPath());
-//			boolean pVpn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
-//			Path conn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Connection");
-//			if (pVpn && conn.getPath().equals(path.getPath())) {
-//				// found the connection
-//				LOG.debug("Add signal handler for VPN.");
-//				sysConn.addSigHandler(VpnStateChanged.class, handler);		
-//			}
-//		}
-//	}
 
 	private Path getCubeVpnConnectionPath() throws DBusException {
 		NetworkManagerSettings settings = sysConn.getRemoteObject("org.freedesktop.NetworkManagerUserSettings", "/org/freedesktop/NetworkManagerSettings",
@@ -227,8 +221,8 @@ public class NMApplet {
 					org.freedesktop.NetworkManagerSettings.Connection.class);
 			Map<String, Variant<?>> connCfg = connection.GetSettings().get("connection");
 			boolean isVpn = "vpn".equals(connCfg.get("type").getValue());
-			// debug: select test VPN only
-			if (!"test-system-vpn".equals(connCfg.get("id").getValue())) {
+			// debug: select cube-vpn
+			if (isVpn && CUBE_VPN_NAME.equals(connCfg.get("id").getValue())) {
 				return connectionPath;
 			}
 		}
@@ -247,7 +241,7 @@ public class NMApplet {
 			Properties properties = explo.getProperties(sysConn, NM_DBUS_BUSNAME, p.getPath());
 			ActiveConnectionState pState = getEnumConstant(((UInt32) properties.Get("org.freedesktop.NetworkManager.Connection.Active", "State")).intValue(),
 					ActiveConnectionState.class);
-			boolean pVpn = properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
+			boolean pVpn = (Boolean)properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
 			if (!pVpn && pState == ActiveConnectionState.NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				noVpn.add(p);
 			} else {

@@ -1,12 +1,27 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ch.admin.vbs.cube.core.network.impl;
 
 import java.util.ArrayList;
 
 import org.freedesktop.NMApplet;
-import org.freedesktop.NetworkManager;
 import org.freedesktop.NMApplet.DeviceState;
 import org.freedesktop.NMApplet.NmState;
 import org.freedesktop.NMApplet.VpnConnectionState;
+import org.freedesktop.NetworkManager;
 import org.freedesktop.NetworkManager.StateChanged;
 import org.freedesktop.NetworkManager.VPN.Connection.VpnStateChanged;
 import org.freedesktop.dbus.DBusConnection;
@@ -24,7 +39,7 @@ import ch.admin.vbs.cube.core.network.INetworkManager;
 public class CNMStateMachine implements INetworkManager {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(CNMStateMachine.class);
-	private NetworkManagerState curState;
+	private NetworkConnectionState curState;
 	private ArrayList<Listener> listeners = new ArrayList<INetworkManager.Listener>(
 			2);
 	private NMApplet nmApplet = new NMApplet();
@@ -33,8 +48,8 @@ public class CNMStateMachine implements INetworkManager {
 		NM_CONNECTING, NM_CONNECTED, NM_DISCONNECTED, VPN_CONNECTING, VPN_CONNECTED, VPN_DISCONNECTED
 	}
 
-	private void setCurrentState(NetworkManagerState n) {
-		NetworkManagerState old = curState;
+	private void setCurrentState(NetworkConnectionState n) {
+		NetworkConnectionState old = curState;
 		curState = n;
 		if (old != n) {
 			for (Listener l : listeners) {
@@ -45,7 +60,7 @@ public class CNMStateMachine implements INetworkManager {
 
 	@Override
 	public void start() {
-		setCurrentState(NetworkManagerState.NOT_CONNECTED);
+		setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 		// TODO: adapt curState to NetworkManager status
 		try {
 			// create DBUS interface to NetworkManager
@@ -69,7 +84,7 @@ public class CNMStateMachine implements INetworkManager {
 	}
 
 	@Override
-	public NetworkManagerState getState() {
+	public NetworkConnectionState getState() {
 		return curState;
 	}
 
@@ -162,19 +177,19 @@ public class CNMStateMachine implements INetworkManager {
 		synchronized (this) {
 			switch (action) {
 			case NM_CONNECTING:
-				setCurrentState(NetworkManagerState.CONNECTING);
+				setCurrentState(NetworkConnectionState.CONNECTING);
 				break;
 			case NM_CONNECTED:
 				checkVpnNeeded();
 				break;
 			case NM_DISCONNECTED:
-				setCurrentState(NetworkManagerState.NOT_CONNECTED);
+				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 				break;
 			case VPN_CONNECTING:
-				setCurrentState(NetworkManagerState.CONNECTING_VPN);
+				setCurrentState(NetworkConnectionState.CONNECTING_VPN);
 				break;
 			case VPN_CONNECTED:
-				setCurrentState(NetworkManagerState.CONNECTED);
+				setCurrentState(NetworkConnectionState.CONNECTED);
 				break;
 			case VPN_DISCONNECTED:
 				checkVpnNeeded();
@@ -191,16 +206,16 @@ public class CNMStateMachine implements INetworkManager {
 			LOG
 					.debug("We are connected to cube network. No need to open CubeVPN.");
 			// we may connect cube server directly.
-			setCurrentState(NetworkManagerState.CONNECTED);
+			setCurrentState(NetworkConnectionState.CONNECTED);
 		} else {
 			LOG.debug("Connected to foreign network. Start CubeVPN.");
-			setCurrentState(NetworkManagerState.CONNECTING_VPN);
+			setCurrentState(NetworkConnectionState.CONNECTING_VPN);
 			// we have to start CubeVPN
 			Path vpn = nmApplet.startVpn();
 			if (vpn == null) {
 				LOG
 						.debug("VPN not connected. Will wait network manager to reconnect.");
-				setCurrentState(NetworkManagerState.NOT_CONNECTED);
+				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 			}
 		}
 	}

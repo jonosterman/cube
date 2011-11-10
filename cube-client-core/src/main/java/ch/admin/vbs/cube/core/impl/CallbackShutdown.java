@@ -31,7 +31,7 @@ import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 
 public class CallbackShutdown extends AbstractUICallback implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(CallbackShutdown.class);
@@ -58,7 +58,7 @@ public class CallbackShutdown extends AbstractUICallback implements Runnable {
 		List<Vm> vmToWait = new ArrayList<Vm>();
 		for (final ISession s : sessions) {
 			for (final Vm vm : s.getModel().getVmList()) {
-				if (vm.getVmStatus() == VmStatus.RUNNING) {
+				if (vm.getVmState() == VmState.RUNNING) {
 					vmToWait.add(vm);
 				}
 			}
@@ -75,8 +75,8 @@ public class CallbackShutdown extends AbstractUICallback implements Runnable {
 		while (System.currentTimeMillis() < timeout) {
 			int remind = 0;
 			for (Vm vm : vmToWait) {
-				if (vm.getVmStatus() == VmStatus.STOPPING || vm.getVmStatus() == VmStatus.RUNNING) {
-					LOG.debug("Wait on VM [{}][{}]", vm.getDescriptor().getRemoteCfg().getName(), vm.getVmStatus());
+				if (vm.getVmState() == VmState.STOPPING || vm.getVmState() == VmState.RUNNING) {
+					LOG.debug("Wait on VM [{}][{}]", vm.getDescriptor().getRemoteCfg().getName(), vm.getVmState());
 					remind++;
 				}
 			}

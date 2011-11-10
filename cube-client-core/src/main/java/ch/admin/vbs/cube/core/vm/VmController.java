@@ -53,7 +53,7 @@ public class VmController implements IVmProductListener {
 	private Object updateLock = new Object();
 	private VBoxProduct product;
 	private Stager stagger;
-	private Map<String, VmStatus> tempStatus = new  HashMap<String, VmStatus>();
+	private Map<String, VmState> tempStatus = new  HashMap<String, VmState>();
 	private Executor exec = Executors.newCachedThreadPool();
 	private IContainerFactory containerFactory;
 	private VpnManager vpnManager;
@@ -68,19 +68,19 @@ public class VmController implements IVmProductListener {
 		vpnManager.setNetworkManager(networkManager);
 	}
 
-	public void setTempStatus(Vm vm, VmStatus temp) {
+	public void setTempStatus(Vm vm, VmState temp) {
 		synchronized (tempStatus) {
 			tempStatus.put(vm.getId(), temp);
 		}
 	}
 
-	public VmStatus getTempStatus(Vm vm) {
+	public VmState getTempStatus(Vm vm) {
 		synchronized (tempStatus) {
 			return tempStatus.get(vm.getId());
 		}
 	}
 	
-	public VmStatus clearTempStatus(Vm vm) {
+	public VmState clearTempStatus(Vm vm) {
 		synchronized (tempStatus) {
 			return tempStatus.remove(vm.getId());
 		}
@@ -93,10 +93,10 @@ public class VmController implements IVmProductListener {
 		switch (cmd) {
 		case STAGE:
 			stagger.startStaging(vm, model, id, keyring);
-			refreshVmStatus(vm);
+			refreshVmState(vm);
 			break;
 		case START:
-			if (vm.getVmStatus() == VmStatus.STOPPED) {
+			if (vm.getVmState() == VmState.STOPPED) {
 				exec.execute(new Start(this, keyring, vm, containerFactory, vpnManager, product, transfer, model, option));
 			} else {
 				LOG.warn("Vm MUST be stopped to be started.");
@@ -173,7 +173,7 @@ public class VmController implements IVmProductListener {
 			// update all VMs in model
 			synchronized (updateLock) {
 				for (Vm vm : src.getVmList()) {
-					refreshVmStatus(vm);
+					refreshVmState(vm);
 				}
 			}
 		}
@@ -182,13 +182,13 @@ public class VmController implements IVmProductListener {
 		public void vmUpdated(Vm vm) {
 			// update given VM
 			synchronized (updateLock) {
-				refreshVmStatus(vm);
+				refreshVmState(vm);
 			}
 		}
 	}
 
 	/** update vm state due to a change in model. */
-	public void refreshVmStatus(Vm vm) {
+	public void refreshVmState(Vm vm) {
 		try {
 			// is vm staggable?
 			VmDescriptor desc = vm.getDescriptor();
@@ -201,22 +201,22 @@ public class VmController implements IVmProductListener {
 			}
 			// check if container exists on disk
 			if (stagger.isStaging(vm.getId())) {
-				vm.setVmStatus(VmStatus.STAGING);
+				vm.setVmState(VmState.STAGING);
 			} else {
 				if (vm.getVmContainer() != null && vm.getRuntimeContainer() != null && vm.getRuntimeContainer().exists() && vm.getVmContainer().exists()) {
 					LOG.debug("already stagged");
-					VmStatus tmp = tempStatus.get(vm.getId());
+					VmState tmp = tempStatus.get(vm.getId());
 					if (tmp != null) {
 						VmProductState pstate = product.getProductState(vm);
 						if (pstate == VmProductState.ERROR) {
 							// cancel temporary status
 							tempStatus.remove(vm.getId());
-							vm.setVmStatus(VmStatus.ERROR);
+							vm.setVmState(VmState.ERROR);
 						} else {
 							LOG.debug("Rely on temporary status [{}] instead of product state [{}]", tmp, pstate);
 							// when starting or stopping, rely on the temporary
 							// status that we set in controlVm() method.
-							vm.setVmStatus(tmp);
+							vm.setVmState(tmp);
 						}
 					} else {
 						// container are present on the disk. ask product in
@@ -225,34 +225,34 @@ public class VmController implements IVmProductListener {
 						LOG.debug("Rely on product status [{}]", pstate);
 						switch (pstate) {
 						case STARTING:
-							vm.setVmStatus(VmStatus.STARTING);
+							vm.setVmState(VmState.STARTING);
 							break;
 						case RUNNING:
-							vm.setVmStatus(VmStatus.RUNNING);
+							vm.setVmState(VmState.RUNNING);
 							break;
 						case STOPPED:
-							vm.setVmStatus(VmStatus.STOPPED);
+							vm.setVmState(VmState.STOPPED);
 							break;
 						case STOPPING:
-							vm.setVmStatus(VmStatus.STOPPING);
+							vm.setVmState(VmState.STOPPING);
 							break;
 						case ERROR:
-							vm.setVmStatus(VmStatus.ERROR);
+							vm.setVmState(VmState.ERROR);
 							break;
 						case UNKNOWN:
 						default:
 							LOG.debug("Unsupported status [" + product.getProductState(vm) + "]");
-							vm.setVmStatus(VmStatus.ERROR);
+							vm.setVmState(VmState.ERROR);
 							break;
 						}
 					}
 				} else {
-					vm.setVmStatus(VmStatus.STAGABLE);
+					vm.setVmState(VmState.STAGABLE);
 				}
 			}
 		} catch (Exception e) {
 			LOG.error("Failed to update VM state", e);
-			vm.setVmStatus(VmStatus.ERROR);
+			vm.setVmState(VmState.ERROR);
 		}
 		// find model which contains this VM and notify changes
 		VmModel model = null;
@@ -301,7 +301,7 @@ public class VmController implements IVmProductListener {
 			 * effectively running through this event.
 			 */
 			tempStatus.remove(vm.getId());
-			refreshVmStatus(vm);
+			refreshVmState(vm);
 			break;
 		case STOPPED:
 			/*
@@ -309,11 +309,11 @@ public class VmController implements IVmProductListener {
 			 * see that the VM is STOPPED). We will be notified that the VM is
 			 * effectively stopped through this event.
 			 */
-			VmStatus status = tempStatus.remove(vm.getId());
-			if (status == VmStatus.STOPPING) {
+			VmState status = tempStatus.remove(vm.getId());
+			if (status == VmState.STOPPING) {
 				LOG.debug("'STOPPING' VM reached 'STOPPED' status.");
 				// expected STOPPED status
-				refreshVmStatus(vm);
+				refreshVmState(vm);
 			} else {
 				LOG.error("Unexpected STOPPED status. Power off VM.");
 				// unexpected STOPPED status (VM's OS shutdown). power off VM.
@@ -324,7 +324,7 @@ public class VmController implements IVmProductListener {
 			if (oldState == VmProductState.RUNNING && !tempStatus.containsKey(vm.getId())) {
 				// guest OS probably shutdown. trigger shutdown
 				LOG.debug("Cleanup VM");
-				tempStatus.put(vm.getId(), VmStatus.STOPPING);
+				tempStatus.put(vm.getId(), VmState.STOPPING);
 				controlVm(vm, null, VmCommand.POWER_OFF, null, null, null, null);
 			}
 		default:

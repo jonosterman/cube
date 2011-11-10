@@ -20,7 +20,7 @@ import java.util.List;
 
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
-import ch.admin.vbs.cube.core.ISessionUI.ConnectionState;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -104,5 +104,5 @@ public interface IClientFacade {
 
 	void notifySessionStateUpdate(ISessionStateDTO state);
 
-	void notifyConnectionStateUpdate(ConnectionState state);
+	void notifyConnectionStateUpdate(INetworkManager.NetworkConnectionState state);
 }

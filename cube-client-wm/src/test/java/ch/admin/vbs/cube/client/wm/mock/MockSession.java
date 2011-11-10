@@ -32,7 +32,7 @@ import ch.admin.vbs.cube.core.usb.UsbDeviceEntry.DeviceEntryState;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 
 public class MockSession implements ISession {
@@ -45,7 +45,7 @@ public class MockSession implements ISession {
 		vmModel = new VmModel();
 		try {
 			Vm vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.RUNNING);
+			vm.setVmState(VmState.RUNNING);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -61,7 +61,7 @@ public class MockSession implements ISession {
 			usbDevices.add(new UsbDeviceEntry(vm.getId(), new UsbDevice("0015", "ACME shop", "1018", "The whole Internet"), DeviceEntryState.AVAILABLE));
 
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -69,7 +69,7 @@ public class MockSession implements ISession {
 			vm.getDescriptor().getRemoteCfg().setName("Some BB Zm");
 			vmModel.addVm(vm);
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -77,7 +77,7 @@ public class MockSession implements ISession {
 			vm.getDescriptor().getRemoteCfg().setName("Some AA zm");
 			vmModel.addVm(vm);
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -85,7 +85,7 @@ public class MockSession implements ISession {
 			vm.getDescriptor().getRemoteCfg().setName("Some aa vm");
 			vmModel.addVm(vm);
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.CONFIDENTIAL);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -95,7 +95,7 @@ public class MockSession implements ISession {
 			
 
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.SECRET);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -104,7 +104,7 @@ public class MockSession implements ISession {
 			vmModel.addVm(vm);
 
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.UNCLASSIFIED);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");
@@ -113,7 +113,7 @@ public class MockSession implements ISession {
 			vmModel.addVm(vm);
 
 			vm = new Vm(new VmDescriptor());
-			vm.setVmStatus(VmStatus.STOPPED);
+			vm.setVmState(VmState.STOPPED);
 			vm.getDescriptor().getRemoteCfg().setId(UuidGenerator.generate());
 			vm.getDescriptor().getRemoteCfg().setClassification(CubeClassification.RESTRICTED);
 			vm.getDescriptor().getRemoteCfg().setDescription("description");

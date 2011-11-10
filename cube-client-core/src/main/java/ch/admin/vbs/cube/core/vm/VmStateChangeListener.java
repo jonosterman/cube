@@ -16,8 +16,8 @@
 
 package ch.admin.vbs.cube.core.vm;
 
-public interface VmStatusChangeListener {
-	void notifyStatusChanged(Vm vm, VmStatus oldStatus, VmStatus newStatus);
+public interface VmStateChangeListener {
+	void notifyStateChanged(Vm vm, VmState oldStatus, VmState newState);
 
 	/**
 	 * method used to notify that the descriptor has changed. It have to be save

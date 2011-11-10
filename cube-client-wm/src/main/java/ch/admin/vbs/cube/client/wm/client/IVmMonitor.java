@@ -17,7 +17,8 @@
 package ch.admin.vbs.cube.client.wm.client;
 
 import ch.admin.vbs.cube.common.CubeClassification;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 
 /**
  * This interface is used to fetch information about the VmHanlde list and VM's
@@ -27,7 +28,9 @@ import ch.admin.vbs.cube.core.vm.VmStatus;
  * The goal is to avoid UI elements to retains references to VM objects.
  */
 public interface IVmMonitor {
-	VmStatus getVmState(VmHandle handle);
+	VmState getVmState(VmHandle handle);
+
+	VmVpnState getVpnState(VmHandle handle);
 
 	String getVmDescription(VmHandle handle);
 

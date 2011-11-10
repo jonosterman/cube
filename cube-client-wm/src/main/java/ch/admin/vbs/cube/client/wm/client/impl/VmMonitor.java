@@ -21,7 +21,8 @@ import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.CubeClassification;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 
 /**
  * @see IVmMonitor
@@ -55,9 +56,14 @@ public class VmMonitor implements IVmMonitor {
 	}
 
 	@Override
-	public VmStatus getVmState(VmHandle handle) {
+	public VmState getVmState(VmHandle handle) {
 		Vm vm = client.getVm(handle);
-		return vm == null ? VmStatus.UNKNOWN : vm.getVmStatus();
+		return vm == null ? VmState.UNKNOWN : vm.getVmState();
+	}
+	@Override
+	public VmVpnState getVpnState(VmHandle handle) {
+		Vm vm = client.getVm(handle);
+		return vm == null ? VmVpnState.NOT_CONNECTED: vm.getVpnState();
 	}
 
 	@Override

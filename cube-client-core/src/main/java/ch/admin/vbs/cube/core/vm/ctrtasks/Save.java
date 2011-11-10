@@ -28,7 +28,8 @@ import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
-import ch.admin.vbs.cube.core.vm.VmStatus;
+import ch.admin.vbs.cube.core.vm.VmState;
+import ch.admin.vbs.cube.core.vm.VmVpnState;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class Save extends AbstractCtrlTask {
@@ -44,10 +45,10 @@ public class Save extends AbstractCtrlTask {
 	public void run() {
 		// set temporary status
 		LOG.debug("Start saving...");
-		ctrl.setTempStatus(vm, VmStatus.STOPPING);
+		ctrl.setTempStatus(vm, VmState.STOPPING);
 		vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.saving"));
 		LOG.debug("refresh");
-		ctrl.refreshVmStatus(vm);
+		ctrl.refreshVmState(vm);
 		LOG.debug("refresh done");
 		// stop VM
 		try {
@@ -58,9 +59,9 @@ public class Save extends AbstractCtrlTask {
 			LOG.error("Failed to save VM", e);
 		}
 		// stop VPN
+		vm.setVpnState(VmVpnState.NOT_CONNECTED);
 		try {
 			vpnManager.closeVpn(vm);
-			LOG.debug("VPN closed");
 		} catch (Exception e) {
 			LOG.error("Failed to stop VPN", e);
 		}
@@ -85,6 +86,6 @@ public class Save extends AbstractCtrlTask {
 			LOG.error("Failed to unmount VM's containers", e);
 		}
 		ctrl.clearTempStatus(vm);
-		ctrl.refreshVmStatus(vm);
+		ctrl.refreshVmState(vm);
 	}
 }

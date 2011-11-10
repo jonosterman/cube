@@ -37,6 +37,7 @@ import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.IUICallback;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
@@ -520,7 +521,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	}
 	
 	@Override
-	public void notifyConnectionState(ConnectionState state) {
+	public void notifyConnectionState(INetworkManager.NetworkConnectionState state) {
 		lock();
 		try {
 			LOG.debug("notifyConnectionState("+state+"]");
@@ -573,7 +574,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 		// check that the given VM is referenced in the active session's
 		// model.
 		if (activeSession != null && activeSession.getModel().findByInstanceUid(vm.getId()) != null) {
-			LOG.debug("REFRESH UI [1 vm: " + vm.getDescriptor().getRemoteCfg().getName() + " / " + vm.getVmStatus() + "] (but refresh all tabs)");
+			LOG.debug("REFRESH UI [1 vm: " + vm.getDescriptor().getRemoteCfg().getName() + " / " + vm.getVmState() + "] (but refresh all tabs)");
 			clientFacade.notifiyVmUpdated(vm);
 		} else {
 			LOG.debug("No active session OR vm [" + vm.getId() + "] not in current active session");

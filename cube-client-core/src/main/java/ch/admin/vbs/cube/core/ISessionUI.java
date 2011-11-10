@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.core;
 
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 
 /**
  * Define a simplistic session UI where only one dialog could be displayed at
@@ -25,15 +26,13 @@ import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
  */
 public interface ISessionUI {
 	
-	enum ConnectionState { CONNECTED, CONNECTING, NOT_CONNECTED, CONNECTING_VPN }
-	
 	void showDialog(String message, ISession session);
 
 	void showWorkspace(ISession session);
 
 	void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO);
 
-	void notifyConnectionState(ConnectionState connectingVpn);
+	void notifyConnectionState(INetworkManager.NetworkConnectionState state);
 	
 
 	
