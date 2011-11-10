@@ -350,8 +350,8 @@ public class NavigationTabs extends JideTabbedPane {
 		// hidden VMs
 		cubePopupMenu.add(showMenu);
 		//
-		vmPopupMenu.addSeparator();
-		vmPopupMenu.add(new JideMenu("WiFi Configuration..."));
+		cubePopupMenu.addSeparator();
+		cubePopupMenu.add(new JideMenu("WiFi Configuration..."));
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());

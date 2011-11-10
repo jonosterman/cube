@@ -507,7 +507,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	public void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO) {
 		lock();
 		try {
-			LOG.debug("notifySessionState("+session+")["+sessionStateDTO.getState()+"]");
+			LOG.debug("notifySessionState(" + session + ")[" + sessionStateDTO.getState() + "]");
 			// only allow active session to do this and only if login do
 			// not
 			// use the UI.
@@ -519,13 +519,15 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 			unlock();
 		}
 	}
-	
+
 	@Override
 	public void notifyConnectionState(INetworkManager.NetworkConnectionState state) {
 		lock();
 		try {
-			LOG.debug("notifyConnectionState("+state+"]");
-			clientFacade.notifyConnectionStateUpdate(state);
+			if (mode == Mode.SESSION) {
+				LOG.debug("notifyConnectionState(" + state + "]");
+				clientFacade.notifyConnectionStateUpdate(state);
+			}
 		} finally {
 			unlock();
 		}
