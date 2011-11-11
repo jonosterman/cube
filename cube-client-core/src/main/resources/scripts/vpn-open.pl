@@ -97,8 +97,8 @@ sub vpnopen() {
 			$pid = int($pid);
 			print "[DEBUG] Kill openvpn process [$pid]\n";
 			runCmd("kill -9 $pid");
-			exit(6);
-		}		
+		}
+		exit 11;
 	 } else {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) != 0) {
 			## VPN is open
