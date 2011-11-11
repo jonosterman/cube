@@ -97,9 +97,7 @@ public class Start extends AbstractCtrlTask {
 						while (product.getProductState(vm) == VmProductState.STARTING) {
 							Thread.sleep(500);
 						}
-						// disconnect / connect cable to trigger host's network manager
-						product.connectNic(vm, false);
-						Thread.sleep(1000);
+						// connect cable to trigger host's network manager
 						product.connectNic(vm, true);
 						//
 					} catch (Exception e) {
@@ -111,7 +109,22 @@ public class Start extends AbstractCtrlTask {
 					vmModel.fireVmStateUpdatedEvent(vm);
 				}
 				@Override
+				public void closed() {
+					try {
+						product.connectNic(vm, false);
+					} catch (VmException e) {
+						LOG.error("Failed to disconnect NIC",e);
+					}
+					vm.setVpnState(VmVpnState.NOT_CONNECTED);
+					vmModel.fireVmStateUpdatedEvent(vm);
+				}
+				@Override
 				public void connecting() {	
+					try {
+						product.connectNic(vm, false);
+					} catch (VmException e) {
+						LOG.error("Failed to disconnect NIC",e);
+					}
 					vm.setVpnState(VmVpnState.CONNECTING);
 					vmModel.fireVmStateUpdatedEvent(vm);
 				}

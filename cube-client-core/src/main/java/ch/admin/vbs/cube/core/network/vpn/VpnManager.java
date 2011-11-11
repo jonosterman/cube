@@ -207,7 +207,10 @@ public class VpnManager {
 		try {
 			if (!keepInCache) {
 				synchronized (vpnCache) {
-					vpnCache.remove(vm.getId());
+					CacheEntry e = vpnCache.remove(vm.getId());
+					if (e!=null) {
+						e.listener.closed();
+					}
 				}
 			}
 			// load configuration
@@ -246,6 +249,8 @@ public class VpnManager {
 
 	public static interface VpnListener {
 		void connecting();
+
+		void closed();
 
 		void opened();
 

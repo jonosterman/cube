@@ -70,7 +70,7 @@ sub vpnopen() {
 	}
 	
 	## open VPN
-	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persit-key --persist-tun --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &";
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &";
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined
@@ -97,6 +97,7 @@ sub vpnopen() {
 			$pid = int($pid);
 			print "[DEBUG] Kill openvpn process [$pid]\n";
 			runCmd("kill -9 $pid");
+			exit(6);
 		}		
 	 } else {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) != 0) {
