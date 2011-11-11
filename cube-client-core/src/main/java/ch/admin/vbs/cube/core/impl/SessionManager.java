@@ -30,9 +30,9 @@ import ch.admin.vbs.cube.core.ILoginListener;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionUI;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
 import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
-import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 import ch.admin.vbs.cube.core.vm.VmController;
 
 public class SessionManager implements ISessionManager, ILoginListener {
@@ -44,22 +44,14 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	private IContainerFactory containerFactory;
 	private VmController vmController;
 	private ArrayList<ISessionManagerListener> listeners = new ArrayList<ISessionManager.ISessionManagerListener>(2);
-	private CNMStateMachine networkManager;
+	private INetworkManager networkManager;
 
 	public SessionManager() {
+		vmController = new VmController();
 	}
 
 	@Override
 	public void start() {
-		vmController = new VmController();
-		networkManager =  new CNMStateMachine();
-		vmController.setNetworkManager(networkManager);
-		networkManager.addListener(new Listener() {
-			@Override
-			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {
-				sessionUI.notifyConnectionState(state);
-			}
-		});
 		networkManager.start();
 		vmController.start();
 	}
@@ -166,10 +158,24 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	}
 
 	// Dependencies injection
-	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory) {
+	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetworkManager networkManager) {
 		this.login = login;
 		this.sessionUI = sessionUI;
 		this.containerFactory = containerFactory;
 		this.login.addListener(this);
+		this.networkManager = networkManager;
+		vmController.setNetworkManager(networkManager);
+		networkManager.addListener(new Listener() {
+			@Override
+			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {
+				SessionManager.this.sessionUI.notifyConnectionState(state);
+				// also notify all sessions about connection change since each session try to connect to cube web-service
+				synchronized (sessions) {
+					for (ISession o : sessions.values()) {
+						o.notifyConnectionState(state);
+					}
+				}
+			}
+		});
 	}
 }

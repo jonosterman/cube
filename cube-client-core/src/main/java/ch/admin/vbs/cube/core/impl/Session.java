@@ -32,6 +32,7 @@ import ch.admin.vbs.cube.common.keyring.impl.KeyringProvider;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionUI;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
@@ -71,6 +72,7 @@ public class Session implements Runnable, ISession {
 	private WSDescriptorUpdater descWs;
 	private final VmController vmController;
 	private Executor exec = Executors.newCachedThreadPool();
+	private NetworkConnectionState connectionState;
 
 	public Session(IIdentityToken id, ISessionUI clientUI, VmController vmController) {
 		this.id = id;
@@ -81,6 +83,25 @@ public class Session implements Runnable, ISession {
 		bundle = I18nBundleProvider.getBundle();
 		thread = new Thread(this, "Session-(" + id.getSubjectName() + ")");
 		thread.start();
+	}
+
+	@Override
+	public void notifyConnectionState(NetworkConnectionState state) {
+		this.connectionState = state;
+		synchronized (this) {
+			if (descWs != null) {
+				switch (state) {
+				case CONNECTED:
+					descWs.enable(true);
+					break;
+				case NOT_CONNECTED:
+					descWs.enable(false);
+					break;
+				default:
+					break;
+				}
+			}
+		}
 	}
 
 	/**

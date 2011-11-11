@@ -56,11 +56,12 @@ public class VpnManager {
 				switch (state) {
 				case CONNECTED:
 					/* repoen all VM's VPNs. (in separated theads) */
-					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs.");
+					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs [{}].", vpns.size());
 					for (final CacheEntry e : vpns) {
 						exs.execute(new Runnable() {
 							@Override
 							public void run() {
+								LOG.debug("reopen vpn...");
 								if (e.keyring.isOpen()) {
 									try {
 										openVpn(e.vm, e.keyring, e.listener);
@@ -84,13 +85,11 @@ public class VpnManager {
 						exs.execute(new Runnable() {
 							@Override
 							public void run() {
-								// TODO Auto-generated method stub
 								try {
-									closeVpn(e.vm);
+									closeVpn(e.vm, true);
 								} catch (VmException e1) {
 									LOG.error("Failed to re-open VPN");
 								}
-								
 							}
 						});
 					}
@@ -201,9 +200,15 @@ public class VpnManager {
 	}
 
 	public void closeVpn(Vm vm) throws VmException {
+		closeVpn(vm, false);
+	}
+
+	public void closeVpn(Vm vm, boolean keepInCache) throws VmException {
 		try {
-			synchronized (vpnCache) {
-				vpnCache.remove(vm.getId());
+			if (!keepInCache) {
+				synchronized (vpnCache) {
+					vpnCache.remove(vm.getId());
+				}
 			}
 			// load configuration
 			VpnConfig cfg = new VpnConfig(vm.getVmContainer(), vm.getRuntimeContainer());
@@ -217,6 +222,7 @@ public class VpnManager {
 			script.execute("sudo", "./vpn-close.pl", //
 					"--tap", cfg.getOption(VpnOption.Tap)//
 			);
+			LOG.debug("VPN closed.");
 		} catch (Exception e) {
 			throw new VmException("Failed to close VPN.", e);
 		}
@@ -227,13 +233,14 @@ public class VpnManager {
 	}
 
 	private class CacheEntry {
-		private VpnListener listener;
-		private Vm vm;
-		private IKeyring keyring;
+		private final VpnListener listener;
+		private final Vm vm;
+		private final IKeyring keyring;
 
 		public CacheEntry(Vm vm, IKeyring keyring, VpnListener listener) {
 			this.vm = vm;
 			this.keyring = keyring;
+			this.listener = listener;
 		}
 	}
 

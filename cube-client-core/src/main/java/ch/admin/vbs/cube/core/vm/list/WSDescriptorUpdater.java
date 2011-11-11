@@ -53,6 +53,8 @@ public class WSDescriptorUpdater implements Runnable {
 	private boolean running;
 	private WebServiceFactory factory;
 	private boolean connected;
+	private boolean enabled = true;
+
 	/**
 	 * @param model
 	 *            model to update
@@ -236,21 +238,33 @@ public class WSDescriptorUpdater implements Runnable {
 		}
 		return map;
 	}
-	
+
 	public boolean isConnected() {
 		return connected;
 	}
 
 	private void connectWebService() {
-		if (srv == null) {
+		if (enabled) {
+			if (srv == null) {
+				try {
+					factory = new WebServiceFactory(builder);
+					srv = factory.createCubeManagerService();
+				} catch (Exception e) {
+					connected = false;
+					srv = null;
+					LOG.error("Failed to init webservice client. Server probably unreachable.", e);
+				}
+			}
+		} else {
 			try {
-				factory = new WebServiceFactory(builder);
-				srv = factory.createCubeManagerService();
-			} catch (Exception e) {
-				connected = false;
-				srv = null;
-				LOG.error("Failed to init webservice client. Server probably unreachable.", e);
+				Thread.sleep(1000);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
 			}
 		}
+	}
+
+	public void enable(boolean enabled) {
+		this.enabled = enabled;
 	}
 }

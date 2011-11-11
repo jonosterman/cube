@@ -1,0 +1,478 @@
+<class-diagram version="1.0.4" icons="true" automaticImage="PNG" always-add-relationships="false" generalizations="true" 
+  realizations="true" associations="true" dependencies="false" nesting-relationships="true">  
+  <class id="1" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.impl.CubeCore" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/impl/CubeCore.java" 
+    binary="false">    
+    <position x="667" y="727" width="276" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="7" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.impl.LoginMachine" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/impl/LoginMachine.java" 
+    binary="false">    
+    <position x="486" y="252" width="127" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="9" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.impl.Session" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/impl/Session.java" 
+    binary="false">    
+    <position x="1233" y="776" width="254" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="10" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.impl.SessionManager" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/impl/SessionManager.java" 
+    binary="false">    
+    <position x="1155" y="290" width="251" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <interface id="12" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ILoginUI" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ILoginUI.java" 
+    binary="false">    
+    <position x="613" y="514" width="218" height="43"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="13" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ISessionManager" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ISessionManager.java" 
+    binary="false">    
+    <position x="956" y="403" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="14" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ITokenListener" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ITokenListener.java" 
+    binary="false">    
+    <position x="213" y="64" width="190" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="15" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.IClientFacade" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/IClientFacade.java" 
+    binary="false">    
+    <position x="533" y="962" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="17" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.IAuthModuleListener" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/IAuthModuleListener.java" 
+    binary="false">    
+    <position x="421" y="66" width="246" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="18" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ILoginListener" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ILoginListener.java" 
+    binary="false">    
+    <position x="1274" y="101" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="19" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ISessionUI" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ISessionUI.java" 
+    binary="false">    
+    <position x="1246" y="645" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="21" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.IUICallback" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/IUICallback.java" 
+    binary="false">    
+    <position x="785" y="960" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="22" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ISession" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ISession.java" 
+    binary="false">    
+    <position x="1630" y="990" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="24" corner="BOTTOM_RIGHT" language="java" 
+    name="ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener" project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ISessionManager.java" binary="false">    
+    <position x="1010" y="517" width="169" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="25" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ICoreFacade" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ICoreFacade.java" 
+    binary="false">    
+    <position x="315" y="655" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="27" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.ILogin" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/ILogin.java" binary="false">    
+    <position x="813" y="94" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="28" corner="BOTTOM_RIGHT" language="java" 
+    name="ch.admin.vbs.cube.core.network.INetworkManager.Listener" project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/network/INetworkManager.java" binary="false">    
+    <position x="2409" y="255" width="198" height="65"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="30" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.network.INetworkManager" 
+    project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/network/INetworkManager.java" binary="false">    
+    <position x="2319" y="128" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <class id="35" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.network.impl.CNMStateMachine" 
+    project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/network/impl/CNMStateMachine.java" binary="false">    
+    <position x="2171" y="363" width="248" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <interface id="36" corner="BOTTOM_RIGHT" language="java" 
+    name="ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener" project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/network/vpn/VpnManager.java" binary="false">    
+    <position x="1932" y="460" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <class id="38" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.network.vpn.VpnManager" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/network/vpn/VpnManager.java" 
+    binary="false">    
+    <position x="1872" y="275" width="204" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <interface id="39" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.IVmModelChangeListener" 
+    project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/IVmModelChangeListener.java" binary="false">    
+    <position x="971" y="985" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="40" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.IVmProduct" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/IVmProduct.java" 
+    binary="false">    
+    <position x="155" y="1032" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="41" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.IVmProductListener" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/IVmProductListener.java" 
+    binary="false">    
+    <position x="1648" y="101" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <interface id="42" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.IVmStateChangeListener" 
+    project="cube-client-core" 
+    file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/IVmStateChangeListener.java" binary="false">    
+    <position x="1185" y="912" width="-1" height="-1"/>    
+    <display autosize="true" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </interface>  
+  <class id="43" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.VmController" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/VmController.java" 
+    binary="false">    
+    <position x="1510" y="228" width="261" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <class id="44" corner="BOTTOM_RIGHT" language="java" name="ch.admin.vbs.cube.core.vm.VmModel" 
+    project="cube-client-core" file="/cube-client-core/src/main/java/ch/admin/vbs/cube/core/vm/VmModel.java" 
+    binary="false">    
+    <position x="1128" y="1010" width="146" height="43"/>    
+    <display autosize="false" package="true" initial-value="false" signature="true" visibility="true">      
+      <attributes public="true" package="true" protected="true" private="true"/>      
+      <operations public="true" package="true" protected="true" private="true"/>    
+    </display>  
+  </class>  
+  <association>    
+    <end type="SOURCE" nodeId="44" navigable="false">      
+      <attribute name="stateListeners"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="42" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="44" navigable="false">      
+      <attribute name="modelListeners"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="39" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting>    
+    <end type="SOURCE" nodeId="13"/>    
+    <end type="TARGET" nodeId="24"/>  
+  </nesting>  
+  <association>    
+    <end type="SOURCE" nodeId="38" navigable="false">      
+      <attribute name="networkManager"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="30" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization>    
+    <end type="SOURCE" nodeId="43"/>    
+    <end type="TARGET" nodeId="41"/>  
+  </realization>  
+  <nesting>    
+    <end type="SOURCE" nodeId="30"/>    
+    <end type="TARGET" nodeId="28"/>  
+  </nesting>  
+  <realization>    
+    <end type="SOURCE" nodeId="7"/>    
+    <end type="TARGET" nodeId="14"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="42"/>  
+  </realization>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="vmController"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="43" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="1" navigable="false">      
+      <attribute name="activeSession"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="22" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="9" navigable="false">      
+      <attribute name="sessionUI"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="9" navigable="false">      
+      <attribute name="vmController"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="43" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="1" navigable="false">      
+      <attribute name="currentCallback"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="21" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="sessionUI"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="19" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="35" navigable="false">      
+      <attribute name="listeners"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="28" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="networkManager"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="35" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="1" navigable="false">      
+      <attribute name="sessionManager"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="13" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <nesting>    
+    <end type="SOURCE" nodeId="38"/>    
+    <end type="TARGET" nodeId="36"/>  
+  </nesting>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="sessions"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="22" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="login"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="27" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="12"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="24"/>  
+  </realization>  
+  <association>    
+    <end type="SOURCE" nodeId="7" navigable="false">      
+      <attribute name="loginUI"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="12" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="10" navigable="false">      
+      <attribute name="listeners"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="24" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="25"/>  
+  </realization>  
+  <association>    
+    <end type="SOURCE" nodeId="7" navigable="false">      
+      <attribute name="listeners"/>      
+      <multiplicity minimum="0" maximum="2147483647"/>    
+    </end>    
+    <end type="TARGET" nodeId="18" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="43" navigable="false">      
+      <attribute name="vpnManager"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="38" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <association>    
+    <end type="SOURCE" nodeId="9" navigable="false">      
+      <attribute name="vmModel"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="44" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <realization>    
+    <end type="SOURCE" nodeId="9"/>    
+    <end type="TARGET" nodeId="22"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="7"/>    
+    <end type="TARGET" nodeId="27"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="39"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="7"/>    
+    <end type="TARGET" nodeId="17"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="1"/>    
+    <end type="TARGET" nodeId="19"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="10"/>    
+    <end type="TARGET" nodeId="13"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="10"/>    
+    <end type="TARGET" nodeId="18"/>  
+  </realization>  
+  <realization>    
+    <end type="SOURCE" nodeId="35"/>    
+    <end type="TARGET" nodeId="30"/>  
+  </realization>  
+  <association>    
+    <end type="SOURCE" nodeId="1" navigable="false">      
+      <attribute name="clientFacade"/>      
+      <multiplicity minimum="0" maximum="1"/>    
+    </end>    
+    <end type="TARGET" nodeId="15" navigable="true"/>    
+    <display labels="true" multiplicity="true"/>  
+  </association>  
+  <classifier-display autosize="true" package="true" initial-value="false" signature="true" visibility="true">    
+    <attributes public="true" package="true" protected="true" private="true"/>    
+    <operations public="true" package="true" protected="true" private="true"/>  
+  </classifier-display>  
+  <association-display labels="true" multiplicity="true"/>
+</class-diagram>

@@ -49,6 +49,7 @@ import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
+import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 
 /**
  * This class is the entry point to start the cube secure client.
@@ -79,7 +80,7 @@ public final class Cube {
 			LOG.info("");
 			LOG.info("================================================================");
 			for (Object k : System.getProperties().keySet()) {
-				LOG.info(String.format("%s = %s\n",k, System.getProperty((String)k)));
+				LOG.info(String.format("%s = %s",k, System.getProperty((String)k)).trim());
 			}
 			// #########################
 			// Start application
@@ -120,6 +121,7 @@ public final class Cube {
 		ioc.addBean(new ScAuthModule());
 		ioc.addBean(new DmcryptContainerFactory());
 		ioc.addBean(new ScTokenDevice());
+		ioc.addBean(new CNMStateMachine());
 		
 		// IoC
 		ioc.setupDependenciesOnAllBeans();

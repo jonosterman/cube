@@ -68,13 +68,24 @@ public class CNMStateMachine implements INetworkManager {
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, VpnStateChanged.class, new VpnStateChangedHandler());
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, org.freedesktop.NetworkManager.Device.StateChanged.class, new DeviceStateChangedHandler());
-			// initial NetworkManager stop/start in order to get its state through events
+			// initial NetworkManager stop/start in order to get its state
+			// through events
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
-					try { nmApplet.enable(false); } catch (Exception e) {}
-					try { nmApplet.enable(true); } catch (Exception e) {}				}
-			});
+					LOG.debug("Restart network manager");
+					try {
+						nmApplet.enable(false);
+					} catch (Exception e) {
+						LOG.error("Failed to disable NetworkManager", e);
+					}
+					try {
+						nmApplet.enable(true);
+					} catch (Exception e) {
+						LOG.error("Failed to re-enable NetworkManager", e);
+					}
+				}
+			}).start();
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS", e);
 		}
