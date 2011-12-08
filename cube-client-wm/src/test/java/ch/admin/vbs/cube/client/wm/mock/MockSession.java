@@ -26,6 +26,7 @@ import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.mock.MockIdentityToken;
+import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry.DeviceEntryState;
@@ -189,5 +190,11 @@ public class MockSession implements ISession {
 			LOG.debug("not implemented [{}]", cmd);
 			break;
 		}
+	}
+
+	@Override
+	public void notifyConnectionState(NetworkConnectionState state) {
+		// TODO Auto-generated method stub
+		
 	}
 }

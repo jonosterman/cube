@@ -70,7 +70,16 @@ sub vpnopen() {
 	}
 	
 	## open VPN
-	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log &";
+	## -> setsid: process will be started in background. We will monitor 
+        ##    log file in order to detect success or failure and abort after a given timeout.
+        ## -> --persist-key: key will be shreded after openvpn started. Thereore openvpn need to 
+        ##    keep keys in memory
+        ## -> --resolv-retry infinite: ?
+	## -> --nobind: ?
+	## -> --write-pid: keep a track of this process ID
+	## -> --fast-io: may boost throughput
+        ##
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log --write-pid /tmp/openvpn-${tap}.pid &";
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined
@@ -79,6 +88,7 @@ sub vpnopen() {
 		print "[DEBUG] wait tap to be configured ($timeout)..\n";
 		sleep(1);
 	}
+	## ensure that log file exists (openvpn will not create it if it failed in an early stage)
 	`touch /tmp/openvpn-${tap}.log`;
 	## wait "Error/Exiting/exiting" or "Initialization Sequence Completed" messages)
 	while (int(`cat /tmp/openvpn-${tap}.log | grep -i "error"| wc -l`) == 0 && int(`cat /tmp/openvpn-${tap}.log | grep -i "exiting"| wc -l`) == 0 && int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) == 0 && $timeout-- > 0) {
@@ -87,17 +97,14 @@ sub vpnopen() {
 	}
 	## if timeout has been reached, kill buggy openvpn process
 	if ($timeout < 0) {
-		print "[ERROR] failed to configure interface $tap (timeout)\n";
+		print "[ERROR] failed to open VPN on $tap (timeout)\n";
 		## dump logs
 		print `cat /tmp/openvpn-${tap}.log`;
 		
-		## kill process	
-		my @pids = `ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-open" | awk '{ print \$2 }'`;
-		for my $pid (@pids) {
-			$pid = int($pid);
-			print "[DEBUG] Kill openvpn process [$pid]\n";
-			runCmd("kill -9 $pid");
-		}
+		## kill openvpn
+		my $pid = int(`cat /tmp/openvpn-${tap}.pid`)
+		print "[DEBUG] Kill openvpn process [$pid]\n";
+		runCmd("kill -9 $pid");
 		exit 11;
 	 } else {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed"| wc -l`) != 0) {
@@ -133,7 +140,8 @@ sub vpnopen() {
 sub runCmd {
 	my ($cmd) = $_[0];
 	if ( system($cmd) ) {
-		die "Failed to execute [$cmd]";
+	   print "[ERROR] Failed to execute [$cmd]";
+           exit(7);
 	}
 }
 ## Trim string
