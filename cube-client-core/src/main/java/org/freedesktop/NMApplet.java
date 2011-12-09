@@ -18,25 +18,28 @@ package org.freedesktop;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Map;
 import java.util.Vector;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.freedesktop.DBus.Properties;
-import org.freedesktop.NetworkManagerSettings.Connection;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.UInt32;
-import org.freedesktop.dbus.Variant;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xml.sax.SAXException;
 
+import ch.admin.vbs.cube.common.shell.ScriptUtil;
+import ch.admin.vbs.cube.common.shell.ShellUtil;
+import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
+import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * @see http://projects.gnome.org/NetworkManager//developers/api/08/spec-08.html
@@ -47,7 +50,7 @@ public class NMApplet {
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
 	private static final Logger LOG = LoggerFactory.getLogger(NMApplet.class);
-
+	
 	public enum NmState {
 		NM_STATE_UNKNOWN, NM_STATE_ASLEEP, NM_STATE_CONNECTING, NM_STATE_CONNECTED, NM_STATE_DISCONNECTED
 	}
@@ -71,7 +74,9 @@ public class NMApplet {
 	private DBusConnection sysConn; // system dbus
 	private DBusConnection sesConn; // session dbus
 	private DBusExplorer explo;
-
+	private Executor exec = Executors.newCachedThreadPool();
+	private ArrayList<VpnStateListener> listeners = new ArrayList<NMApplet.VpnStateListener>();
+	
 	public NMApplet() {
 	}
 
@@ -178,55 +183,40 @@ public class NMApplet {
 				| (Integer.parseInt(split[3]) & 0xFF);
 	}
 
-	public Path startVpn() {
-		try {
-			/*
-			 * get active connection (not a VPN) that will be used as base
-			 * connection. If there is more than one active connection we will
-			 * have to choose one (uncertain output)
-			 */
-			Path base = getBaseConnection();
-			if (base == null) {
-				LOG.debug("No valid base connection found. Do not start VPN.");
-				return null;
+	/*
+	 * do not use network manager to start VPN anymore. system network-manager
+	 * is unable to start it (seems to be a bug) and user network manager need
+	 * to run network manager applet in background (will display unwanted status
+	 * pop-ups over cube UI)
+	 */
+	public void startVpn() {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_PREPARE);
+					ScriptUtil script = new ScriptUtil();
+					ShellUtil su = script.execute("sudo", "./vpn-open.pl", //
+							"--tap", CubeClientCoreProperties.getProperty("INetworkManager.vpnTap"),//
+							"--hostname", CubeClientCoreProperties.getProperty("INetworkManager.vpnServer"),//
+							"--port", CubeClientCoreProperties.getProperty("INetworkManager.vpnPort"),//
+							"--ca", CubeClientCoreProperties.getProperty("INetworkManager.vpnCa"),//
+							"--cert", CubeClientCoreProperties.getProperty("INetworkManager.vpnCrt"),//
+							"--key", CubeClientCoreProperties.getProperty("INetworkManager.vpnKey"), //
+							"--dhcp" //
+							);
+					if (su.getExitValue() == 0) {
+						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_CONNECT);
+					} else {
+						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+					}
+					
+				} catch (Exception e) {
+					LOG.error("Failed to start OpenVpn");
+					fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+				}
 			}
-			// get CubeVpn settings
-			Path cubeVpnConnectionPath = getCubeVpnConnectionPath();
-			if (cubeVpnConnectionPath == null) {
-				LOG.error("No valid Cube VPN defined in user settings.");
-				return null;
-			}
-			// start CubeVpn
-			NetworkManager nm = sysConn.getRemoteObject("org.freedesktop.NetworkManager", "/org/freedesktop/NetworkManager",
-					org.freedesktop.NetworkManager.class);
-			LOG.debug("Activate VPN [{}]",cubeVpnConnectionPath.getPath());
-			nm.ActivateConnection( //
-					"org.freedesktop.NetworkManagerUserSettings", //
-					cubeVpnConnectionPath, //
-					new Path("/"), // ignored for VPN
-					base); // peek a connection
-			return cubeVpnConnectionPath;
-		} catch (Exception e) {
-			LOG.error("Failed to start VPN", e);
-			return null;
-		}
-	}
-
-	private Path getCubeVpnConnectionPath() throws DBusException {
-		NetworkManagerSettings settings = sysConn.getRemoteObject("org.freedesktop.NetworkManagerUserSettings", "/org/freedesktop/NetworkManagerSettings",
-				org.freedesktop.NetworkManagerSettings.class);
-		// list VPN connections in user settings
-		for (Path connectionPath : settings.ListConnections()) {
-			Connection connection = sysConn.getRemoteObject("org.freedesktop.NetworkManagerUserSettings", connectionPath.getPath(),
-					org.freedesktop.NetworkManagerSettings.Connection.class);
-			Map<String, Variant<?>> connCfg = connection.GetSettings().get("connection");
-			boolean isVpn = "vpn".equals(connCfg.get("type").getValue());
-			// debug: select cube-vpn
-			if (isVpn && CUBE_VPN_NAME.equals(connCfg.get("id").getValue())) {
-				return connectionPath;
-			}
-		}
-		return null;
+		});
 	}
 
 	public Path getBaseConnection() throws DBusException, SAXException, IOException, ParserConfigurationException {
@@ -241,7 +231,7 @@ public class NMApplet {
 			Properties properties = explo.getProperties(sysConn, NM_DBUS_BUSNAME, p.getPath());
 			ActiveConnectionState pState = getEnumConstant(((UInt32) properties.Get("org.freedesktop.NetworkManager.Connection.Active", "State")).intValue(),
 					ActiveConnectionState.class);
-			boolean pVpn = (Boolean)properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
+			boolean pVpn = (Boolean) properties.Get("org.freedesktop.NetworkManager.Connection.Active", "Vpn");
 			if (!pVpn && pState == ActiveConnectionState.NM_ACTIVE_CONNECTION_STATE_ACTIVATED) {
 				noVpn.add(p);
 			} else {
@@ -261,8 +251,22 @@ public class NMApplet {
 	}
 
 	public void enable(boolean b) throws DBusException {
-		NetworkManager nm = sysConn.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT,
-				org.freedesktop.NetworkManager.class);
+		NetworkManager nm = sysConn.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class);
 		nm.Enable(b);
+	}
+	
+	public void addListener(VpnStateListener l) {
+		listeners.add(l);
+	}
+	public void removeListener(VpnStateListener l) {
+		listeners.remove(l);
+	}
+	private void fireVpnConnectionState(VpnConnectionState state) {
+		for(VpnStateListener l : listeners) {
+			l.handle(state);
+		}
+	}
+	public static interface VpnStateListener {
+		public void handle(VpnConnectionState sig);
 	}
 }

@@ -56,6 +56,7 @@ public interface INetworkManager {
 	enum NetworkConnectionState {
 		NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED
 	}
+	public static final String VPN_IP_CHECK_PROPERTIE= "INetworkManager.vpnIpCheck";
 
 	void start();
 

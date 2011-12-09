@@ -32,6 +32,7 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 
 /**
@@ -66,7 +67,7 @@ public class CNMStateMachine implements INetworkManager {
 			nmApplet.connect();
 			// register for signal (connections and VPN connections)
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
-			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, VpnStateChanged.class, new VpnStateChangedHandler());
+			nmApplet.addListener(new VpnStateChangedHandler());
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, org.freedesktop.NetworkManager.Device.StateChanged.class, new DeviceStateChangedHandler());
 			// initial NetworkManager stop/start in order to get its state
 			// through events
@@ -149,13 +150,9 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
-	public class VpnStateChangedHandler implements DBusSigHandler<VpnStateChanged> {
-		public VpnStateChangedHandler() {
-		}
-
-		@Override
-		public void handle(VpnStateChanged signal) {
-			VpnConnectionState sig = nmApplet.getEnumConstant(signal.state.intValue(), VpnConnectionState.class);
+	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
+		
+		public void handle(VpnConnectionState sig) {
 			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);
 			switch (sig) {
 			case NM_VPN_CONNECTION_STATE_ACTIVATED:
@@ -203,7 +200,7 @@ public class CNMStateMachine implements INetworkManager {
 	}
 
 	private void checkVpnNeeded() {
-		if (nmApplet.isIpReachable("172.20.0.5")) {
+		if (nmApplet.isIpReachable(CubeClientCoreProperties.getProperty(VPN_IP_CHECK_PROPERTIE))) {
 			LOG.debug("We are connected to cube network. No need to open CubeVPN.");
 			// we may connect cube server directly.
 			setCurrentState(NetworkConnectionState.CONNECTED);
@@ -211,9 +208,10 @@ public class CNMStateMachine implements INetworkManager {
 			LOG.debug("Connected to foreign network. Start CubeVPN.");
 			setCurrentState(NetworkConnectionState.CONNECTING_VPN);
 			// we have to start CubeVPN
-			Path vpn = nmApplet.startVpn();
-			if (vpn == null) {
-				LOG.debug("VPN not connected. Will wait network manager to reconnect.");
+			try {
+				nmApplet.startVpn();
+			} catch (Exception e) {
+				LOG.error("VPN not connected. Will wait network manager to reconnect.",e);
 				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 			}
 		}

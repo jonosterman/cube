@@ -47,21 +47,15 @@ sub vpnclose() {
 	## end of vbox_hack
 	
 	## check if running
-	my $isRunning = int(`ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-close" | wc -l`);
-	if ($isRunning != 0) {
-		# kill already running vpn
-		my @pids = `ps -ef | grep "$tap" | grep -v "grep" | grep -v "vpn-close" | awk '{ print \$2 }'`;
-		for my $pid (@pids) {
-			$pid = int($pid);
-			print "[DEBUG] Kill openvpn process [$pid]\n";
-			runCmd("kill -9 $pid");
-		}
-	}
+	my $pidFile = "/tmp/openvpn-${tap}.pid";
+    if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
+    	## OpenVPN is running. Kill it
+    	my $pid = `cat ${pidFile}`;
+        print "[DEBUG] Kill openvpn process [$pid]\n";
+    	runCmd("kill -9 $pid");
+    }
 	## remove tap (sometime the command hang and never ends: uninterruptible sleep state. Therefore we fork this command with '&')
 	`tunctl -d $tap &`;
-	
-	
-	
 }
 
 ###################################################
@@ -75,15 +69,7 @@ sub runCmd {
 		die "Failed to execute [$cmd]";
 	}
 }
-## Trim string
-sub trim($)
-{	
-	my $string = shift;
-	$string =~ s/^\s+//;
-	$string =~ s/\s+$//;
-	#print "[DEBUG] trim [$string]\n";
-	return $string;
-}
+
 
 
 ###################################################
