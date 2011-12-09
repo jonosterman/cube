@@ -43,6 +43,7 @@ public class CNMStateMachine implements INetworkManager {
 	private NetworkConnectionState curState;
 	private ArrayList<Listener> listeners = new ArrayList<INetworkManager.Listener>(2);
 	private NMApplet nmApplet = new NMApplet();
+	private boolean nmConnected;
 
 	private enum CNMStateEvent {
 		NM_CONNECTING, NM_CONNECTED, NM_DISCONNECTED, VPN_CONNECTING, VPN_CONNECTED, VPN_DISCONNECTED
@@ -68,7 +69,9 @@ public class CNMStateMachine implements INetworkManager {
 			// register for signal (connections and VPN connections)
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
 			nmApplet.addListener(new VpnStateChangedHandler());
-			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, org.freedesktop.NetworkManager.Device.StateChanged.class, new DeviceStateChangedHandler());
+			// nmApplet.addSignalHanlder(DBusConnection.SYSTEM,
+			// org.freedesktop.NetworkManager.Device.StateChanged.class, new
+			// DeviceStateChangedHandler());
 			// initial NetworkManager stop/start in order to get its state
 			// through events
 			new Thread(new Runnable() {
@@ -136,22 +139,24 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
-	public class DeviceStateChangedHandler implements DBusSigHandler<NetworkManager.Device.StateChanged> {
-		public DeviceStateChangedHandler() {
-		}
-
-		@Override
-		public void handle(NetworkManager.Device.StateChanged signal) {
-			DeviceState sigo = nmApplet.getEnumConstant(signal.ostate.intValue(), DeviceState.class);
-			DeviceState sign = nmApplet.getEnumConstant(signal.nstate.intValue(), DeviceState.class);
-			LOG.debug("Got DBus signal [Device.StateChanged] - [{} -> {}]  (ignored)", sigo, sign);
-			// actually we do not use device StateChanged event. We only rely on
-			// NetworkManager StateChange events.
-		}
-	}
-
+	// public class DeviceStateChangedHandler implements
+	// DBusSigHandler<NetworkManager.Device.StateChanged> {
+	// public DeviceStateChangedHandler() {
+	// }
+	//
+	// @Override
+	// public void handle(NetworkManager.Device.StateChanged signal) {
+	// DeviceState sigo = nmApplet.getEnumConstant(signal.ostate.intValue(),
+	// DeviceState.class);
+	// DeviceState sign = nmApplet.getEnumConstant(signal.nstate.intValue(),
+	// DeviceState.class);
+	// LOG.debug("Got DBus signal [Device.StateChanged] - [{} -> {}]  (ignored)",
+	// sigo, sign);
+	// // actually we do not use device StateChanged event. We only rely on
+	// // NetworkManager StateChange events.
+	// }
+	// }
 	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
-		
 		public void handle(VpnConnectionState sig) {
 			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);
 			switch (sig) {
@@ -176,22 +181,40 @@ public class CNMStateMachine implements INetworkManager {
 		synchronized (this) {
 			switch (action) {
 			case NM_CONNECTING:
+				nmConnected = false;
 				setCurrentState(NetworkConnectionState.CONNECTING);
 				break;
 			case NM_CONNECTED:
+				nmConnected = true;
 				checkVpnNeeded();
 				break;
 			case NM_DISCONNECTED:
+				nmConnected = false;
 				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
+				nmApplet.closeVpn();
 				break;
 			case VPN_CONNECTING:
-				setCurrentState(NetworkConnectionState.CONNECTING_VPN);
+				if (nmConnected) {
+					setCurrentState(NetworkConnectionState.CONNECTING_VPN);
+				} else {
+					// Network Manager is not connected. We should not have any
+					// VPN running
+					nmApplet.closeVpn();
+				}
 				break;
 			case VPN_CONNECTED:
-				setCurrentState(NetworkConnectionState.CONNECTED);
+				if (nmConnected) {
+					setCurrentState(NetworkConnectionState.CONNECTED);
+				} else {
+					// Network Manager is not connected. We should not have any
+					// VPN running
+					nmApplet.closeVpn();
+				}
 				break;
 			case VPN_DISCONNECTED:
-				checkVpnNeeded();
+				if (nmConnected) {
+					checkVpnNeeded();
+				}
 				break;
 			default:
 				break;
@@ -211,7 +234,7 @@ public class CNMStateMachine implements INetworkManager {
 			try {
 				nmApplet.startVpn();
 			} catch (Exception e) {
-				LOG.error("VPN not connected. Will wait network manager to reconnect.",e);
+				LOG.error("VPN not connected. Will wait network manager to reconnect.", e);
 				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 			}
 		}

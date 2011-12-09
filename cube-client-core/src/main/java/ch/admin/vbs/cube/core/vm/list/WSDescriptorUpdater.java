@@ -17,6 +17,8 @@
 package ch.admin.vbs.cube.core.vm.list;
 
 import java.net.ConnectException;
+import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.security.KeyStore.Builder;
 import java.util.HashMap;
 import java.util.List;
@@ -141,6 +143,8 @@ public class WSDescriptorUpdater implements Runnable {
 							Thread.sleep(CONNECTION_REFUSED_TIMEOUT);
 						} catch (InterruptedException e1) {
 						}
+					} else if (handeConnecionTimeoutException(e)) {
+						enabled = false;
 					} else if (handeBadCertificateException(e)) {
 						LOG.debug("Unrecoverable error. Stop web service.");
 						running = false;
@@ -208,6 +212,17 @@ public class WSDescriptorUpdater implements Runnable {
 		Throwable t = e;
 		while (t != null) {
 			if (t instanceof ConnectException && "Connection refused".equals(t.getMessage())) {
+				return true;
+			}
+			t = t.getCause();
+		}
+		return false;
+	}
+	
+	private boolean handeConnecionTimeoutException(Exception e) {
+		Throwable t = e;
+		while (t != null) {
+			if (t instanceof SocketTimeoutException) {
 				return true;
 			}
 			t = t.getCause();

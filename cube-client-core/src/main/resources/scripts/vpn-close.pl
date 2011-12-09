@@ -23,28 +23,37 @@ use Getopt::Long;
 ## 
 sub vpnclose() {
 	my (
-		$tap
+		$tap,$noBridge
 	);
+	$noBridge = 0;
 	## Parse arguments
 	GetOptions(
-		'tap=s'          => \$tap
+		'tap=s'          => \$tap,
+		'no-bridge+'        => \$noBridge
 	) or die "parameters error. $?";
 	
 	
 	## parameters validation // unquoting
 	if ( ! ($tap =~ m/^tap[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
 	
-	## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
-	## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
-	## add an intermediate bridge
-	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
-	my $tapvbox = $tap;
-	my $bridge = $tap;
-	$tap =~ s/^tap/tapX/;
-	$bridge =~ s/^tap/br/;
-	`ifconfig $bridge 0.0.0.0 down`;
-	`brctl delbr $bridge`;
-	## end of vbox_hack
+	my $tapvbox = "";
+	my $bridge = "";
+	if ($noBridge == 0) {
+		## vbox_hack : OpenVPN and VirtualBox seems to have some problems: If we start VirtualBox 
+		## before OpenVPN, it lock the TAP and OpenVPN fails to open its tunnel. Therefore we
+		## add an intermediate bridge
+		## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
+		$tapvbox = $tap;
+		$bridge = $tap;
+		$tap =~ s/^tap/tapX/;
+		$bridge =~ s/^tap/br/;
+		`ifconfig $bridge down`;
+		`brctl delbr $bridge`;
+		## end of vbox_hack
+	} else {
+		`ifconfig $tap down`;
+	}
+	
 	
 	## check if running
 	my $pidFile = "/tmp/openvpn-${tap}.pid";

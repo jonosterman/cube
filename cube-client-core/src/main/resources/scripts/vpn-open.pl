@@ -23,9 +23,9 @@ use Getopt::Long;
 ## 
 sub vpnopen() {
 	my (
-		$tap,$hostname,$port,$key,$cert,$ca,$dhcp
+		$tap,$hostname,$port,$key,$cert,$ca,$noBridge
 	);
-	$dhcp = 0;
+	$noBridge = 0;
 	## Parse arguments
 	GetOptions(
 		'tap=s'        => \$tap,
@@ -34,7 +34,7 @@ sub vpnopen() {
 		'key=s'        => \$key,
 		'cert=s'       => \$cert,
 		'ca=s'         => \$ca,
-		'dhcp+'        => \$dhcp
+		'no-bridge+'        => \$noBridge
 	) or die "parameters error. $?";
 	## parameters validation // unquoting
 	if ( ! ($tap =~ m/^tap[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
@@ -48,17 +48,20 @@ sub vpnopen() {
 	if ( ! -e $cert ) { die "file [$cert] does not exists."; }
 	if ( ! -e $ca ) { die "file [$ca] does not exists."; }
 
-
-	## vbox_hack : OpenVPN and VirtualBox seems to have some conflicts: If we start VirtualBox 
-	## before OpenVPN, it locks the TAP and OpenVPN fails to open its tunnel. Therefore we
-	## add an intermediate bridge
-	## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
-	my $tapvbox = $tap;
-	my $bridge = $tap;
-	$tap =~ s/^tap/tapX/;
-	$bridge =~ s/^tap/br/;
-	## end of vbox_hack (see below for the rest of the hack)
-	
+    my $tapvbox = "";
+    my $bridge = "";
+    if ($noBridge == 0) {
+		## vbox_hack : OpenVPN and VirtualBox seems to have some conflicts: If we start VirtualBox 
+		## before OpenVPN, it locks the TAP and OpenVPN fails to open its tunnel. Therefore we
+		## add an intermediate bridge
+		## @see: vpn-open.pl, vpn-close.pl, vbox-tuncreate.pl, vbox-tundelete.pl
+		$tapvbox = $tap;
+		$bridge = $tap;
+		$tap =~ s/^tap/tapX/;
+		$bridge =~ s/^tap/br/;
+		## end of vbox_hack (see below for the rest of the hack)
+    }
+    
 	## check if vpn is still running (pid file and matching process are present)
 	my $pidFile = "/tmp/openvpn-${tap}.pid";
     if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
@@ -113,8 +116,6 @@ sub vpnopen() {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed" | wc -l`) != 0) {
 			## VPN is open
 			print "[DEBUG] set interface $tap UP\n";
-			## bring tap up
-			runCmd("ifconfig $tap 0.0.0.0 up");
 		} else {
 			## VPN opening failed
 			print "[ERROR] Failed to setup VPN\n";
@@ -122,22 +123,19 @@ sub vpnopen() {
 			exit 12;
 		}
 	}
-	## vbox_hack (continue): bridge to vpn
-	`brctl addbr $bridge`;
-	`brctl stp $bridge off`;
-	`brctl addif $bridge $tap`;
-	`brctl addif $bridge $tapvbox`;
-	`ifconfig $tap 0.0.0.0 up`;
-	`ifconfig $tapvbox 0.0.0.0 up`;
-	`ifconfig $bridge 0.0.0.0 up`;
+	
+	if ($noBridge == 0) {
+		## vbox_hack (continue): bridge to vpn
+		`brctl addbr $bridge`;
+		`brctl stp $bridge off`;
+		`brctl addif $bridge $tap`;
+		`brctl addif $bridge $tapvbox`;
+		`ifconfig $tap 0.0.0.0 up`;
+		`ifconfig $tapvbox 0.0.0.0 up`;
+		`ifconfig $bridge 0.0.0.0 up`;
+	}
 
-	if ( $dhcp > 0 ) {
-	  print "[DEBUG] get DHCP address on $bridge (up to 60s timeout)\n";	
-      runCmd("dhclient $bridge");		
-    }
-
-	## end of vbox_hack
-			
+	## end of vbox_hack	
 }
 
 ###################################################

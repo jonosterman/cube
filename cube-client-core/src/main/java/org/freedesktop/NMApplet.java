@@ -127,6 +127,7 @@ public class NMApplet {
 					byte[] arr = nic.getAddress().getAddress();
 					// only handle IPV4 since cube is still IPV4
 					if (arr.length == 4 && nic.getNetworkPrefixLength()>0) {
+						LOG.debug("check IP address [{}]",nic.getAddress());
 						int nicIp = arr[0] << 24 | arr[1]<<16 | arr[2]<<8 | arr[3];
 						int mask = ((1 << nic.getNetworkPrefixLength()) - 1) << (32 - nic.getNetworkPrefixLength());
 						if ((nicIp & mask) == (ipToCheck & mask)) {
@@ -183,10 +184,10 @@ public class NMApplet {
 							"--ca", CubeClientCoreProperties.getProperty("INetworkManager.vpnCa"),//
 							"--cert", CubeClientCoreProperties.getProperty("INetworkManager.vpnCrt"),//
 							"--key", CubeClientCoreProperties.getProperty("INetworkManager.vpnKey"), //
-							"--dhcp" //
+							"--no-bridge" //
 					);
 					if (su.getExitValue() == 0) {
-						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_CONNECT);
+						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_ACTIVATED);
 					} else {
 						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
 					}
@@ -196,6 +197,22 @@ public class NMApplet {
 				}
 			}
 		});
+	}
+	public void closeVpn() {
+		try {
+			LOG.debug("Close VPN");
+			ScriptUtil script = new ScriptUtil();
+			ShellUtil su = script.execute("sudo", "./vpn-close.pl", //
+					"--tap", CubeClientCoreProperties.getProperty("INetworkManager.vpnTap"),//
+					"--no-bridge" //
+			);
+			LOG.debug(su.getStandardOutput().toString());
+			LOG.debug(su.getStandardError().toString());
+			fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_DISCONNECTED);
+		} catch (Exception e) {
+			LOG.error("Failed to start OpenVpn",e);
+			fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+		}
 	}
 
 	public Path getBaseConnection() throws DBusException, SAXException, IOException, ParserConfigurationException {
@@ -251,4 +268,6 @@ public class NMApplet {
 	public static interface VpnStateListener {
 		public void handle(VpnConnectionState sig);
 	}
+
+
 }
