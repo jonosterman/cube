@@ -106,6 +106,9 @@ public class ShellUtil {
 				} catch (Exception e) {
 					LOG.debug("Failed to destroy process [{}]", commandLine);
 				}
+				// output stdout & stderr to be able to debug error
+				LOG.error("\nstdout> " + stdOut.toString().trim().replaceAll("\n(.)", "\nstdout> $1"));
+				LOG.error("\nstderr> " + stdErr.toString().trim().replaceAll("\n(.)", "\nstderr> $1"));
 			}
 			// terminate watchdog
 			if (watchdog != null) {

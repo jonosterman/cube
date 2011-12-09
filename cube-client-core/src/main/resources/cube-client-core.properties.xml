@@ -50,7 +50,8 @@
 	<entry key="rootca.keystore.password">password</entry>
     <entry key="INetworkManager.vpnIpCheck">172.20.0.5</entry>
     <entry key="INetworkManager.vpnTap">tap-cube</entry>
-    <entry key="INetworkManager.vpnServer"></entry>
+    <entry key="INetworkManager.vpnServer">xxx</entry>
+    <entry key="INetworkManager.vpnPort">1234</entry>
     <entry key="INetworkManager.vpnCa">/etc/openvpn/keys/ca.crt</entry>
     <entry key="INetworkManager.vpnCrt">/etc/openvpn/keys/__HOSTNAME__.crt</entry>
     <entry key="INetworkManager.vpnKey">/etc/openvpn/keys/__HOSTNAME__.key</entry>

@@ -17,7 +17,12 @@
 package org.freedesktop;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Vector;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -39,7 +44,6 @@ import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
-import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 
 /**
  * @see http://projects.gnome.org/NetworkManager//developers/api/08/spec-08.html
@@ -50,7 +54,7 @@ public class NMApplet {
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
 	private static final Logger LOG = LoggerFactory.getLogger(NMApplet.class);
-	
+
 	public enum NmState {
 		NM_STATE_UNKNOWN, NM_STATE_ASLEEP, NM_STATE_CONNECTING, NM_STATE_CONNECTED, NM_STATE_DISCONNECTED
 	}
@@ -76,7 +80,7 @@ public class NMApplet {
 	private DBusExplorer explo;
 	private Executor exec = Executors.newCachedThreadPool();
 	private ArrayList<VpnStateListener> listeners = new ArrayList<NMApplet.VpnStateListener>();
-	
+
 	public NMApplet() {
 	}
 
@@ -111,54 +115,30 @@ public class NMApplet {
 		}
 	}
 
+	
 	public boolean isIpReachable(String ip) {
 		// convert ip to int
-		int uip = ipToInt(ip);
+		int ipToCheck = ipToInt(ip);
 		// find all active IP for system connections
 		try {
-			Vector<Path> activeConnections = explo.getProperty(sysConn, //
-					NM_DBUS_BUSNAME, //
-					NM_DBUS_OBJECT, //
-					NM_DBUS_NMIFACE, //
-					"ActiveConnections");
-			for (Path ac : activeConnections) {
-				Vector<Path> devices = explo.getProperty(sysConn, //
-						NM_DBUS_BUSNAME, //
-						ac.getPath(), //
-						"org.freedesktop.NetworkManager.Connection.Active", //
-						"Devices");
-				for (Path device : devices) {
-					Path ip4config = explo.getProperty(sysConn, //
-							NM_DBUS_BUSNAME, //
-							device.getPath(), //
-							"org.freedesktop.NetworkManager.Device", //
-							"Ip4Config");
-					Vector<Vector<UInt32>> addresses = explo.getProperty(sysConn, //
-							NM_DBUS_BUSNAME, //
-							ip4config.getPath(), //
-							"org.freedesktop.NetworkManager.IP4Config", //
-							"Addresses");
-					for (Vector<UInt32> address : addresses) {
-						boolean match = checkIp(address.get(0), address.get(1).intValue(), uip);
-						if (match)
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface intf = en.nextElement();
+				for (InterfaceAddress nic : intf.getInterfaceAddresses()) {
+					byte[] arr = nic.getAddress().getAddress();
+					// only handle IPV4 since cube is still IPV4
+					if (arr.length == 4 && nic.getNetworkPrefixLength()>0) {
+						int nicIp = arr[0] << 24 | arr[1]<<16 | arr[2]<<8 | arr[3];
+						int mask = ((1 << nic.getNetworkPrefixLength()) - 1) << (32 - nic.getNetworkPrefixLength());
+						if ((nicIp & mask) == (ipToCheck & mask)) {
 							return true;
+						}
 					}
 				}
 			}
-		} catch (Exception e) {
-			LOG.error("Failed to check IP reachibility", e);
+		} catch (SocketException e) {
+			LOG.error("Failed to list network interfaces", e);
 		}
 		return false;
-	}
-
-	/** check if both IP are in the same network */
-	private boolean checkIp(UInt32 uInt32, int mask, int uip) {
-		int umask = maskToInt(mask);
-		return (uint32ToInt(uInt32) & umask) == (uip & umask);
-	}
-
-	public static final int maskToInt(int mask) {
-		return ((1 << mask) - 1) << (32 - mask);
 	}
 
 	/**
@@ -204,15 +184,14 @@ public class NMApplet {
 							"--cert", CubeClientCoreProperties.getProperty("INetworkManager.vpnCrt"),//
 							"--key", CubeClientCoreProperties.getProperty("INetworkManager.vpnKey"), //
 							"--dhcp" //
-							);
+					);
 					if (su.getExitValue() == 0) {
 						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_CONNECT);
 					} else {
 						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
 					}
-					
 				} catch (Exception e) {
-					LOG.error("Failed to start OpenVpn");
+					LOG.error("Failed to start OpenVpn",e);
 					fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
 				}
 			}
@@ -254,18 +233,21 @@ public class NMApplet {
 		NetworkManager nm = sysConn.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class);
 		nm.Enable(b);
 	}
-	
+
 	public void addListener(VpnStateListener l) {
 		listeners.add(l);
 	}
+
 	public void removeListener(VpnStateListener l) {
 		listeners.remove(l);
 	}
+
 	private void fireVpnConnectionState(VpnConnectionState state) {
-		for(VpnStateListener l : listeners) {
+		for (VpnStateListener l : listeners) {
 			l.handle(state);
 		}
 	}
+
 	public static interface VpnStateListener {
 		public void handle(VpnConnectionState sig);
 	}

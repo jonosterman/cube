@@ -62,8 +62,10 @@ sub vpnopen() {
 	## check if vpn is still running (pid file and matching process are present)
 	my $pidFile = "/tmp/openvpn-${tap}.pid";
     if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
+    	my $pid = int(`cat $pidFile`);
   	    ## kill the process
-  	    system("kill -9 `cat $pidFile`");
+  	    print "[DEBUG] Kill old openvpn process [$pid]\n";
+  	    system("kill -9 $pid");
     }
 	
 	## open VPN
@@ -73,11 +75,11 @@ sub vpnopen() {
     ##    cache them.
     ## -> --resolv-retry infinite: ?
 	## -> --nobind: ?
-	## -> --write-pid: keep a track of this process ID
+	## -> --writepid: keep a track of this process ID
 	## -> --fast-io: may boost throughput
     ## -> --log --verb 3: needed log config to monitor OpenVPN success or failure later in this script     
     ## openvpn command
-	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log --write-pid ${pidFile} &";
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log --writepid ${pidFile} &";
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined (openvpn create the tap device)
@@ -100,20 +102,19 @@ sub vpnopen() {
 		print `cat /tmp/openvpn-${tap}.log`;
 		
 		## kill openvpn
-		my $pid = int(`cat ${pidFile}`);
-		print "[DEBUG] Kill openvpn process [$pid]\n";
-		runCmd("kill -9 $pid");
+		if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
+     		my $pid = int(`cat $pidFile`);
+  	    	## kill the process
+  	    	print "[DEBUG] Kill old openvpn process [$pid]\n";
+  	    	system("kill -9 $pid");
+        }
 		exit 11;
 	 } else {
 		if (int(`cat /tmp/openvpn-${tap}.log | grep -i "Initialization Sequence Completed" | wc -l`) != 0) {
 			## VPN is open
 			print "[DEBUG] set interface $tap UP\n";
 			## bring tap up
-			if ( $dhcp == 0 ) {
-			  runCmd("ifconfig $tap 0.0.0.0 up");
-			} else {
-			  runCmd("dhclient $tap");				
-			}
+			runCmd("ifconfig $tap 0.0.0.0 up");
 		} else {
 			## VPN opening failed
 			print "[ERROR] Failed to setup VPN\n";
@@ -129,6 +130,12 @@ sub vpnopen() {
 	`ifconfig $tap 0.0.0.0 up`;
 	`ifconfig $tapvbox 0.0.0.0 up`;
 	`ifconfig $bridge 0.0.0.0 up`;
+
+	if ( $dhcp > 0 ) {
+	  print "[DEBUG] get DHCP address on $bridge (up to 60s timeout)\n";	
+      runCmd("dhclient $bridge");		
+    }
+
 	## end of vbox_hack
 			
 }
