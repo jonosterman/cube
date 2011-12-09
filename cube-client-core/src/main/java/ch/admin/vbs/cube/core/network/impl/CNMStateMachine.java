@@ -139,23 +139,6 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
-	// public class DeviceStateChangedHandler implements
-	// DBusSigHandler<NetworkManager.Device.StateChanged> {
-	// public DeviceStateChangedHandler() {
-	// }
-	//
-	// @Override
-	// public void handle(NetworkManager.Device.StateChanged signal) {
-	// DeviceState sigo = nmApplet.getEnumConstant(signal.ostate.intValue(),
-	// DeviceState.class);
-	// DeviceState sign = nmApplet.getEnumConstant(signal.nstate.intValue(),
-	// DeviceState.class);
-	// LOG.debug("Got DBus signal [Device.StateChanged] - [{} -> {}]  (ignored)",
-	// sigo, sign);
-	// // actually we do not use device StateChanged event. We only rely on
-	// // NetworkManager StateChange events.
-	// }
-	// }
 	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
 		public void handle(VpnConnectionState sig) {
 			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);

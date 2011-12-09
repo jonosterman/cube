@@ -81,6 +81,7 @@ public class VpnManager {
 				case CONNECTING_VPN:
 					break;
 				case NOT_CONNECTED:
+					LOG.debug("Disconnect [{}] VM's VPN (because NetworkManager is disconnected))", vpns.size());
 					for (final CacheEntry e : vpns) {
 						exs.execute(new Runnable() {
 							@Override
@@ -88,7 +89,7 @@ public class VpnManager {
 								try {
 									closeVpn(e.vm, true);
 								} catch (VmException e1) {
-									LOG.error("Failed to re-open VPN");
+									LOG.error("Failed to close VM's VPN");
 								}
 							}
 						});
@@ -205,12 +206,12 @@ public class VpnManager {
 
 	public void closeVpn(Vm vm, boolean keepInCache) throws VmException {
 		try {
-			if (!keepInCache) {
-				synchronized (vpnCache) {
-					CacheEntry e = vpnCache.remove(vm.getId());
-					if (e!=null) {
-						e.listener.closed();
-					}
+			CacheEntry e = null;
+			synchronized (vpnCache) {
+				if (keepInCache) {
+					e = vpnCache.get(vm.getId());
+				} else {
+					e = vpnCache.remove(vm.getId());
 				}
 			}
 			// load configuration
@@ -220,12 +221,15 @@ public class VpnManager {
 			if (!cfg.getOptionAsBoolean(VpnOption.Enabled)) {
 				return;
 			}
-			// open VPN tunnel
+			// close VPN tunnel
 			ScriptUtil script = new ScriptUtil();
 			script.execute("sudo", "./vpn-close.pl", //
 					"--tap", cfg.getOption(VpnOption.Tap)//
 			);
 			LOG.debug("VPN closed.");
+			if (e != null) {
+				e.listener.closed();
+			}
 		} catch (Exception e) {
 			throw new VmException("Failed to close VPN.", e);
 		}
