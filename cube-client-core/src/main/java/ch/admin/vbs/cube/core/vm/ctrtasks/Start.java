@@ -122,10 +122,11 @@ public class Start extends AbstractCtrlTask {
 				public void connecting() {	
 					try {
 						product.connectNic(vm, false);
+						vm.setVpnState(VmVpnState.CONNECTING);
 					} catch (VmException e) {
-						LOG.error("Failed to disconnect NIC",e);
+						LOG.error("Failed to connect NIC",e);
+						vm.setVpnState(VmVpnState.NOT_CONNECTED);
 					}
-					vm.setVpnState(VmVpnState.CONNECTING);
 					vmModel.fireVmStateUpdatedEvent(vm);
 				}
 
