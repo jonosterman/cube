@@ -81,7 +81,9 @@ public class ScTokenDevice implements ITokenDevice, Runnable {
 					savedEx = e;
 					if (--retry >= 0) {
 						LOG.warn("Retry [{}] connecting terminal in 2 seconds.. [{}]", retry, e.getMessage());
-						LOG.debug("Detailed exception", e);
+						if (retry == 0) {
+							LOG.debug("Detailed exception", e);
+						}
 						Thread.sleep(2000);
 					}
 				}

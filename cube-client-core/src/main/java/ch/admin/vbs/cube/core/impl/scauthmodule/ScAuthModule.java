@@ -34,6 +34,8 @@ import ch.admin.vbs.cube.core.IAuthModuleListener;
 import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransition;
 
 /**
+ * Smart-Card based IAuthModule.
+ * 
  * It is important not to block the state machine. So make your method return
  * ASAP (do crypto or UI stuff in another thread).
  */
@@ -57,9 +59,12 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	// states
 	private HashMap<Class<?>, AbstractState> stateInstances = new HashMap<Class<?>, AbstractState>();
 
+	/** get singleton instance of state object but initialize them the lazy way. */
 	public AbstractState getStateInstance(Class<?> clazz) {
+		// check if instance is in cache
 		AbstractState state = stateInstances.get(clazz);
 		if (state == null) {
+			// lazy initialize it
 			try {
 				state = (AbstractState) clazz.getConstructor(ScAuthModule.class).newInstance(this);
 			} catch (Exception e) {
@@ -68,7 +73,7 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		}
 		return state;
 	}
-	
+
 	// =============================================
 	// IAuthModule
 	// =============================================
@@ -77,7 +82,6 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		enqueue(ScAuthStateTransition.ABORT_AUTH);
 	}
 
-
 	@Override
 	public void openToken() {
 		enqueue(ScAuthStateTransition.START_AUTH);
@@ -85,8 +89,13 @@ public class ScAuthModule implements IAuthModule, Runnable {
 
 	@Override
 	public void setPassword(char[] password) {
+		/*
+		 * openKeyStoreTask SHOULD not be null since we set it in start(). But
+		 * since a race condition may occur, we have to test it.
+		 */
 		if (openKeyStoreTask != null) {
-			openKeyStoreTask.setPassword( password);
+			LOG.debug("set the passord on the OpenKeyStoreTask that run in background");
+			openKeyStoreTask.setPassword(password);
 		}
 		enqueue(ScAuthStateTransition.PASSWORD_SUBMIT);
 	}
@@ -96,7 +105,6 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		running = true;
 		// get PKCS11 library path from configuration file
 		pkcs11LibraryPath = CubeClientCoreProperties.getProperty(SC_PKCS11_LIBRARY_PROPERTY);
-		// create certificate-chain validator
 		// Create and start state's watchdog
 		watchdog = new StateWatchdog(this);
 		exec.execute(watchdog);
@@ -111,17 +119,24 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		// initial ScAuthModule state
 		activeState = new IdleState(this);
 		activeState.proceed();
-		// loop
+		// loop pretty much forever
 		while (running) {
 			ScAuthStateTransition tr = null;
 			synchronized (transitions) {
-				if (transitions.size() > 0) {
+				// consume enqueued transitions
+				while (transitions.size() > 0) {
+					// next transition
 					tr = transitions.removeFirst();
-					AbstractState ostate = activeState;
+					// reference to current state
+					AbstractState lastState = activeState;
+					// process transition and retrieve the new state
 					activeState = activeState.transition(tr);
-					LOG.debug("Apply transition [{}] on state [{}] => [" + activeState + "]", tr, ostate);
+					LOG.debug("Apply transition [{}] on state [{}] => [" + activeState + "]", tr, lastState);
+					// proceed new state logic
 					activeState.proceed();
-				}
+				} 
+				// clear transition
+				tr = null;
 			}
 			if (tr == null) {
 				synchronized (transitions) {
@@ -135,7 +150,6 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		}
 	}
 
-
 	void enqueue(ScAuthStateTransition t) {
 		synchronized (transitions) {
 			transitions.add(t);
@@ -143,14 +157,13 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		}
 	}
 
-
-
 	@Override
 	public void addListener(IAuthModuleListener l) {
 		synchronized (listeners) {
 			listeners.add(l);
 		}
 	}
+
 	void fireStateChanged(final AuthModuleEvent event) {
 		exec.execute(new Runnable() {
 			@Override
@@ -211,11 +224,9 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		return false;
 	}
 
-
 	public void setAbortReason(AuthModuleEvent abortReason) {
 		this.abortReason = abortReason;
 	}
-
 
 	public AuthModuleEvent getAbortReason() {
 		return abortReason;
