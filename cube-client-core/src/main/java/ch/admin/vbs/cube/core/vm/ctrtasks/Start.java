@@ -42,9 +42,12 @@ import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 public class Start extends AbstractCtrlTask {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(Start.class);
+	/** maximum time we will wait for the VM to be started before triggering an error. */
 	private static final long START_TIMEOUT = 40000; // ms
+	/** maximum time that the VM coud stay in a transitional state before triggering an error. */
 	private static final long UNKNOWN_STATE_TIMEOUT = 4000; // ms
 
+	/** Constructor */
 	public Start(VmController vmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
 			Container transfer, VmModel vmModel, IOption option) {
 		super(vmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
@@ -59,14 +62,13 @@ public class Start extends AbstractCtrlTask {
 			// buggy (too slow) operations. After some trials it seems that the smartcard 
 			// used to hang sometimes for 60 seconds (!!)... buggy drivers.
 			Chronos c = new Chronos();
-			vmModel.fireVmStateUpdatedEvent(vm);
+			// update VM state (for UI)
 			c.zap("fireVmStateUpdateEvent()");
-			// set temporary status
 			ctrl.setTempStatus(vm, VmState.STARTING);
-			//
 			vm.setProgressMessage(I18nBundleProvider.getBundle().getString("vm.starting"));
 			ctrl.refreshVmState(vm);
 			c.zap("refresh vm state");
+			//
 			//
 			vmKey = keyring.getKey(vm.getVmContainer().getId());
 			c.zap("got vm's key");

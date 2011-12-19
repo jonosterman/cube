@@ -53,7 +53,7 @@ public class VmController implements IVmProductListener {
 	private Object updateLock = new Object();
 	private VBoxProduct product;
 	private Stager stagger;
-	private Map<String, VmState> tempStatus = new  HashMap<String, VmState>();
+	private Map<String, VmState> tempStatus = new HashMap<String, VmState>();
 	private Executor exec = Executors.newCachedThreadPool();
 	private IContainerFactory containerFactory;
 	private VpnManager vpnManager;
@@ -63,29 +63,31 @@ public class VmController implements IVmProductListener {
 		product = new VBoxProduct();
 		vpnManager = new VpnManager();
 	}
-	
+
 	public void setNetworkManager(INetworkManager networkManager) {
 		vpnManager.setNetworkManager(networkManager);
 	}
 
+	/** @see refreshVmState() */
 	public void setTempStatus(Vm vm, VmState temp) {
 		synchronized (tempStatus) {
 			tempStatus.put(vm.getId(), temp);
 		}
 	}
 
+	/** @see refreshVmState() */
 	public VmState getTempStatus(Vm vm) {
 		synchronized (tempStatus) {
 			return tempStatus.get(vm.getId());
 		}
 	}
-	
+
+	/** @see refreshVmState() */
 	public VmState clearTempStatus(Vm vm) {
 		synchronized (tempStatus) {
 			return tempStatus.remove(vm.getId());
 		}
 	}
-
 
 	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
 			final IOption option) {
@@ -135,7 +137,6 @@ public class VmController implements IVmProductListener {
 
 	public void start() {
 		stagger = new Stager(this, product);
-	
 		vpnManager.start();
 		try {
 			containerFactory = ContainerFactoryProvider.getFactory();
@@ -187,10 +188,17 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
-	/** update vm state due to a change in model. */
+	/**
+	 * update VM state due to a change in model. This state may be found through
+	 * the ProductManager (for example, asking VirtualBox about the VM state).
+	 * But since this info may be insufficient to know if the VM is starting or
+	 * stopping (like SAVED state that may occurs during both starting and
+	 * stopping phase) we store a 'temp' state that is used in priority. It
+	 * greatly improves the user experience.
+	 */
 	public void refreshVmState(Vm vm) {
 		try {
-			// is vm staggable?
+			// get VM descriptor
 			VmDescriptor desc = vm.getDescriptor();
 			// lazy initialize VM's containers references
 			if (desc.getLocalCfg().getVmContainerUid() != null) {
@@ -199,28 +207,34 @@ public class VmController implements IVmProductListener {
 			if (desc.getLocalCfg().getRuntimeContainerUid() != null) {
 				vm.setRuntimeContainer(Container.initContainerObject(desc.getLocalCfg().getRuntimeContainerUid()));
 			}
-			// check if container exists on disk
+			// check if container exists on disk or is stagging
 			if (stagger.isStaging(vm.getId())) {
+				// the container is being staged
 				vm.setVmState(VmState.STAGING);
 			} else {
 				if (vm.getVmContainer() != null && vm.getRuntimeContainer() != null && vm.getRuntimeContainer().exists() && vm.getVmContainer().exists()) {
-					LOG.debug("already stagged");
+					// both containers exists on the disk. Check if 'temp' state
+					// is set.
 					VmState tmp = tempStatus.get(vm.getId());
 					if (tmp != null) {
+						// rely on 'temp' state as long as the product state is
+						// 'error'
 						VmProductState pstate = product.getProductState(vm);
 						if (pstate == VmProductState.ERROR) {
-							// cancel temporary status
+							// cancel temporary status since product return an
+							// 'error' state.
 							tempStatus.remove(vm.getId());
+							LOG.debug("Rely on product status [{}] (and cancel 'temp' state)", pstate);
 							vm.setVmState(VmState.ERROR);
 						} else {
-							LOG.debug("Rely on temporary status [{}] instead of product state [{}]", tmp, pstate);
 							// when starting or stopping, rely on the temporary
 							// status that we set in controlVm() method.
+							LOG.debug("Rely on temporary status [{}] instead of product state [{}]", tmp, pstate);
 							vm.setVmState(tmp);
 						}
 					} else {
-						// container are present on the disk. ask product in
-						// order to determine VM state
+						// since 'temp' state is not set, rely on product
+						// manager to get the VM state.
 						VmProductState pstate = product.getProductState(vm);
 						LOG.debug("Rely on product status [{}]", pstate);
 						switch (pstate) {
@@ -247,6 +261,7 @@ public class VmController implements IVmProductListener {
 						}
 					}
 				} else {
+					// not on the disk and not being staged.
 					vm.setVmState(VmState.STAGABLE);
 				}
 			}
