@@ -55,6 +55,9 @@ public class Start extends AbstractCtrlTask {
 		EncryptionKey vmKey = null;
 		EncryptionKey rtKey = null;
 		try {
+			// Chronos is used to display logs with time differences in order to track 
+			// buggy (too slow) operations. After some trials it seems that the smartcard 
+			// used to hang sometimes for 60 seconds (!!)... buggy drivers.
 			Chronos c = new Chronos();
 			vmModel.fireVmStateUpdatedEvent(vm);
 			c.zap("fireVmStateUpdateEvent()");
