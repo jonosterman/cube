@@ -102,15 +102,13 @@ public class Start extends AbstractCtrlTask {
 						while (product.getProductState(vm) == VmProductState.STARTING) {
 							Thread.sleep(500);
 						}
-						// connect cable to trigger host's network manager
+						// connect VM's network card to trigger guest's network manager
 						product.connectNic(vm, true);
-						//
+						vm.setVpnState(VmVpnState.CONNECTED);
 					} catch (Exception e) {
 						LOG.error("VM's VPN was opened but we failed to connect VM's NIC", e);
 						vm.setVpnState(VmVpnState.NOT_CONNECTED);
-						vmModel.fireVmStateUpdatedEvent(vm);
 					}
-					vm.setVpnState(VmVpnState.CONNECTED);
 					vmModel.fireVmStateUpdatedEvent(vm);
 				}
 				@Override
