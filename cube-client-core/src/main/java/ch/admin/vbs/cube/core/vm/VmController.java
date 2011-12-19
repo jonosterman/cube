@@ -269,7 +269,7 @@ public class VmController implements IVmProductListener {
 			LOG.error("Failed to update VM state", e);
 			vm.setVmState(VmState.ERROR);
 		}
-		// find model which contains this VM and notify changes
+		// find the model that contains this VM and notify changes
 		VmModel model = null;
 		synchronized (lIndex) {
 			for (VmModel m : lIndex.keySet()) {
