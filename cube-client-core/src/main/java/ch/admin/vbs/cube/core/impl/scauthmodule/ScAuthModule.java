@@ -45,7 +45,7 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	static final long TIMEOUT_KEYSTOREINIT = 10000;
 	static final long TIMEOUT_KEYSTOREOPEN = 5000;
 	/** Logger */
-	static final Logger LOG = LoggerFactory.getLogger(ScAuthModule.class);
+	private static final Logger LOG = LoggerFactory.getLogger(ScAuthModule.class);
 	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
 	String pkcs11LibraryPath;
 	Executor exec = Executors.newCachedThreadPool();

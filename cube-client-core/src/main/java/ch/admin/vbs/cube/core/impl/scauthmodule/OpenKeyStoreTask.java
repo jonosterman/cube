@@ -27,30 +27,33 @@ import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import sun.security.pkcs11.SunPKCS11;
+import ch.admin.vbs.cube.common.Chronos;
 import ch.admin.vbs.cube.core.AuthModuleEvent;
 import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 import ch.admin.vbs.cube.core.impl.CaValidation;
 import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransition;
 
 class OpenKeyStoreTask implements Runnable, CallbackHandler {
+	private static final Logger LOG = LoggerFactory.getLogger(OpenKeyStoreTask.class);
 	private final ScAuthModule scAuthModule;
-
-	/**
-	 * @param scAuthModule
-	 */
-	OpenKeyStoreTask(ScAuthModule scAuthModule) {
-		this.scAuthModule = scAuthModule;
-	}
-
 	private SunPKCS11 provider;
 	private Builder builder;
 	private KeyStore keystore;
 	private boolean keyStoreOpeningLock;
 	private boolean killed;
 	private char[] password;
-	private int id = 0;
 	private CaValidation caValid = new CaValidation();
+
+	/**
+	 * @param scAuthModule
+	 */
+	public OpenKeyStoreTask(ScAuthModule scAuthModule) {
+		this.scAuthModule = scAuthModule;
+	}
 
 	public void finalizeKeyStoreOpening() {
 		keyStoreOpeningLock = false;
@@ -58,49 +61,59 @@ class OpenKeyStoreTask implements Runnable, CallbackHandler {
 
 	@Override
 	public void run() {
+		Chronos cronos = new Chronos();
+		cronos.zap("Run OpenKeyStoreTask...");
 		scAuthModule.setAbortReason(null);
 		try {
-			ScAuthModule.LOG.debug("Start auth [id:{}]", id);
+			/*
+			 * cleanup already register provider seems needed in order to reset
+			 * smart-card driver.
+			 */
 			if (provider != null) {
 				Security.removeProvider(provider.getName());
 				provider = null;
 			}
+			cronos.zap("Old provider removed");
+			// initialize provider
 			StringBuilder buf = new StringBuilder();
 			buf.append("library = ").append(this.scAuthModule.pkcs11LibraryPath).append("\nname = Cube\n");
 			provider = new sun.security.pkcs11.SunPKCS11(new ByteArrayInputStream(buf.toString().getBytes()));
 			Security.addProvider(provider);
+			cronos.zap("New provider added");
 			// create builder
 			builder = KeyStore.Builder.newInstance("PKCS11", provider, new KeyStore.CallbackHandlerProtection(this));
+			cronos.zap("Builder created");
 			// request keystore
-			ScAuthModule.LOG.debug("Open keystore...");
 			// getKeyStore will block until user gave its password via
 			// method "handle(Callback[] callbacks)" and
 			// "handle(Callback[] callbacks)" will block until OpenKeyStoreState
 			// will call 'finalizeKeyStoreOpening'
-			ScAuthModule.LOG.debug("Opening KeyStore ..");
 			keystore = builder.getKeyStore();
+			cronos.zap("Got keystore"); // may take long since it will wait user input
 			// check certificates chain
 			caValid.validate(keystore);
+			cronos.zap("Certificate chain validate");
 			// next transition / state
 			this.scAuthModule.enqueue(ScAuthStateTransition.KEYSTORE_READY);
 		} catch (Exception e) {
+			/* try to guess error cause in order to give the user a better feedback. */
 			if (this.scAuthModule.handlePinIncorrect(e)) {
-				ScAuthModule.LOG.debug("Incorrect PIN (CKR_PIN_INCORRECT)");
+				LOG.debug("OpenKeyStoreTask failed: Incorrect PIN (CKR_PIN_INCORRECT)");
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_WRONGPIN, null, null, null));
 			} else if (this.scAuthModule.handleCanceled(e)) {
-				ScAuthModule.LOG.debug("PKCS11 login canceled");
+				LOG.debug("OpenKeyStoreTask failed: PKCS11 login canceled");
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED, null, null, null));
 			} else if (this.scAuthModule.handleUserNotLoggedIn(e)) {
-				ScAuthModule.LOG.debug("User did not enter its password (CKR_USER_NOT_LOGGED_IN)");
+				LOG.debug("OpenKeyStoreTask failed: User did not enter its password (CKR_USER_NOT_LOGGED_IN)");
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_USERTIMEOUT, null, null, null));
 			} else if (this.scAuthModule.handleNoSuchAlgo(e)) {
-				ScAuthModule.LOG.debug("Unable to read smart-Card (NoSuchAlgorithmException)");
+				LOG.debug("OpenKeyStoreTask failed: Unable to read smart-Card (NoSuchAlgorithmException)");
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED, null, null, null));
 			} else if (this.scAuthModule.handleFunctionFailed(e)) {
-				ScAuthModule.LOG.debug("Unable to use smart-Card (CKR_FUNCTION_FAILED)");
+				LOG.debug("OpenKeyStoreTask failed: Unable to use smart-Card (CKR_FUNCTION_FAILED)");
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED, null, null, null));
 			} else {
-				ScAuthModule.LOG.debug("Failed to open KeyStore", e);
+				LOG.debug("OpenKeyStoreTask failed: general failure", e);
 				scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED, null, null, null));
 			}
 			this.scAuthModule.enqueue(ScAuthStateTransition.ABORT_AUTH);
@@ -111,11 +124,12 @@ class OpenKeyStoreTask implements Runnable, CallbackHandler {
 	public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 		keyStoreOpeningLock = true;
 		this.scAuthModule.enqueue(ScAuthStateTransition.PASSWORD_REQUEST);
+		/* wait until user entered its password */
 		while (!killed && keyStoreOpeningLock) {
 			try {
 				Thread.sleep(400);
 			} catch (InterruptedException e) {
-				ScAuthModule.LOG.error("", e);
+				LOG.error("", e);
 			}
 		}
 		((PasswordCallback) callbacks[0]).setPassword(password);

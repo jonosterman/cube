@@ -15,6 +15,9 @@
  */
 package ch.admin.vbs.cube.core.impl.scauthmodule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.admin.vbs.cube.core.AuthModuleEvent;
 import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransition;
@@ -24,7 +27,8 @@ class StateWatchdog implements Runnable {
 	 * 
 	 */
 	private final ScAuthModule scAuthModule;
-
+	private static final Logger LOG = LoggerFactory.getLogger(StateWatchdog.class);
+	
 	/**
 	 * @param scAuthModule
 	 */
@@ -39,7 +43,7 @@ class StateWatchdog implements Runnable {
 			AbstractState tstate = this.scAuthModule.activeState;
 			// test if deadline is defined and expired
 			if (tstate != null && tstate.deadline != 0 && tstate.deadline < System.currentTimeMillis()) {
-				ScAuthModule.LOG.debug("Abort state [{}] due to timeout", tstate);
+				LOG.debug("Abort state [{}] due to timeout", tstate);
 				tstate.deadline = 0; // reset deadline to
 				if (tstate == this.scAuthModule.getStateInstance(WaitPasswordState.class)) {
 					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_USERTIMEOUT, null, null, null));
@@ -50,13 +54,13 @@ class StateWatchdog implements Runnable {
 			}
 			// log..
 			if (tstate != null && tstate.deadline > 0) {
-				ScAuthModule.LOG.debug("Monitor state [{}] : remaining {} ms", tstate, tstate.deadline - System.currentTimeMillis());
+				LOG.debug("Monitor state [{}] : remaining {} ms", tstate, tstate.deadline - System.currentTimeMillis());
 			}
 			// sleep
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {
-				ScAuthModule.LOG.error("", e);
+				LOG.error("", e);
 			}
 		}
 	}

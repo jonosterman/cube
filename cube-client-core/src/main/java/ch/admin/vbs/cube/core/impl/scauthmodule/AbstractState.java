@@ -16,12 +16,16 @@
 
 package ch.admin.vbs.cube.core.impl.scauthmodule;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Mother class of all states.
  */
 abstract class AbstractState {
+	private static final Logger LOG = LoggerFactory.getLogger(AbstractState.class);
 	protected long deadline = 0;
-
+	
 	/**
 	 * State transitions
 	 */
@@ -41,7 +45,7 @@ abstract class AbstractState {
 	 */
 	public AbstractState transition(ScAuthStateTransition trs) {
 		// default implementation
-		ScAuthModule.LOG.error("Invalid transition [{}] [{}]. Ignore.", trs, this);
+		LOG.error("Invalid transition [{}] [{}]. Ignore.", trs, this);
 		return this;
 	}
 
