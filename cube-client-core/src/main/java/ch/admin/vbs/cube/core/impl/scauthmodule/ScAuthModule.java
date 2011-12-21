@@ -121,29 +121,27 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		activeState.proceed();
 		// loop pretty much forever
 		while (running) {
-			ScAuthStateTransition tr = null;
-			synchronized (transitions) {
-				// consume enqueued transitions
-				while (transitions.size() > 0) {
-					// next transition
-					tr = transitions.removeFirst();
+			// consume enqueued transitions
+			while (transitions.size() > 0) {
+				// next transition
+				synchronized (transitions) {
+					ScAuthStateTransition tr = transitions.removeFirst();
 					// reference to current state
 					AbstractState lastState = activeState;
 					// process transition and retrieve the new state
 					activeState = activeState.transition(tr);
 					LOG.debug("Apply transition [{}] on state [{}] => [" + activeState + "]", tr, lastState);
 					// proceed new state logic
-					activeState.proceed();
-				} 
-				// clear transition
-				tr = null;
+				}
+				activeState.proceed();
 			}
-			if (tr == null) {
-				synchronized (transitions) {
+			// wait next transition
+			synchronized (transitions) {
+				while (transitions.size() == 0) {
 					try {
-						transitions.wait(1000);
+						transitions.wait(30000);
 					} catch (InterruptedException e) {
-						LOG.error("", e);
+						LOG.error("Transition wait loop failure", e);
 					}
 				}
 			}
@@ -165,6 +163,10 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	}
 
 	void fireStateChanged(final AuthModuleEvent event) {
+		/*
+		 * Notify listeners in another thread, because we MUST not block the
+		 * state machine.
+		 */
 		exec.execute(new Runnable() {
 			@Override
 			public void run() {
@@ -176,11 +178,14 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		});
 	}
 
+	/** exception handling */
 	boolean handleCanceled(Exception e) {
 		return e instanceof RuntimeException && "cancel".equals(e.getMessage());
 	}
 
+	/** exception handling */
 	boolean handlePinIncorrect(Exception e) {
+		// search specific exception in call stack
 		Throwable x = e;
 		while (x != null) {
 			if (x instanceof PKCS11Exception && "CKR_PIN_INCORRECT".equals(x.getMessage())) {
@@ -191,7 +196,9 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		return false;
 	}
 
+	/** exception handling */
 	boolean handleNoSuchAlgo(Exception e) {
+		// search specific exception in call stack
 		Throwable x = e;
 		while (x != null) {
 			if (x instanceof NoSuchAlgorithmException) {
@@ -202,7 +209,9 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		return false;
 	}
 
+	/** exception handling */
 	boolean handleUserNotLoggedIn(Exception e) {
+		// search specific exception in call stack
 		Throwable x = e;
 		while (x != null) {
 			if (x instanceof PKCS11Exception && "CKR_USER_NOT_LOGGED_IN".equals(x.getMessage())) {
@@ -213,7 +222,9 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		return false;
 	}
 
+	/** exception handling */
 	boolean handleFunctionFailed(Exception e) {
+		// search specific exception in call stack
 		Throwable x = e;
 		while (x != null) {
 			if (x instanceof PKCS11Exception && "CKR_FUNCTION_FAILED".equals(x.getMessage())) {
