@@ -23,9 +23,10 @@ use Getopt::Long;
 ## 
 sub vpnopen() {
 	my (
-		$tap,$hostname,$port,$key,$cert,$ca,$noBridge
+		$tap,$hostname,$port,$key,$cert,$ca,$noBridge,$noLzo
 	);
 	$noBridge = 0;
+        $noLzo = 0;
 	## Parse arguments
 	GetOptions(
 		'tap=s'        => \$tap,
@@ -34,7 +35,8 @@ sub vpnopen() {
 		'key=s'        => \$key,
 		'cert=s'       => \$cert,
 		'ca=s'         => \$ca,
-		'no-bridge+'        => \$noBridge
+		'no-bridge+'        => \$noBridge,
+		'no-lzo+'        => \$noLzo
 	) or die "parameters error. $?";
 	## parameters validation // unquoting
 	if ( ! ($tap =~ m/^tap[-_\w]+$/) ) { die "wrong --tap format [$tap]"; }
@@ -71,18 +73,22 @@ sub vpnopen() {
   	    system("kill -9 $pid");
     }
 	
-	## open VPN
-	## -> setsid: process will be started in background. We will monitor 
+    ## open VPN
+    ## -> setsid: process will be started in background. We will monitor 
     ##    log file in order to detect success or failure and abort after a given timeout.
     ## -> --persist-key: key files are going to be shreded as soons as openvpn has been started. Therefore openvpn need to 
     ##    cache them.
     ## -> --resolv-retry infinite: ?
-	## -> --nobind: ?
-	## -> --writepid: keep a track of this process ID
-	## -> --fast-io: may boost throughput
+    ## -> --nobind: ?
+    ## -> --writepid: keep a track of this process ID
+    ## -> --fast-io: may boost throughput
     ## -> --log --verb 3: needed log config to monitor OpenVPN success or failure later in this script     
     ## openvpn command
-	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server --comp-lzo --verb 3 --log /tmp/openvpn-${tap}.log --writepid ${pidFile} &";
+    my $lzoOption = "";
+    if ($noLzo == 0) {
+	 $lzoOption = "--comp-lzo";
+    }
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server $lzoOption --verb 3 --log /tmp/openvpn-${tap}.log --writepid ${pidFile} &";
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined (openvpn create the tap device)

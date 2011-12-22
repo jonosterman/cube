@@ -183,6 +183,7 @@ public class NMApplet {
 							"--ca", CubeClientCoreProperties.getProperty("INetworkManager.vpnCa"),//
 							"--cert", CubeClientCoreProperties.getProperty("INetworkManager.vpnCrt"),//
 							"--key", CubeClientCoreProperties.getProperty("INetworkManager.vpnKey"), //
+							"--no-lzo", //
 							"--no-bridge" //
 					);
 					if (su.getExitValue() == 0) {
