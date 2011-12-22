@@ -147,6 +147,7 @@ public class CNMStateMachine implements INetworkManager {
 				process(CNMStateEvent.VPN_CONNECTED);
 				break;
 			case CUBEVPN_CONNECTION_STATE_CONNECT:
+			case CUBEVPN_CONNECTION_STATE_PREPARE:
 				process(CNMStateEvent.VPN_CONNECTING);
 				break;
 			default:
