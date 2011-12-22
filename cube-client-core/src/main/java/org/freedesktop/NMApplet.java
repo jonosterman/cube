@@ -17,7 +17,6 @@
 package org.freedesktop;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -49,7 +48,6 @@ import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
  * @see http://projects.gnome.org/NetworkManager//developers/api/08/spec-08.html
  */
 public class NMApplet {
-	private static final String CUBE_VPN_NAME = "cube-vpn";
 	private static final String NM_DBUS_OBJECT = "/org/freedesktop/NetworkManager";
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
@@ -64,10 +62,10 @@ public class NMApplet {
 	}
 
 	public enum VpnConnectionState {
-		NM_VPN_CONNECTION_STATE_UNKNOWN, NM_VPN_CONNECTION_STATE_PREPARE, NM_VPN_CONNECTION_STATE_NEED_AUTH, NM_VPN_CONNECTION_STATE_CONNECT, NM_VPN_CONNECTION_STATE_IP_CONFIG_GET, NM_VPN_CONNECTION_STATE_ACTIVATED, NM_VPN_CONNECTION_STATE_FAILED, NM_VPN_CONNECTION_STATE_DISCONNECTED
+		CUBEVPN_CONNECTION_STATE_PREPARE, CUBEVPN_CONNECTION_STATE_CONNECT, CUBEVPN_CONNECTION_STATE_ACTIVATED, CUBEVPN_CONNECTION_STATE_FAILED, CUBEVPN_CONNECTION_STATE_DISCONNECTED
 	}
 
-	public enum VpnConnectionReason {
+	public enum CubeVpnConnectionReason {
 		NM_VPN_CONNECTION_STATE_REASON_UNKNOWN, NM_VPN_CONNECTION_STATE_REASON_NONE, NM_VPN_CONNECTION_STATE_REASON_USER_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_DEVICE_DISCONNECTED, NM_VPN_CONNECTION_STATE_REASON_SERVICE_STOPPED, NM_VPN_CONNECTION_STATE_REASON_IP_CONFIG_INVALID, NM_VPN_CONNECTION_STATE_REASON_CONNECT_TIMEOUT, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_TIMEOUT, NM_VPN_CONNECTION_STATE_REASON_SERVICE_START_FAILED, NM_VPN_CONNECTION_STATE_REASON_NO_SECRETS, NM_VPN_CONNECTION_STATE_REASON_LOGIN_FAILED, NM_VPN_CONNECTION_STATE_REASON_CONNECTION_REMOVED
 	}
 
@@ -175,7 +173,8 @@ public class NMApplet {
 			@Override
 			public void run() {
 				try {
-					fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_PREPARE);
+					LOG.debug("Open Cube VPN");
+					fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_PREPARE);
 					ScriptUtil script = new ScriptUtil();
 					ShellUtil su = script.execute("sudo", "./vpn-open.pl", //
 							"--tap", CubeClientCoreProperties.getProperty("INetworkManager.vpnTap"),//
@@ -187,20 +186,20 @@ public class NMApplet {
 							"--no-bridge" //
 					);
 					if (su.getExitValue() == 0) {
-						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_ACTIVATED);
+						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_ACTIVATED);
 					} else {
-						fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 					}
 				} catch (Exception e) {
-					LOG.error("Failed to start OpenVpn",e);
-					fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+					LOG.error("Failed to start Cube VPN",e);
+					fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 				}
 			}
 		});
 	}
 	public void closeVpn() {
 		try {
-			LOG.debug("Close VPN");
+			LOG.debug("Close Cube VPN");
 			ScriptUtil script = new ScriptUtil();
 			ShellUtil su = script.execute("sudo", "./vpn-close.pl", //
 					"--tap", CubeClientCoreProperties.getProperty("INetworkManager.vpnTap"),//
@@ -208,10 +207,10 @@ public class NMApplet {
 			);
 			LOG.debug(su.getStandardOutput().toString());
 			LOG.debug(su.getStandardError().toString());
-			fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_DISCONNECTED);
+			fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_DISCONNECTED);
 		} catch (Exception e) {
 			LOG.error("Failed to start OpenVpn",e);
-			fireVpnConnectionState(VpnConnectionState.NM_VPN_CONNECTION_STATE_FAILED);
+			fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 		}
 	}
 

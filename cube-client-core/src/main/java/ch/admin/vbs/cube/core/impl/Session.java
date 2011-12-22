@@ -91,7 +91,8 @@ public class Session implements Runnable, ISession {
 		synchronized (this) {
 			if (descWs != null) {
 				switch (state) {
-				case CONNECTED:
+				case CONNECTED_TO_CUBE:
+				case CONNECTED_TO_CUBE_BY_VPN:
 					descWs.enable(true);
 					break;
 				case NOT_CONNECTED:

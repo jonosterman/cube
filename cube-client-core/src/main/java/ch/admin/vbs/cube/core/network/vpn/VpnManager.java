@@ -54,7 +54,8 @@ public class VpnManager {
 					vpns.addAll(vpnCache.values());
 				}
 				switch (state) {
-				case CONNECTED:
+				case CONNECTED_TO_CUBE_BY_VPN:
+				case CONNECTED_TO_CUBE:
 					/* repoen all VM's VPNs. (in separated theads) */
 					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs [{}].", vpns.size());
 					for (final CacheEntry e : vpns) {

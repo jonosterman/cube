@@ -54,7 +54,7 @@ package ch.admin.vbs.cube.core.network;
  */
 public interface INetworkManager {
 	enum NetworkConnectionState {
-		NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED
+		NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED_TO_CUBE, CONNECTED_TO_CUBE_BY_VPN
 	}
 	public static final String VPN_IP_CHECK_PROPERTIE= "INetworkManager.vpnIpCheck";
 

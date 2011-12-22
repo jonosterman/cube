@@ -143,13 +143,10 @@ public class CNMStateMachine implements INetworkManager {
 		public void handle(VpnConnectionState sig) {
 			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);
 			switch (sig) {
-			case NM_VPN_CONNECTION_STATE_ACTIVATED:
+			case CUBEVPN_CONNECTION_STATE_ACTIVATED:
 				process(CNMStateEvent.VPN_CONNECTED);
 				break;
-			case NM_VPN_CONNECTION_STATE_PREPARE:
-			case NM_VPN_CONNECTION_STATE_NEED_AUTH:
-			case NM_VPN_CONNECTION_STATE_CONNECT:
-			case NM_VPN_CONNECTION_STATE_IP_CONFIG_GET:
+			case CUBEVPN_CONNECTION_STATE_CONNECT:
 				process(CNMStateEvent.VPN_CONNECTING);
 				break;
 			default:
@@ -187,7 +184,7 @@ public class CNMStateMachine implements INetworkManager {
 				break;
 			case VPN_CONNECTED:
 				if (nmConnected) {
-					setCurrentState(NetworkConnectionState.CONNECTED);
+					setCurrentState(NetworkConnectionState.CONNECTED_TO_CUBE_BY_VPN);
 				} else {
 					// Network Manager is not connected. We should not have any
 					// VPN running
@@ -209,7 +206,7 @@ public class CNMStateMachine implements INetworkManager {
 		if (nmApplet.isIpReachable(CubeClientCoreProperties.getProperty(VPN_IP_CHECK_PROPERTIE))) {
 			LOG.debug("We are connected to cube network. No need to open CubeVPN.");
 			// we may connect cube server directly.
-			setCurrentState(NetworkConnectionState.CONNECTED);
+			setCurrentState(NetworkConnectionState.CONNECTED_TO_CUBE);
 		} else {
 			LOG.debug("Connected to foreign network. Start CubeVPN.");
 			setCurrentState(NetworkConnectionState.CONNECTING_VPN);
