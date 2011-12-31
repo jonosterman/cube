@@ -64,6 +64,7 @@ sub vpnopen() {
 		## end of vbox_hack (see below for the rest of the hack)
     }
     
+    
 	## check if vpn is still running (pid file and matching process are present)
 	my $pidFile = "/tmp/openvpn-${tap}.pid";
     if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
@@ -72,6 +73,21 @@ sub vpnopen() {
   	    print "[DEBUG] Kill old openvpn process [$pid]\n";
   	    system("kill -9 $pid");
     }
+    
+    ## DEBUG : check that openvpn is not running with another PID (if yes it is a bug).
+    ##         Fix the situation by killing the process and write an error log 
+    if ( system("pgrep $pidFile") == 0 ) {
+      ## found one or more process
+      my $pid = int(`cat $pidFile`);
+      `echo "Running VPN process(es) found with wrong PID ($pid):" >> /tmp/openvpn.error`; 
+      `ps -ef | grep openvpn >> /tmp/openvpn.error`;
+      ## fix the problem
+      `pkill $pidFile`;
+      `echo "After fix report:" >> /tmp/openvpn.error`; 
+      `ps -ef | grep openvpn >> /tmp/openvpn.error`;
+    }
+    
+    
     ## 2nd check (if something get nasty with the pid file)
     #system("pkill -f -9 '$pidFile'");
     
