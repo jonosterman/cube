@@ -63,8 +63,8 @@ sub vpnclose() {
         print "[DEBUG] Kill openvpn process [$pid]\n";
     	runCmd("kill -9 $pid");
     }
-	## remove tap (sometime the command hang and never ends: uninterruptible sleep state. Therefore we fork this command with '&')
-	`tunctl -d $tap &`;
+    ## remove tap (sometime the command hang and never ends: uninterruptible sleep state. Therefore we fork this command with '&')
+    `tunctl -d $tap &`;
 }
 
 ###################################################

@@ -189,6 +189,7 @@ public class NMApplet {
 					if (su.getExitValue() == 0) {
 						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_ACTIVATED);
 					} else {
+						LOG.debug("Failed to connect Cube VPN [script returned: "+su.getExitValue()+"]. \nSTDOUT:\n"+su.getStandardOutput()+"\nSTDERR:\n"+su.getStandardError());
 						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 					}
 				} catch (Exception e) {

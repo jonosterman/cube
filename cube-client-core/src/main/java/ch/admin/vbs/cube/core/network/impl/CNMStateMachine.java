@@ -141,7 +141,7 @@ public class CNMStateMachine implements INetworkManager {
 
 	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
 		public void handle(VpnConnectionState sig) {
-			LOG.debug("Got DBus signal [VpnStateChanged] - [{}]", sig);
+			LOG.debug("Got CubeVPN signal - [{}]", sig);
 			switch (sig) {
 			case CUBEVPN_CONNECTION_STATE_ACTIVATED:
 				process(CNMStateEvent.VPN_CONNECTED);
