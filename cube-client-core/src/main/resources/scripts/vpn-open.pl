@@ -73,7 +73,7 @@ sub vpnopen() {
   	    system("kill -9 $pid");
     }
     ## 2nd check (if something get nasty with the pid file)
-    system("pkill -f -9 '$pidFile'");
+    #system("pkill -f -9 '$pidFile'");
     
 	
     ## open VPN
