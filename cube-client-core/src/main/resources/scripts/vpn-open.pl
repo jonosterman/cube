@@ -72,6 +72,9 @@ sub vpnopen() {
   	    print "[DEBUG] Kill old openvpn process [$pid]\n";
   	    system("kill -9 $pid");
     }
+    ## 2nd check (if something get nasty with the pid file)
+    system("pkill -f -9 '$pidFile'");
+    
 	
     ## open VPN
     ## -> setsid: process will be started in background. We will monitor 
