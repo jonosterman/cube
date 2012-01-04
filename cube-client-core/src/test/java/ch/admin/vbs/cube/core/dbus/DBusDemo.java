@@ -7,8 +7,6 @@ import org.freedesktop.NetworkManager.StateChanged;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 
-import ch.admin.vbs.cube.core.network.impl.CNMStateMachine.StateChangedHandler;
-
 public class DBusDemo {
 	public static void main(String[] args) throws Exception {
 		NMApplet nmappet = new NMApplet();

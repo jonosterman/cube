@@ -19,15 +19,12 @@ package ch.admin.vbs.cube.core.network.impl;
 import java.util.ArrayList;
 
 import org.freedesktop.NMApplet;
-import org.freedesktop.NMApplet.DeviceState;
 import org.freedesktop.NMApplet.NmState;
 import org.freedesktop.NMApplet.VpnConnectionState;
 import org.freedesktop.NetworkManager;
 import org.freedesktop.NetworkManager.StateChanged;
-import org.freedesktop.NetworkManager.VPN.Connection.VpnStateChanged;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
-import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +33,7 @@ import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 
 /**
- *
+ * 
  */
 public class CNMStateMachine implements INetworkManager {
 	private static final Logger LOG = LoggerFactory.getLogger(CNMStateMachine.class);
@@ -45,10 +42,12 @@ public class CNMStateMachine implements INetworkManager {
 	private NMApplet nmApplet = new NMApplet();
 	private boolean nmConnected;
 
+	/** Internal State Machine events */
 	private enum CNMStateEvent {
 		NM_CONNECTING, NM_CONNECTED, NM_DISCONNECTED, VPN_CONNECTING, VPN_CONNECTED, VPN_DISCONNECTED
 	}
 
+	/** Set current state and notify listener about the change */
 	private void setCurrentState(NetworkConnectionState n) {
 		NetworkConnectionState old = curState;
 		curState = n;
@@ -62,18 +61,14 @@ public class CNMStateMachine implements INetworkManager {
 	@Override
 	public void start() {
 		setCurrentState(NetworkConnectionState.NOT_CONNECTED);
-		// TODO: adapt curState to NetworkManager status
 		try {
-			// create DBUS interface to NetworkManager
+			// connect NetworkManager via DBUS
 			nmApplet.connect();
-			// register for signal (connections and VPN connections)
+			// register signals (listen NetworkManager events)
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
 			nmApplet.addListener(new VpnStateChangedHandler());
-			// nmApplet.addSignalHanlder(DBusConnection.SYSTEM,
-			// org.freedesktop.NetworkManager.Device.StateChanged.class, new
-			// DeviceStateChangedHandler());
-			// initial NetworkManager stop/start in order to get its state
-			// through events
+			// Restart NetworkManager in order to sync this StateMachine and the
+			// NetworkManager states.
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -93,11 +88,11 @@ public class CNMStateMachine implements INetworkManager {
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS", e);
 		}
-		// ...
 	}
 
 	@Override
 	public void stop() {
+		// nothing
 	}
 
 	@Override
@@ -115,6 +110,7 @@ public class CNMStateMachine implements INetworkManager {
 		listeners.remove(l);
 	}
 
+	/** DBUS Signal listener */
 	public class StateChangedHandler implements DBusSigHandler<NetworkManager.StateChanged> {
 		public StateChangedHandler() {
 		}
@@ -139,18 +135,22 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
+	/** VPN state's changes listener */
 	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
 		public void handle(VpnConnectionState sig) {
 			LOG.debug("Got CubeVPN signal - [{}]", sig);
 			switch (sig) {
 			case CUBEVPN_CONNECTION_STATE_ACTIVATED:
+				// VPN established
 				process(CNMStateEvent.VPN_CONNECTED);
 				break;
 			case CUBEVPN_CONNECTION_STATE_CONNECT:
 			case CUBEVPN_CONNECTION_STATE_PREPARE:
+				// VPN connecting ...
 				process(CNMStateEvent.VPN_CONNECTING);
 				break;
 			default:
+				// VPN disconnected
 				process(CNMStateEvent.VPN_DISCONNECTED);
 				break;
 			}
@@ -203,6 +203,16 @@ public class CNMStateMachine implements INetworkManager {
 		}
 	}
 
+	/**
+	 * Once connceted to a network, we have to find out if we need to start the
+	 * Cube VPN or if we can directly reach the Cube Server. We only check the
+	 * IP in order if we got an IP in the right range. It will not work in a
+	 * network with the same IP range than Cube, but we do not care since the
+	 * VPN will not work either in this case.
+	 * 
+	 * This method set the State Machine's state accordingly and eventually
+	 * start the VPN.
+	 */
 	private void checkVpnNeeded() {
 		if (nmApplet.isIpReachable(CubeClientCoreProperties.getProperty(VPN_IP_CHECK_PROPERTIE))) {
 			LOG.debug("We are connected to cube network. No need to open CubeVPN.");

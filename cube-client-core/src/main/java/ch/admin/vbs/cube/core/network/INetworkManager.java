@@ -37,7 +37,7 @@ package ch.admin.vbs.cube.core.network;
  *          |
  *          +-------------------------.
  *          |                         | in:  connected signal, but 
- *          | in  : connected and     |      Cube server unreachable
+ *          | in  : connected and     |      Cube server unreachable (foreign network)
  *          |       Cube server       | out: start Cube VPN
  *          |       reachable.        V
  *          | out : restart VM's   +--------------------+---\ in  : connection failed
@@ -45,29 +45,41 @@ package ch.admin.vbs.cube.core.network;
  *          |                      +--------------------+<--/
  *          |                         | in:  VPN connected
  *          |                         | out: restart VM's VPNs
- *          |   ,---------------------'
- *          V   V                    
- * +--------------------+ 
- * |    Connected       | 
- * +--------------------+
+ *          |                         |
+ *          V                         V                    
+ * +--------------------+          +--------------------+
+ * |    Connected       |          |  Connected by VPN  | 
+ * +--------------------+          +--------------------+
  * </pre>
  */
 public interface INetworkManager {
+	/**
+	 * IP to check in order to known if we are connected to Cube network or if
+	 * we need to start the VPN.
+	 */
+	public static final String VPN_IP_CHECK_PROPERTIE = "INetworkManager.vpnIpCheck";
+
+	/** States */
 	enum NetworkConnectionState {
 		NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED_TO_CUBE, CONNECTED_TO_CUBE_BY_VPN
 	}
-	public static final String VPN_IP_CHECK_PROPERTIE= "INetworkManager.vpnIpCheck";
 
+	/** Start State Machine */
 	void start();
 
+	/** Stop State Machine */
 	void stop();
 
+	/** @return current state */
 	public NetworkConnectionState getState();
 
+	/** Add state changed listener */
 	public void addListener(Listener l);
 
+	/** Remove state changed listener */
 	public void removeListener(Listener l);
 
+	/** State Machine Listener */
 	public interface Listener {
 		void stateChanged(NetworkConnectionState old, NetworkConnectionState state);
 	}
