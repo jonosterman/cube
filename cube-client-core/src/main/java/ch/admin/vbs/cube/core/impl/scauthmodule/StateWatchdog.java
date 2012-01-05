@@ -45,7 +45,7 @@ class StateWatchdog implements Runnable {
 			if (tstate != null && tstate.deadline != 0 && tstate.deadline < System.currentTimeMillis()) {
 				LOG.debug("Abort state [{}] due to timeout", tstate);
 				tstate.deadline = 0; // reset deadline to
-				if (tstate == this.scAuthModule.getStateInstance(WaitPasswordState.class)) {
+				if (tstate == this.scAuthModule.states.waitPasswordState) {
 					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_USERTIMEOUT, null, null, null));
 				} else {
 					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_CARDTIMEOUT, null, null, null));

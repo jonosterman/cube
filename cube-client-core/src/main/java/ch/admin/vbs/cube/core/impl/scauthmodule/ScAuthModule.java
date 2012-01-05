@@ -38,10 +38,51 @@ import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransit
  * 
  * It is important not to block the state machine. So make your method return
  * ASAP (do crypto or UI stuff in another thread).
+ * 
+ * <pre>
+ * 
+ *                 +----------------+
+ *                 |      Idle      |<-----------------------.
+ *                 +----------------|                        |
+ *                          |    |                           | ABORT_AUTH
+ *                          |    `--------------------------'|
+ *                          |                                | 
+ *                          | START_AUTH                     | 
+ *                          |                                |
+ *            +--------------------------+                   |
+ *            | WaitKeyStoreAndPassword  |                   |
+ *            +--------------------------+                   | 
+ *                     |         |    |                      |
+ *                     |         |    `---------------------'|
+ *             ,-------'         `------.                    |
+ *             |  PASSWORD_SUBMIT       | PASSWORD_REQUEST   |
+ *             |                        |                    |
+ *    +----------------+        +----------------+           |
+ *    |  WaitKeyStore  |        |  WaitPassword  |----------'|
+ *    +----------------+        +----------------+           |
+ *            |     |                   |                    |
+ * PASSWORD_REQUEST |                   | PASSWORD_SUMIT     |
+ *            |     |                   |                    |
+ *            |     `------------------ | ------------------'| 
+ *            |                         |                    |
+ *            `----------. ,------------'                    |
+ *                       | |                                 |
+ *            +--------------------------+                   |
+ *            |      OpenKeyStore        |------------------'|
+ *            +--------------------------+                   | 
+ *                        |                                  |
+ *                        | KEYSTORE_READY                   |
+ *                        |                                  |
+ *            +--------------------------+                   |
+ *            |      OpenKeyReady        |-------------------'
+ *            +--------------------------+
+ * 
+ * </pre>
+ * 
  */
 public class ScAuthModule implements IAuthModule, Runnable {
 	static final long TIMEOUT_NO = 0;
-	static final long TIMEOUT_USERINPUT = 60000;
+	static final long TIMEOUT_USERINPUT = 120000;
 	static final long TIMEOUT_KEYSTOREINIT = 10000;
 	static final long TIMEOUT_KEYSTOREOPEN = 5000;
 	/** Logger */
@@ -56,22 +97,16 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	private OpenKeyStoreTask openKeyStoreTask;
 	private StateWatchdog watchdog;
 	private AuthModuleEvent abortReason = null;
-	// states
-	private HashMap<Class<?>, AbstractState> stateInstances = new HashMap<Class<?>, AbstractState>();
+	// pre-initialized states (grouped in class State for readability)
+	States states = new States();
 
-	/** get singleton instance of state object but initialize them the lazy way. */
-	public AbstractState getStateInstance(Class<?> clazz) {
-		// check if instance is in cache
-		AbstractState state = stateInstances.get(clazz);
-		if (state == null) {
-			// lazy initialize it
-			try {
-				state = (AbstractState) clazz.getConstructor(ScAuthModule.class).newInstance(this);
-			} catch (Exception e) {
-				LOG.error("Failed to instanciate state object [{}]", clazz);
-			}
-		}
-		return state;
+	class States {
+		public IdleState idle = new IdleState(ScAuthModule.this);
+		public KeyStoreReadyState keyStoreReady = new KeyStoreReadyState(ScAuthModule.this);
+		public OpenKeyStoreState openKeyStore = new OpenKeyStoreState(ScAuthModule.this);
+		public WaitKeystoreAndPasswordState waitKeyStoreAndPassword = new WaitKeystoreAndPasswordState(ScAuthModule.this);
+		public WaitKeystoreState waitKeyStore = new WaitKeystoreState(ScAuthModule.this);
+		public WaitPasswordState waitPasswordState = new WaitPasswordState(ScAuthModule.this);
 	}
 
 	// =============================================
@@ -93,11 +128,13 @@ public class ScAuthModule implements IAuthModule, Runnable {
 		 * openKeyStoreTask SHOULD not be null since we set it in start(). But
 		 * since a race condition may occur, we have to test it.
 		 */
-		if (openKeyStoreTask != null) {
+		if (openKeyStoreTask == null) {
+			LOG.warn("Race condition: got passowrd when openKeyStoreTask is still not ready. ignore event");
+		} else {
 			LOG.debug("set the passord on the OpenKeyStoreTask that run in background");
 			openKeyStoreTask.setPassword(password);
+			enqueue(ScAuthStateTransition.PASSWORD_SUBMIT);
 		}
-		enqueue(ScAuthStateTransition.PASSWORD_SUBMIT);
 	}
 
 	@Override

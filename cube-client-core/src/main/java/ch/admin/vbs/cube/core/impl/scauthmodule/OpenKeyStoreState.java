@@ -46,10 +46,10 @@ class OpenKeyStoreState extends AbstractState {
 		switch (trs) {
 		case KEYSTORE_READY:
 			// OpenKeyStoreTask says us that KeyStore is ready -> jump to KeyStoreReadyState
-			return scAuthModule.getStateInstance(KeyStoreReadyState.class);
+			return scAuthModule.states.keyStoreReady;
 		case ABORT_AUTH:
 			// return to IdleSate if something goes wrong
-			return scAuthModule.getStateInstance(IdleState.class);
+			return scAuthModule.states.idle;
 
 		default:
 			return super.transition(trs);

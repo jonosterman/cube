@@ -43,7 +43,7 @@ class KeyStoreReadyState extends AbstractState {
 		switch (trs) {
 		case ABORT_AUTH:
 			// return to IdleSate if something goes wrong
-			return scAuthModule.getStateInstance(IdleState.class);
+			return scAuthModule.states.idle;
 		default:
 			return super.transition(trs);
 		}

@@ -47,9 +47,9 @@ class IdleState extends AbstractState {
 	public AbstractState transition(ScAuthStateTransition trs) {
 		switch (trs) {
 		case START_AUTH:
-			return scAuthModule.getStateInstance(WaitKeystoreAndPasswordState.class);
+			return scAuthModule.states.waitKeyStoreAndPassword;
 		case ABORT_AUTH:
-			return scAuthModule.getStateInstance(IdleState.class);
+			return scAuthModule.states.idle;
 		default:
 			return super.transition(trs);
 		}

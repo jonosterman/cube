@@ -39,11 +39,11 @@ class WaitKeystoreAndPasswordState extends AbstractState {
 	public AbstractState transition(ScAuthStateTransition trs) {
 		switch (trs) {
 		case PASSWORD_SUBMIT:
-			return scAuthModule.getStateInstance(WaitKeystoreState.class);
+			return scAuthModule.states.waitKeyStore;
 		case PASSWORD_REQUEST:
-			return scAuthModule.getStateInstance(WaitPasswordState.class);
+			return scAuthModule.states.waitPasswordState;
 		case ABORT_AUTH:
-			return scAuthModule.getStateInstance(IdleState.class);
+			return scAuthModule.states.idle;
 		default:
 			return super.transition(trs);
 		}

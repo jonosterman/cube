@@ -33,6 +33,12 @@ import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 
 /**
+ * Implements INetworkManager state machine. Use NMApplet in order to monitor
+ * system's NetworkManager (via DBUS) and start/stop the Cube VPN.
+ * 
+ * CubeVPN is a base VPN used to connect Cube network from the Internet. The
+ * whole traffic will be tunneled into it, it includes: VM's VPNs and access to
+ * Cube web service (https). Therefore all traffic is encrypted two times.
  * 
  */
 public class CNMStateMachine implements INetworkManager {
@@ -42,15 +48,11 @@ public class CNMStateMachine implements INetworkManager {
 	private NMApplet nmApplet = new NMApplet();
 	private boolean nmConnected;
 
-	/** Internal State Machine events */
-	private enum CNMStateEvent {
-		NM_CONNECTING, NM_CONNECTED, NM_DISCONNECTED, VPN_CONNECTING, VPN_CONNECTED, VPN_DISCONNECTED
-	}
-
 	/** Set current state and notify listener about the change */
 	private void setCurrentState(NetworkConnectionState n) {
 		NetworkConnectionState old = curState;
 		curState = n;
+		// notify listeners only if state effectively changed
 		if (old != n) {
 			for (Listener l : listeners) {
 				l.stateChanged(old, n);
@@ -60,11 +62,12 @@ public class CNMStateMachine implements INetworkManager {
 
 	@Override
 	public void start() {
+		// set initial state
 		setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 		try {
-			// connect NetworkManager via DBUS
+			// connect NetworkManager (via DBUS)
 			nmApplet.connect();
-			// register signals (listen NetworkManager events)
+			// listen NetworkManager events
 			nmApplet.addSignalHanlder(DBusConnection.SYSTEM, StateChanged.class, new StateChangedHandler());
 			nmApplet.addListener(new VpnStateChangedHandler());
 			// Restart NetworkManager in order to sync this StateMachine and the
@@ -117,20 +120,38 @@ public class CNMStateMachine implements INetworkManager {
 
 		@Override
 		public void handle(NetworkManager.StateChanged signal) {
-			NmState sig = nmApplet.getEnumConstant(signal.state.intValue(), NmState.class);
-			LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);
-			switch (sig) {
-			case NM_STATE_CONNECTED:
-				process(CNMStateEvent.NM_CONNECTED);
-				break;
-			case NM_STATE_CONNECTING:
-				process(CNMStateEvent.NM_CONNECTING);
-				break;
-			case NM_STATE_ASLEEP:
-			case NM_STATE_UNKNOWN:
-			default:
-				process(CNMStateEvent.NM_DISCONNECTED);
-				break;
+			synchronized (this) {
+				// convert signal into the corresponding enumeration reference
+				NmState sig = nmApplet.getEnumConstant(signal.state.intValue(), NmState.class);
+				LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);
+				//
+				switch (sig) {
+				case NM_STATE_CONNECTED:
+					// set connected flag. see
+					// VpnStateChangedHandler.handle(...) below.
+					nmConnected = true;
+					// start CubeVPN and update current state.
+					checkVpnNeeded();
+					break;
+				case NM_STATE_CONNECTING:
+					// set connected flag. see
+					// VpnStateChangedHandler.handle(...) below.
+					nmConnected = false;
+					// set current state
+					setCurrentState(NetworkConnectionState.CONNECTING);
+					break;
+				case NM_STATE_ASLEEP:
+				case NM_STATE_UNKNOWN:
+				default:
+					// set connected flag. see
+					// VpnStateChangedHandler.handle(...) below.
+					nmConnected = false;
+					// set current state
+					setCurrentState(NetworkConnectionState.NOT_CONNECTED);
+					// ensure that VPN is closed
+					nmApplet.closeVpn();
+					break;
+				}
 			}
 		}
 	}
@@ -138,73 +159,44 @@ public class CNMStateMachine implements INetworkManager {
 	/** VPN state's changes listener */
 	public class VpnStateChangedHandler implements NMApplet.VpnStateListener {
 		public void handle(VpnConnectionState sig) {
-			LOG.debug("Got CubeVPN signal - [{}]", sig);
-			switch (sig) {
-			case CUBEVPN_CONNECTION_STATE_ACTIVATED:
-				// VPN established
-				process(CNMStateEvent.VPN_CONNECTED);
-				break;
-			case CUBEVPN_CONNECTION_STATE_CONNECT:
-			case CUBEVPN_CONNECTION_STATE_PREPARE:
-				// VPN connecting ...
-				process(CNMStateEvent.VPN_CONNECTING);
-				break;
-			default:
-				// VPN disconnected
-				process(CNMStateEvent.VPN_DISCONNECTED);
-				break;
-			}
-		}
-	}
-
-	private void process(CNMStateEvent action) {
-		LOG.debug("process action [{}]", action);
-		synchronized (this) {
-			switch (action) {
-			case NM_CONNECTING:
-				nmConnected = false;
-				setCurrentState(NetworkConnectionState.CONNECTING);
-				break;
-			case NM_CONNECTED:
-				nmConnected = true;
-				checkVpnNeeded();
-				break;
-			case NM_DISCONNECTED:
-				nmConnected = false;
-				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
-				nmApplet.closeVpn();
-				break;
-			case VPN_CONNECTING:
-				if (nmConnected) {
-					setCurrentState(NetworkConnectionState.CONNECTING_VPN);
-				} else {
-					// Network Manager is not connected. We should not have any
-					// VPN running
-					nmApplet.closeVpn();
+			synchronized (this) {
+				LOG.debug("Got CubeVPN signal - [{}]", sig);
+				switch (sig) {
+				case CUBEVPN_CONNECTION_STATE_ACTIVATED:
+					// VPN established
+					if (nmConnected) {
+						setCurrentState(NetworkConnectionState.CONNECTED_TO_CUBE_BY_VPN);
+					} else {
+						// Network Manager is not connected. We should not have
+						// any VPN running.
+						nmApplet.closeVpn();
+					}
+					break;
+				case CUBEVPN_CONNECTION_STATE_CONNECT:
+				case CUBEVPN_CONNECTION_STATE_PREPARE:
+					// VPN connecting ...
+					if (nmConnected) {
+						setCurrentState(NetworkConnectionState.CONNECTING_VPN);
+					} else {
+						// Network Manager is not connected. We should not have
+						// any VPN running
+						nmApplet.closeVpn();
+					}
+					break;
+				default:
+					// VPN disconnected
+					if (nmConnected) {
+						// reconnect again and again (as long as needed)
+						checkVpnNeeded();
+					}
+					break;
 				}
-				break;
-			case VPN_CONNECTED:
-				if (nmConnected) {
-					setCurrentState(NetworkConnectionState.CONNECTED_TO_CUBE_BY_VPN);
-				} else {
-					// Network Manager is not connected. We should not have any
-					// VPN running
-					nmApplet.closeVpn();
-				}
-				break;
-			case VPN_DISCONNECTED:
-				if (nmConnected) {
-					checkVpnNeeded();
-				}
-				break;
-			default:
-				break;
 			}
 		}
 	}
 
 	/**
-	 * Once connceted to a network, we have to find out if we need to start the
+	 * Once connected to a network, we have to find out if we need to start the
 	 * Cube VPN or if we can directly reach the Cube Server. We only check the
 	 * IP in order if we got an IP in the right range. It will not work in a
 	 * network with the same IP range than Cube, but we do not care since the
