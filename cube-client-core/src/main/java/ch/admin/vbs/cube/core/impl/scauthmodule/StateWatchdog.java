@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ch.admin.vbs.cube.core.impl.scauthmodule;
 
 import org.slf4j.Logger;
@@ -28,7 +29,7 @@ class StateWatchdog implements Runnable {
 	 */
 	private final ScAuthModule scAuthModule;
 	private static final Logger LOG = LoggerFactory.getLogger(StateWatchdog.class);
-	
+
 	/**
 	 * @param scAuthModule
 	 */
@@ -47,8 +48,10 @@ class StateWatchdog implements Runnable {
 				tstate.deadline = 0; // reset deadline to
 				if (tstate == this.scAuthModule.states.waitPasswordState) {
 					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_USERTIMEOUT, null, null, null));
-				} else {
+				} else if (tstate == this.scAuthModule.states.waitKeyStore) {
 					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED_CARDTIMEOUT, null, null, null));
+				} else {
+					this.scAuthModule.setAbortReason(new AuthModuleEvent(AuthEventType.FAILED, null, null, null));
 				}
 				this.scAuthModule.enqueue(ScAuthStateTransition.ABORT_AUTH);
 			}

@@ -18,7 +18,6 @@ package ch.admin.vbs.cube.core.impl.scauthmodule;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
