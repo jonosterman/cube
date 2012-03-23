@@ -52,22 +52,22 @@ import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransit
  *            | WaitKeyStoreAndPassword  |                   |
  *            +--------------------------+                   | 
  *                     |         |    |                      |
- *                     |         |    `---------------------'|
+ *                     |         |    `---------------------'|  [TIMEOUT_KEYSTOREINIT]
  *             ,-------'         `------.                    |
  *             |  PASSWORD_SUBMIT       | PASSWORD_REQUEST   |
  *             |                        |                    |
  *    +----------------+        +----------------+           |
- *    |  WaitKeyStore  |        |  WaitPassword  |----------'|
+ *    |  WaitKeyStore  |        |  WaitPassword  |----------'|  [TIMEOUT_USERINPUT]
  *    +----------------+        +----------------+           |
  *            |     |                   |                    |
  * PASSWORD_REQUEST |                   | PASSWORD_SUMIT     |
  *            |     |                   |                    |
- *            |     `------------------ | ------------------'| 
+ *            |     `------------------ | ------------------'|  [TIMEOUT_KEYSTOREINIT] 
  *            |                         |                    |
  *            `----------. ,------------'                    |
  *                       | |                                 |
  *            +--------------------------+                   |
- *            |      OpenKeyStore        |------------------'|
+ *            |      OpenKeyStore        |------------------'|  [TIMEOUT_KEYSTOREOPEN]
  *            +--------------------------+                   | 
  *                        |                                  |
  *                        | KEYSTORE_READY                   |
@@ -83,7 +83,7 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	static final long TIMEOUT_NO = 0;
 	static final long TIMEOUT_USERINPUT = 120000;
 	static final long TIMEOUT_KEYSTOREINIT = 10000;
-	static final long TIMEOUT_KEYSTOREOPEN = 5000;
+	static final long TIMEOUT_KEYSTOREOPEN = 20000;
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(ScAuthModule.class);
 	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
@@ -99,6 +99,7 @@ public class ScAuthModule implements IAuthModule, Runnable {
 	// pre-initialized states (grouped in class State for readability)
 	States states = new States();
 
+	/** Convenient class used to group state instances. */
 	class States {
 		public IdleState idle = new IdleState(ScAuthModule.this);
 		public KeyStoreReadyState keyStoreReady = new KeyStoreReadyState(ScAuthModule.this);

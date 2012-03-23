@@ -18,7 +18,7 @@ package ch.admin.vbs.cube.common.keyring.impl;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.util.Random;
+import java.security.SecureRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,11 +31,11 @@ public class KeyGenerator {
 	private static final Logger LOG = LoggerFactory.getLogger(KeyGenerator.class);
 
 	public static void generateKey(int bitSize, OutputStream os) throws IOException {
-		Random rnd = new Random(System.currentTimeMillis());
+		SecureRandom sr = new SecureRandom();
 		// it will round the bit size
 		int x = 0;
 		for (int i = 0; i < bitSize; i += 8) {
-			os.write(rnd.nextInt());
+			os.write(sr.nextInt());
 			x++;
 		}
 		LOG.debug("generated a [{} bits] key.", x * 8);

@@ -29,8 +29,11 @@ import org.virtualbox_4_1.MachineState;
 import org.virtualbox_4_1.VBoxException;
 
 /**
- * This class cache and monitor virtualbox machines. It raises events when a
+ * This class cache and monitor VirtualBox machines. It raises events when a
  * machine state changed.
+ * 
+ * This class is needed since event notification is not available through the
+ * VirtualBox web service API.
  */
 public class VBoxCache implements Runnable {
 	/** Logger */
