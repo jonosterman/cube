@@ -284,8 +284,15 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void startVm(Vm vm) throws VmException {
+		lock.lock();
 		try {
 			LOG.debug("Start VM [{}]", vm.getDescriptor().getRemoteCfg().getName());
+			// acquire the lock just to be sure it will be unlocked before we call VBoxSDL (or VBoxSDL will fail silently)
+			ISession session = mgr.getSessionObject();
+			IMachine machine = getIMachineReference(vm.getId());
+			machine.lockMachine(session, LockType.Shared);
+			session.unlockMachine();
+			Thread.sleep(500);
 			// start vm using VBoxSDL in order to be
 			// able to contains the VM process in
 			// another SELinux Context and Category
@@ -308,6 +315,8 @@ public class VBoxProduct implements VBoxCacheListener {
 			}
 		} catch (Exception e) {
 			throw new VmException("Failed to start VM", e);
+		} finally {
+			lock.unlock();
 		}
 	}
 
@@ -588,7 +597,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			if (machine != null) {
 				// unregister all disks before unregistering VM
 				ISession session = mgr.getSessionObject();
-				machine.lockMachine(session, LockType.Write);
+				machine.lockMachine(session, LockType.Shared);
 				machine = session.getMachine();
 				for (IMediumAttachment atta : machine.getMediumAttachments()) {
 					if (atta.getMedium() != null) {
