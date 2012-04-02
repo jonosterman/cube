@@ -387,7 +387,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			machine.createSharedFolder("export", vm.getExportFolder().getAbsolutePath(), true, true);
 			machine.createSharedFolder("import", vm.getImportFolder().getAbsolutePath(), false, true);
 			machine.setAccelerate2DVideoEnabled(false);
-			machine.setAccelerate3DEnabled(true);
+			machine.setAccelerate3DEnabled(false);
 			machine.setClipboardMode(ClipboardMode.Bidirectional);
 			machine.setCPUCount(1l);
 			machine.setCPUProperty(CPUPropertyType.PAE, true);
