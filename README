@@ -35,30 +35,32 @@ machines.
 ## Developper environment #######################
 
 ## Checkout code from GITHUB
-
+ cd ~/dev
  git config --global user.name "Your Name"
  git config --global user.email Your@Email
- git clone git@github.com:vboxusers/cube.git
+ git clone git@github.com:username/cube.git
 
 ## Update System
 #  install additional packages: 
 
- apt-get install openvpn bridge-utils virtualbox-4.x dbus-java-bin
+ sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven
 
 ## Create some directories
 
- mkdir -p /opt/cube/client/certificates
- mkdir -p /opt/cube/client/var
- mkdir -p /opt/cube/client/scripts
- chown -R <YOUR USERNAME> /opt/cube
+ sudo mkdir -p /opt/cube/client/certificates
+ sudo mkdir -p /opt/cube/client/var
+ sudo mkdir -p /opt/cube/client/scripts
+ sudo chown -R $USERNAME /opt/cube
 
-#  link script in /opt/cube/client/scripts:
- ln -s /home/<YOUR USERNAME>/xxxx/cube/cube-common/src/main/resources/scripts/container-cleanup /opt/cube/client/scripts/container-cleanup
- ...
+## link script in /opt/cube/client/scripts:
+ 
+ for f in `ls $HOME/dev/cube/cube-common/src/main/resources/scripts/*.pl`; do 
+   echo $f
+   ln -s $f /opt/cube/client/scripts/`basename $f`
+ done
 
-
-#  update /etc/sudo.d/cube:
-
+##  update /etc/sudoers.d/cube :
+--------------------------------------------------------------------------------
 ###############
 ## CUBE
 ###############
@@ -71,6 +73,11 @@ machines.
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
+--------------------------------------------------------------------------------
+
+## set right sudores permissions
+
+chmod 660 /etc/sudoers.d/cube
 
 ## Link certificate (for smart-card use)
 
