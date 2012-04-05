@@ -43,7 +43,7 @@ machines.
 ## Update System
 #  install additional packages: 
 
- sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven
+ sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven openjdk-7-jdk
 
 ## Create some directories
 
@@ -99,7 +99,7 @@ mvn install:install-file \
   -Dfile=./vboxjws.jar \
   -DgroupId=virtualbox \
   -DartifactId=virtualbox \
-  -Dversion=<correct_version> \
+  -Dversion=<correct_version like 4.1> \
   -Dpackaging=jar \
   -DgeneratePom=true
 
@@ -110,7 +110,7 @@ mvn install:install-file \
   -Dfile=./jna.jar \
   -DgroupId=com.sun.jna \
   -DartifactId=jna \
-  -Dversion=<correct_version> \
+  -Dversion=<correct_version like 3.3> \
   -Dpackaging=jar \
   -DgeneratePom=true
 

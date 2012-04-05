@@ -26,6 +26,7 @@
 		<logback.version>0.9.30</logback.version>
 		<junit.version>4.8.1</junit.version>
 		<jide.version>2.10.2</jide.version>
+		<jna.version>3.3</jna.version>
 	</properties>
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
@@ -135,7 +136,7 @@
 		<dependency>
 			<groupId>com.sun.jna</groupId>
 			<artifactId>jna</artifactId>
-			<version>3.3.0</version>
+			<version>${jna.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.jidesoft</groupId>

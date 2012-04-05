@@ -27,7 +27,7 @@
 		<slf4j.version>1.6.2</slf4j.version>
 		<logback.version>0.9.30</logback.version>
 		<commonslang.version>2.6</commonslang.version>
-		<virtualbox.version>4.1.6</virtualbox.version>
+		<virtualbox.version>4.1</virtualbox.version>
 		<junit.version>4.8.1</junit.version>
 		<mainClass>ch.admin.vbs.cube.common.DumpProperties</mainClass>
 	</properties>
