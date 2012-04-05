@@ -32,6 +32,7 @@
 	<build>
 		<plugins>
 			<plugin>
+        <version>2.3.2</version>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
@@ -40,6 +41,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
+        <version>2.4</version>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
@@ -53,6 +55,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
+        <version>2.9</version>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-eclipse-plugin</artifactId>
 				<configuration>
@@ -62,6 +65,7 @@
 				</configuration>
 			</plugin>
 			<plugin>
+        <version>2.4</version>
 				<artifactId>maven-dependency-plugin</artifactId>
 				<executions>
 					<execution>
@@ -77,9 +81,8 @@
 					</execution>
 				</executions>
 			</plugin>
-
-
 			<plugin>
+        <version>1.10.b1</version>
 				<groupId>com.mycila.maven-license-plugin</groupId>
 				<artifactId>maven-license-plugin</artifactId>
 				<configuration>
@@ -120,8 +123,6 @@
 					</execution>
 				</executions>
 			</plugin>
-
-
 		</plugins>
 	</build>
 
