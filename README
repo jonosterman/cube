@@ -2,7 +2,6 @@
 ## Cube
 #################################################
 
-
 The aim of project Cube is to provide a secure
 platform to access several environments in a 
 secure manner from the same physical machine.
@@ -10,7 +9,7 @@ secure manner from the same physical machine.
 It relies on the use of virtualization in order
 to provide contained environments. These virtual
 machines are connected to target infrastructures
-though network tunnels.
+though its own secure network tunnel.
 
 Virtual machines are stored in encrypted 
 containers on the client with their configuration
@@ -19,18 +18,20 @@ until it is actually used. Virtual machines
 run locally (NOT another thin client). Container
 are sealed with a smart-card token (PKCS11). 
 therfore confidential data are kept under user 
-control. Data transfer between machine are
-regulated and protocoled.
+control. Data transfers between virtual machines 
+are regulated and protocoled. 
+
+All encryption and key management is made on the
+host and is not visible from the VM.
 
 Administartor could prepare several virtual 
-machine templates. User may eventually 'stage' 
-one or several environements on a client in order 
-to start them.
+machine templates. User will 'stage' (download)
+one or several virtual machine on its client and
+use them.
 
 User has a simple 'kiosk' like interface where he
 only could stage, start and stop its virtual 
 machines.
-
 
 ## Developper environment #######################
 
@@ -131,8 +132,6 @@ for d in cube-common cube-client-core cube-client-wm; do
  cd ..
 done
 
-
-
 ## build + test 
 
  mvn clean install 
@@ -140,6 +139,10 @@ done
 ## Configuration to do manualy in eclipse
 
  add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
+
+## How to start cube from eclipse
+
+ @TODO
 
 ## How you may commit your changes
 
