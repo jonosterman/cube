@@ -85,9 +85,9 @@ chmod 660 /etc/sudoers.d/cube
 
 ## Commit your changes
 
-  git commit -m 'excplicit comments'
-  git remote add origin git@github.com:<YOUR USERNAME>/cube.git
-  git push -u origin master
+  git add .
+  git commit -a
+  git push
 
 ## Download and install VirtualBox SDK library
 Download VirtualBox SDK from :http://www.virtualbox.org/wiki/Downloads
