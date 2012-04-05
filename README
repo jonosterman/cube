@@ -40,19 +40,28 @@ machines.
  git config --global user.email Your@Email
  git clone git@github.com:username/cube.git
 
-## Update System
-#  install additional packages: 
+## Update System (install additional packages)
+##   - openvpn, bridge-utils: used to connect VMs to target netowrks
+##   - dbus-java-bin: used to connect NetworkManager
+##   - maven: used to compile cube
+##   - virtualbox-4.1: ...
+##   - openjdk7-jdk: ...
 
  sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven openjdk-7-jdk
 
-## Create some directories
+## Create some directories to holds scripts and 
+## certificates (thus may be changed through cube's 
+## configuration file. But we used to use the system
+## wide path in order to match deployment environment
+## and the sudoers permission file (see below).
 
  sudo mkdir -p /opt/cube/client/certificates
  sudo mkdir -p /opt/cube/client/var
  sudo mkdir -p /opt/cube/client/scripts
  sudo chown -R $USERNAME /opt/cube
 
-## link script in /opt/cube/client/scripts:
+## link script in /opt/cube/client/scripts. This way you will
+## not have two copies of them.
  
  for f in `ls $HOME/dev/cube/cube-common/src/main/resources/scripts/*.pl`; do 
    echo $f
@@ -60,8 +69,7 @@ machines.
  done
 
 ##  update /etc/sudoers.d/cube :
---------------------------------------------------------------------------------
-###############
+ echo '###############
 ## CUBE
 ###############
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-mount-container.pl
@@ -73,27 +81,21 @@ machines.
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
 %vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
---------------------------------------------------------------------------------
-
-## set right sudores permissions
-
-chmod 440 /etc/sudoers.d/cube
+' > /tmp/cube
+ sudo cp /tmp/cube /etc/sudoers.d/cube
+ sudo chmod 440 /etc/sudoers.d/cube
 
 ## Link certificate (for smart-card use)
 
  ln -s  /home/<YOUR USERNAME>/xxxxxxxxx/trusted-sdtest-rootca.jks /opt/cube/client/certificates/rootca.jks
 
-## Commit your changes
-
-  git add .
-  git commit -a
-  git push
-
 ## Download and install VirtualBox SDK library
+
 Download VirtualBox SDK from :http://www.virtualbox.org/wiki/Downloads
-unzip it:
+## unzip it
 cd ~/Downloads
 unzip VirtualBoxSDK-<correct_version>.zip
+## install it in maven repository
 cd sdk/bindings/webservice/java/jax-ws/
 mvn install:install-file \
   -Dfile=./vboxjws.jar \
@@ -103,7 +105,7 @@ mvn install:install-file \
   -Dpackaging=jar \
   -DgeneratePom=true
 
-## Download and install JNA library
+## Download and install JNA library in maven repository
 Download jna.jar from http://java.net/projects/jna/downloads
 cd ~/Downloads
 mvn install:install-file \
@@ -139,17 +141,18 @@ done
 
  add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
 
+## How you may commit your changes
+
+  git add .
+  git commit -a
+  git push
 
 ## Quick deploy on test machine
-TESTMACHINE=172.20.3.1
+
+TESTMACHINE=cube001
 mvn -Dmaven.test.skip=true install \
 && scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-wm/4.0/cube-client-wm-4.0.jar $TESTMACHINE:/opt/cube/client/ \
 && scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-core/4.0/cube-client-core-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
 && scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-common/4.0/cube-common-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
 && ssh $TESTMACHINE "pkill -f java"
-
-
-
-
-
 
