@@ -81,9 +81,11 @@
                           				</sourceRoot>
 							<wsdlOptions>
 								<wsdlOption>
-									<wsdl>
-										${basedir}/src/main/resources/wsdl/CubeManagerService.wsdl
-                                 	</wsdl>
+									<wsdl>${basedir}/src/main/resources/wsdl/CubeManagerService.wsdl</wsdl>
+									<extraargs>
+										<extraarg>-frontend</extraarg>
+										<extraarg>jaxws21</extraarg>
+									</extraargs> 
 								</wsdlOption>
 							</wsdlOptions>
 						</configuration>

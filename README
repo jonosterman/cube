@@ -140,9 +140,16 @@ done
 
  add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
 
-## How to start cube from eclipse
+## Eclipse: importing cube projects
+After building the cube project from cube top directory using:
 
- @TODO
+ mvn -Dmaven.test.skip=true clean eclipse:clean eclipse:eclipse install
+
+Start eclipse (new workspace) and use File->Import->Existing Projects to
+import cube projects (do NOT select 'Copy projects into Workspace').
+
+If M2_REPO is not configured in your eclipse workspace, add it in 'Window->
+Preferneces->Classpath Variables' to point to '/home/your_user/.m2/repository'.
 
 ## How you may commit your changes
 
@@ -158,4 +165,6 @@ mvn -Dmaven.test.skip=true install \
 && scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-core/4.0/cube-client-core-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
 && scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-common/4.0/cube-common-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
 && ssh $TESTMACHINE "pkill -f java"
+
+
 

@@ -91,13 +91,15 @@ public class VBoxProduct implements VBoxCacheListener {
 	private static final long MAX_SAVE_TIME = 60000; // 1 minute
 	private static final long MEGA = 1048576;
 	/** Logger */
-	private static final Logger LOG = LoggerFactory.getLogger(VBoxProduct.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(VBoxProduct.class);
 	//
 	private VirtualBoxManager mgr;
 	private IVirtualBox vbox;
 	private Lock lock = new ReentrantLock();
 	private VBoxCache cache;
-	private ArrayList<IVmProductListener> listeners = new ArrayList<IVmProductListener>(2);
+	private ArrayList<IVmProductListener> listeners = new ArrayList<IVmProductListener>(
+			2);
 	private boolean connected = false;
 
 	public VBoxProduct() {
@@ -105,13 +107,23 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void start() {
-		// disable CXF logs. way too chatty and use "java.logging".
-		java.util.logging.Logger.getLogger("org.apache.cxf").setLevel(Level.SEVERE);
+		// disable CXF logs. way to verbose and use "java.logging".
+		java.util.logging.Logger.getLogger("org").setLevel(Level.WARNING);
 		// start cache / monitor
 		cache.start();
-		// Connect VirtualBox Web Service in a new thread to avoid
-		// blocking login for 5 seconds.
+		// Connecting WebService may last up to 15 seconds. Therefore we connect
+		// it from another thread.
 		reconnect();
+	}
+
+	public void stop() {
+		cache.stop();
+		ShellUtil su = new ShellUtil();
+		try {
+			su.run(null, 0, "pkill", "-9", "vboxwebsrv");
+		} catch (Exception e) {
+			LOG.error("Failed to kill vboxwebsrv");
+		}
 	}
 
 	/** used by VBoxCache */
@@ -134,21 +146,24 @@ public class VBoxProduct implements VBoxCacheListener {
 	@Override
 	public void notifyVmAdded(IMachine m) {
 		for (IVmProductListener l : listeners) {
-			l.vmStateChanged(m.getId(), VmProductState.STOPPED, getProductState(m));
+			l.vmStateChanged(m.getId(), VmProductState.STOPPED,
+					getProductState(m));
 		}
 	}
 
 	@Override
 	public void notifyVmRemoved(IMachine m) {
 		for (IVmProductListener l : listeners) {
-			l.vmStateChanged(m.getId(), getProductState(m), VmProductState.STOPPED);
+			l.vmStateChanged(m.getId(), getProductState(m),
+					VmProductState.STOPPED);
 		}
 	}
 
 	@Override
 	public void notifyVmStateChanged(IMachine machine, MachineState oldState) {
 		for (IVmProductListener l : listeners) {
-			l.vmStateChanged(machine.getId(), getProductState(oldState), getProductState(machine));
+			l.vmStateChanged(machine.getId(), getProductState(oldState),
+					getProductState(machine));
 		}
 	}
 
@@ -194,18 +209,23 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public long getPreferredVmDiskSize(InstanceConfigurationDTO config) {
-		long dis1Size = Long.parseLong(InstanceParameterHelper.getInstanceParameter("vbox.disk1Size", config));
+		long dis1Size = Long.parseLong(InstanceParameterHelper
+				.getInstanceParameter("vbox.disk1Size", config));
 		long cntSize = (long) ((dis1Size * 1.2) + (200 * MEGA));
-		LOG.debug("compute container size [{}] to hold file [{}]", SizeFormatUtil.format(cntSize), SizeFormatUtil.format(dis1Size));
+		LOG.debug("compute container size [{}] to hold file [{}]",
+				SizeFormatUtil.format(cntSize), SizeFormatUtil.format(dis1Size));
 		return cntSize;
 	}
 
 	public long getPreferredRuntimeDiskSize(InstanceConfigurationDTO config) {
 		// vbox.baseMemory is received in MEGA unit not bytes
-		long baseMemory = Long.parseLong(InstanceParameterHelper.getInstanceParameter("vbox.baseMemory", config)) * MEGA;
+		long baseMemory = Long.parseLong(InstanceParameterHelper
+				.getInstanceParameter("vbox.baseMemory", config)) * MEGA;
 		// reserve twice its size
 		long cntSize = baseMemory * 2;
-		LOG.debug("compute container size [{}] to hold file [{}]", SizeFormatUtil.format(cntSize), SizeFormatUtil.format(baseMemory));
+		LOG.debug("compute container size [{}] to hold file [{}]",
+				SizeFormatUtil.format(cntSize),
+				SizeFormatUtil.format(baseMemory));
 		return cntSize;
 	}
 
@@ -213,54 +233,80 @@ public class VBoxProduct implements VBoxCacheListener {
 		// not used with virtualbox
 	}
 
-	public void stagging(Vm vm, VmModel model, InstanceConfigurationDTO config, Builder builder) throws VmException {
+	public void stagging(Vm vm, VmModel model, InstanceConfigurationDTO config,
+			Builder builder) throws VmException {
 		try {
 			LOG.debug("Start VirtualBox Image Stagging [{}]", vm.getId());
-			vm.setProgressMessage(I18nBundleProvider.getBundle().getString("staging.vbox.download_image"));
+			vm.setProgressMessage(I18nBundleProvider.getBundle().getString(
+					"staging.vbox.download_image"));
 			model.fireVmStateUpdatedEvent(vm);
 			// write config
-			VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
+			VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(),
+					vm.getRuntimeContainer());
 			cfg.load();
 			cfg.setOption(VBoxOption.Disk1File, DISK1);
-			cfg.setOption(VBoxOption.OsType, InstanceParameterHelper.getInstanceParameter("vbox.operatingSystem", config));
-			cfg.setOption(VBoxOption.IoApic, InstanceParameterHelper.getInstanceParameter("vbox.ioApic", config));
-			cfg.setOption(VBoxOption.Acpi, InstanceParameterHelper.getInstanceParameter("vbox.acpi", config));
-			cfg.setOption(VBoxOption.HwUuid, InstanceParameterHelper.getInstanceParameter("vbox.hwUuid", config));
-			cfg.setOption(VBoxOption.Pae, InstanceParameterHelper.getInstanceParameter("vbox.paenx", config));
-			cfg.setOption(VBoxOption.BaseMemory, InstanceParameterHelper.getInstanceParameter("vbox.baseMemory", config));
-			cfg.setOption(VBoxOption.VideoMemory, InstanceParameterHelper.getInstanceParameter("vbox.videoMemory", config));
+			cfg.setOption(VBoxOption.OsType, InstanceParameterHelper
+					.getInstanceParameter("vbox.operatingSystem", config));
+			cfg.setOption(VBoxOption.IoApic, InstanceParameterHelper
+					.getInstanceParameter("vbox.ioApic", config));
+			cfg.setOption(VBoxOption.Acpi, InstanceParameterHelper
+					.getInstanceParameter("vbox.acpi", config));
+			cfg.setOption(VBoxOption.HwUuid, InstanceParameterHelper
+					.getInstanceParameter("vbox.hwUuid", config));
+			cfg.setOption(VBoxOption.Pae, InstanceParameterHelper
+					.getInstanceParameter("vbox.paenx", config));
+			cfg.setOption(VBoxOption.BaseMemory, InstanceParameterHelper
+					.getInstanceParameter("vbox.baseMemory", config));
+			cfg.setOption(VBoxOption.VideoMemory, InstanceParameterHelper
+					.getInstanceParameter("vbox.videoMemory", config));
 			cfg.setOption(VBoxOption.Audio, "on");
 			// network
-			cfg.setOption(VBoxOption.Nic1, InstanceParameterHelper.getInstanceParameter("vbox.nic1", config));
-			cfg.setOption(VBoxOption.Nic2, InstanceParameterHelper.getInstanceParameter("vbox.nic2", config));
-			cfg.setOption(VBoxOption.Nic3, InstanceParameterHelper.getInstanceParameter("vbox.nic3", config));
-			cfg.setOption(VBoxOption.Nic4, InstanceParameterHelper.getInstanceParameter("vbox.nic4", config));
-			cfg.setOption(VBoxOption.Nic1Mac, InstanceParameterHelper.getInstanceParameter("vbox.nic1Mac", config));
-			cfg.setOption(VBoxOption.Nic2Mac, InstanceParameterHelper.getInstanceParameter("vbox.nic2Mac", config));
-			cfg.setOption(VBoxOption.Nic3Mac, InstanceParameterHelper.getInstanceParameter("vbox.nic3Mac", config));
-			cfg.setOption(VBoxOption.Nic4Mac, InstanceParameterHelper.getInstanceParameter("vbox.nic4Mac", config));
-			cfg.setOption(VBoxOption.Nic1Bridge, InstanceParameterHelper.getInstanceParameter("vbox.nic1Bridge", config));
-			cfg.setOption(VBoxOption.Nic2Bridge, InstanceParameterHelper.getInstanceParameter("vbox.nic2Bridge", config));
-			cfg.setOption(VBoxOption.Nic3Bridge, InstanceParameterHelper.getInstanceParameter("vbox.nic3Bridge", config));
-			cfg.setOption(VBoxOption.Nic4Bridge, InstanceParameterHelper.getInstanceParameter("vbox.nic4Bridge", config));
+			cfg.setOption(VBoxOption.Nic1, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic1", config));
+			cfg.setOption(VBoxOption.Nic2, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic2", config));
+			cfg.setOption(VBoxOption.Nic3, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic3", config));
+			cfg.setOption(VBoxOption.Nic4, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic4", config));
+			cfg.setOption(VBoxOption.Nic1Mac, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic1Mac", config));
+			cfg.setOption(VBoxOption.Nic2Mac, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic2Mac", config));
+			cfg.setOption(VBoxOption.Nic3Mac, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic3Mac", config));
+			cfg.setOption(VBoxOption.Nic4Mac, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic4Mac", config));
+			cfg.setOption(VBoxOption.Nic1Bridge, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic1Bridge", config));
+			cfg.setOption(VBoxOption.Nic2Bridge, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic2Bridge", config));
+			cfg.setOption(VBoxOption.Nic3Bridge, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic3Bridge", config));
+			cfg.setOption(VBoxOption.Nic4Bridge, InstanceParameterHelper
+					.getInstanceParameter("vbox.nic4Bridge", config));
 			cfg.save();
 			// download VM from server via WebService
 			FileDownloader down = new FileDownloader(builder);
-			File tempFile = new File(vm.getVmContainer().getMountpoint(), DISK1 + ".tmp");
+			File tempFile = new File(vm.getVmContainer().getMountpoint(), DISK1
+					+ ".tmp");
 			FileOutputStream fos = new FileOutputStream(tempFile);
 			down.setDestination(fos);
-			long size = InstanceParameterHelper.getInstanceParameterAsLong("vbox.disk1Size", config);
+			long size = InstanceParameterHelper.getInstanceParameterAsLong(
+					"vbox.disk1Size", config);
 			down.setRequest(config.getUuid(), size);
 			down.startDownload();
 			LOG.debug("Download started [{}]", SizeFormatUtil.format(size));
-			while (down.getState() == State.DOWNLOADING || down.getState() == State.IDLE) {
+			while (down.getState() == State.DOWNLOADING
+					|| down.getState() == State.IDLE) {
 				Thread.sleep(2000);
 				vm.setProgress((int) (down.getProgress() * 100));
 				model.fireVmStateUpdatedEvent(vm);
 			}
 			fos.close();
 			if (down.getState() == State.SUCCESS) {
-				tempFile.renameTo(new File(vm.getVmContainer().getMountpoint(), DISK1));
+				tempFile.renameTo(new File(vm.getVmContainer().getMountpoint(),
+						DISK1));
 			} else {
 				tempFile.delete();
 			}
@@ -276,8 +322,10 @@ public class VBoxProduct implements VBoxCacheListener {
 		ShellUtil shell = new ShellUtil();
 		try {
 			// update disk UUID
-			shell.run(null, ShellUtil.NO_TIMEOUT, "VBoxManage", "-nologo", "internalcommands", "sethduuid",
-					new File(vm.getVmContainer().getMountpoint(), DISK1).getAbsolutePath());
+			shell.run(null, ShellUtil.NO_TIMEOUT, "VBoxManage", "-nologo",
+					"internalcommands", "sethduuid", new File(vm
+							.getVmContainer().getMountpoint(), DISK1)
+							.getAbsolutePath());
 		} catch (ShellUtilException e) {
 			throw new VmException("Failed to set HD uuid.", e);
 		}
@@ -286,8 +334,10 @@ public class VBoxProduct implements VBoxCacheListener {
 	public void startVm(Vm vm) throws VmException {
 		lock.lock();
 		try {
-			LOG.debug("Start VM [{}]", vm.getDescriptor().getRemoteCfg().getName());
-			// acquire the lock just to be sure it will be unlocked before we call VBoxSDL (or VBoxSDL will fail silently)
+			LOG.debug("Start VM [{}]", vm.getDescriptor().getRemoteCfg()
+					.getName());
+			// acquire the lock just to be sure it will be unlocked before we
+			// call VBoxSDL (or VBoxSDL will fail silently)
 			ISession session = mgr.getSessionObject();
 			IMachine machine = getIMachineReference(vm.getId());
 			machine.lockMachine(session, LockType.Shared);
@@ -321,7 +371,8 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void registerVm(Vm vm) throws VmException {
-		VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
+		VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(),
+				vm.getRuntimeContainer());
 		try {
 			cfg.load();
 		} catch (Exception e) {
@@ -333,7 +384,9 @@ public class VBoxProduct implements VBoxCacheListener {
 			// check if VM is already registered. Clean it up if necessary.
 			IMachine machine = getIMachineReference(vm.getId());
 			if (machine != null) {
-				LOG.debug("An older VM with the UID [{}] is already registred. Cleanup this VM before registering the new one.", vm.getId());
+				LOG.debug(
+						"An older VM with the UID [{}] is already registred. Cleanup this VM before registering the new one.",
+						vm.getId());
 				ISession session = mgr.getSessionObject();
 				// power-off in necessary
 				machine = getIMachineReference(vm.getId());
@@ -345,8 +398,10 @@ public class VBoxProduct implements VBoxCacheListener {
 					// wait until completed
 					while (!progress.getCompleted()) {
 						// notify progress to model listeners
-						LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
-						vm.setProgress(progress.getOperationPercent().intValue());
+						LOG.debug("power-off progress [{}%]",
+								progress.getOperationPercent());
+						vm.setProgress(progress.getOperationPercent()
+								.intValue());
 						Thread.sleep(500);
 					}
 					unlockSession(session);
@@ -365,8 +420,10 @@ public class VBoxProduct implements VBoxCacheListener {
 					if (atta.getMedium() != null) {
 						machine.lockMachine(session, LockType.Shared);
 						machine = session.getMachine();
-						LOG.debug("Remove medium [{}]", atta.getMedium().getName());
-						machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
+						LOG.debug("Remove medium [{}]", atta.getMedium()
+								.getName());
+						machine.detachDevice(atta.getController(),
+								atta.getPort(), atta.getDevice());
 						machine.saveSettings();
 						atta.getMedium().close();
 					}
@@ -378,23 +435,31 @@ public class VBoxProduct implements VBoxCacheListener {
 			}
 			// register VM (using web service)
 			LOG.debug("Register VM [{}].", vm.getId());
-			machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
+			machine = vbox.createMachine(null, vm.getId(),
+					cfg.getOption(VBoxOption.OsType), vm.getId(), true);
 			String hwUuid = cfg.getOption(VBoxOption.HwUuid);
 			if (UuidGenerator.validate(hwUuid)) {
 				machine.setHardwareUUID(hwUuid);
 			}
 			// configure VM
 			LOG.debug("Configure VM [{}].", vm.getId());
-			machine.getBIOSSettings().setIOAPICEnabled(cfg.getOptionAsBoolean(VBoxOption.IoApic));
-			machine.getBIOSSettings().setACPIEnabled(cfg.getOptionAsBoolean(VBoxOption.Acpi));
-			machine.getBIOSSettings().setBootMenuMode(BIOSBootMenuMode.MenuOnly);
+			machine.getBIOSSettings().setIOAPICEnabled(
+					cfg.getOptionAsBoolean(VBoxOption.IoApic));
+			machine.getBIOSSettings().setACPIEnabled(
+					cfg.getOptionAsBoolean(VBoxOption.Acpi));
+			machine.getBIOSSettings()
+					.setBootMenuMode(BIOSBootMenuMode.MenuOnly);
 			machine.getBIOSSettings().setLogoDisplayTime(0l);
-			machine.setHWVirtExProperty(HWVirtExPropertyType.NestedPaging, cfg.getOptionAsBoolean(VBoxOption.Pae));
+			machine.setHWVirtExProperty(HWVirtExPropertyType.NestedPaging,
+					cfg.getOptionAsBoolean(VBoxOption.Pae));
 			machine.setMemorySize(cfg.getOptionAsLong(VBoxOption.BaseMemory));
 			machine.setVRAMSize(cfg.getOptionAsLong(VBoxOption.VideoMemory));
-			machine.setSnapshotFolder(vm.getRuntimeContainer().getMountpoint().getAbsolutePath());
-			machine.createSharedFolder("export", vm.getExportFolder().getAbsolutePath(), true, true);
-			machine.createSharedFolder("import", vm.getImportFolder().getAbsolutePath(), false, true);
+			machine.setSnapshotFolder(vm.getRuntimeContainer().getMountpoint()
+					.getAbsolutePath());
+			machine.createSharedFolder("export", vm.getExportFolder()
+					.getAbsolutePath(), true, true);
+			machine.createSharedFolder("import", vm.getImportFolder()
+					.getAbsolutePath(), false, true);
 			machine.setAccelerate2DVideoEnabled(false);
 			machine.setAccelerate3DEnabled(false);
 			machine.setClipboardMode(ClipboardMode.Bidirectional);
@@ -402,14 +467,23 @@ public class VBoxProduct implements VBoxCacheListener {
 			machine.setCPUProperty(CPUPropertyType.PAE, true);
 			machine.getUSBController().setEnabled(true);
 			// configure sound card
-			machine.getAudioAdapter().setAudioController(AudioControllerType.AC97);
+			machine.getAudioAdapter().setAudioController(
+					AudioControllerType.AC97);
 			machine.getAudioAdapter().setAudioDriver(AudioDriverType.Pulse);
 			machine.getAudioAdapter().setEnabled(true);
 			// configure network interfaces
-			addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), cfg.getOption(VBoxOption.Nic1Mac), machine);
-			addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), machine);
-			addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), machine);
-			addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), machine);
+			addNetworkIface(0, cfg.getOption(VBoxOption.Nic1),
+					cfg.getOption(VBoxOption.Nic1Bridge),
+					cfg.getOption(VBoxOption.Nic1Mac), machine);
+			addNetworkIface(1, cfg.getOption(VBoxOption.Nic2),
+					cfg.getOption(VBoxOption.Nic2Bridge),
+					cfg.getOption(VBoxOption.Nic2Mac), machine);
+			addNetworkIface(2, cfg.getOption(VBoxOption.Nic3),
+					cfg.getOption(VBoxOption.Nic3Bridge),
+					cfg.getOption(VBoxOption.Nic3Mac), machine);
+			addNetworkIface(3, cfg.getOption(VBoxOption.Nic4),
+					cfg.getOption(VBoxOption.Nic4Bridge),
+					cfg.getOption(VBoxOption.Nic4Mac), machine);
 			LOG.debug("Save VM settings [{}].", vm.getId());
 			machine.saveSettings();
 			vbox.registerMachine(machine);
@@ -421,7 +495,8 @@ public class VBoxProduct implements VBoxCacheListener {
 			machine = session.getMachine();
 			try {
 				//
-				IStorageController store = machine.addStorageController(CONTROLLER_NAME, StorageBus.IDE);
+				IStorageController store = machine.addStorageController(
+						CONTROLLER_NAME, StorageBus.IDE);
 				store.setControllerType(StorageControllerType.PIIX4);
 				/*
 				 * in SDK 4.1, they had a 'forceNewUuid' option (boolean).
@@ -429,10 +504,14 @@ public class VBoxProduct implements VBoxCacheListener {
 				 * medium after use and they should be no risk to re-usethe same
 				 * HDD.
 				 */
-				IMedium medium = vbox.openMedium(new File(vm.getVmContainer().getMountpoint(), cfg.getOption(VBoxOption.Disk1File)).getAbsolutePath(),
-						DeviceType.HardDisk, AccessMode.ReadWrite, false);
-				machine.attachDevice(CONTROLLER_NAME, 0, 0, DeviceType.HardDisk, medium);
-				machine.attachDevice(CONTROLLER_NAME, 1, 0, DeviceType.DVD, null);
+				IMedium medium = vbox.openMedium(new File(vm.getVmContainer()
+						.getMountpoint(), cfg.getOption(VBoxOption.Disk1File))
+						.getAbsolutePath(), DeviceType.HardDisk,
+						AccessMode.ReadWrite, false);
+				machine.attachDevice(CONTROLLER_NAME, 0, 0,
+						DeviceType.HardDisk, medium);
+				machine.attachDevice(CONTROLLER_NAME, 1, 0, DeviceType.DVD,
+						null);
 				machine.saveSettings();
 			} catch (Exception e) {
 				throw new CubeException("Fail to attach VM devices", e);
@@ -468,7 +547,8 @@ public class VBoxProduct implements VBoxCacheListener {
 		}
 	}
 
-	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine) {
+	private void addNetworkIface(long id, String nic, String bridge,
+			String mac, IMachine machine) {
 		LOG.debug("configure nic [{}]", id + " / " + nic + " / mac:" + mac);
 		mac = mac == null ? null : mac.replaceAll(":", "").toLowerCase();
 		if ("vpn".equals(nic)) {
@@ -538,7 +618,8 @@ public class VBoxProduct implements VBoxCacheListener {
 		try {
 			// get IMachine reference
 			IMachine machine = getIMachineReference(vm.getId());
-			if (machine == null || machine.getState() == MachineState.PoweredOff) {
+			if (machine == null
+					|| machine.getState() == MachineState.PoweredOff) {
 				// already power-off
 				return;
 			}
@@ -557,7 +638,8 @@ public class VBoxProduct implements VBoxCacheListener {
 						break;
 					}
 					// notify progress to model listeners
-					LOG.debug("power-off progress [{}%]", progress.getOperationPercent());
+					LOG.debug("power-off progress [{}%]",
+							progress.getOperationPercent());
 					vm.setProgress(progress.getOperationPercent().intValue());
 					model.fireVmStateUpdatedEvent(vm);
 					Thread.sleep(500);
@@ -601,8 +683,10 @@ public class VBoxProduct implements VBoxCacheListener {
 				machine = session.getMachine();
 				for (IMediumAttachment atta : machine.getMediumAttachments()) {
 					if (atta.getMedium() != null) {
-						LOG.debug("Remove medium [{}]", atta.getMedium().getName());
-						machine.detachDevice(atta.getController(), atta.getPort(), atta.getDevice());
+						LOG.debug("Remove medium [{}]", atta.getMedium()
+								.getName());
+						machine.detachDevice(atta.getController(),
+								atta.getPort(), atta.getDevice());
 						machine.saveSettings();
 						atta.getMedium().close();
 					}
@@ -652,7 +736,8 @@ public class VBoxProduct implements VBoxCacheListener {
 						break;
 					}
 					// notify progress to model listeners
-					LOG.debug("save progress [{}%]", progress.getOperationPercent());
+					LOG.debug("save progress [{}%]",
+							progress.getOperationPercent());
 					vm.setProgress(progress.getOperationPercent().intValue());
 					model.fireVmStateUpdatedEvent(vm);
 					Thread.sleep(500);
@@ -704,7 +789,8 @@ public class VBoxProduct implements VBoxCacheListener {
 				return machine;
 			} catch (Exception e) {
 				last = e;
-				LOG.debug("Failed to lock machine [" + id + "]. Retry... " + (i + 1) + "/" + API_RETRY + " times.", e);
+				LOG.debug("Failed to lock machine [" + id + "]. Retry... "
+						+ (i + 1) + "/" + API_RETRY + " times.", e);
 				unlockSession(session);
 				Thread.sleep(500);
 			}
@@ -729,7 +815,8 @@ public class VBoxProduct implements VBoxCacheListener {
 					LOG.error("Failed to kill vboxwebsrv");
 				}
 				try {
-					su.run(null, 0, "VBoxManage", "setproperty", "websrvauthlibrary", "null");
+					su.run(null, 0, "VBoxManage", "setproperty",
+							"websrvauthlibrary", "null");
 					su.run(null, 0, "vboxwebsrv");
 				} catch (Exception e) {
 					LOG.error("Failed to start vboxwebsrv");
@@ -748,9 +835,12 @@ public class VBoxProduct implements VBoxCacheListener {
 					mgr.connect("http://localhost:18083", "", "");
 					vbox = mgr.getVBox();
 					connected = true;
-					LOG.info("VirtualBox Web Service connected [{}]", vbox.getVersion());
+					LOG.info("VirtualBox Web Service connected [{}]",
+							vbox.getVersion());
 				} catch (Exception e) {
-					LOG.error("VirtualBox Web Service not connected (http://localhost:18083). Is vboxwebsrv running? [" + e.getMessage() + "]", e);
+					LOG.error(
+							"VirtualBox Web Service not connected (http://localhost:18083). Is vboxwebsrv running? ["
+									+ e.getMessage() + "]", e);
 				}
 			}
 		}, "WebService Connector").start();
@@ -768,7 +858,8 @@ public class VBoxProduct implements VBoxCacheListener {
 				try {
 					IConsole console = session.getConsole();
 					// get list of usb from host
-					List<IHostUSBDevice> hostDevices = vbox.getHost().getUSBDevices();
+					List<IHostUSBDevice> hostDevices = vbox.getHost()
+							.getUSBDevices();
 					// get list of attached usb devices
 					HashSet<String> attachedIds = new HashSet<String>();
 					for (IUSBDevice dev : console.getUSBDevices()) {
@@ -798,11 +889,17 @@ public class VBoxProduct implements VBoxCacheListener {
 						// add to list
 						if (attachedIds.contains(dev.getAddress())) {
 							list.add(new UsbDeviceEntry(vm.getId(),//
-									new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
+									new UsbDevice(dev.getId(), Integer
+											.toHexString(dev.getVendorId()),
+											Integer.toHexString(dev
+													.getProductId()), fmt),//
 									DeviceEntryState.ALREADY_ATTACHED));
 						} else {
 							list.add(new UsbDeviceEntry(vm.getId(),//
-									new UsbDevice(dev.getId(), Integer.toHexString(dev.getVendorId()), Integer.toHexString(dev.getProductId()), fmt),//
+									new UsbDevice(dev.getId(), Integer
+											.toHexString(dev.getVendorId()),
+											Integer.toHexString(dev
+													.getProductId()), fmt),//
 									DeviceEntryState.AVAILABLE));
 						}
 					}
@@ -837,7 +934,8 @@ public class VBoxProduct implements VBoxCacheListener {
 					unlockSession(session);
 				}
 			} catch (Exception e) {
-				throw new VmException("Failed to attach USB device [" + dev.getId() + "]", e);
+				throw new VmException("Failed to attach USB device ["
+						+ dev.getId() + "]", e);
 			} finally {
 				lock.unlock();
 			}
@@ -862,7 +960,8 @@ public class VBoxProduct implements VBoxCacheListener {
 					unlockSession(session);
 				}
 			} catch (Exception e) {
-				throw new VmException("Failed to detach USB device [" + dev.getId() + "]", e);
+				throw new VmException("Failed to detach USB device ["
+						+ dev.getId() + "]", e);
 			} finally {
 				lock.unlock();
 			}
@@ -884,10 +983,13 @@ public class VBoxProduct implements VBoxCacheListener {
 					for (long i = 0L; i < 4L; i++) {
 						INetworkAdapter nic = machine.getNetworkAdapter(i);
 						if (nic.getEnabled()) {
-							LOG.debug("Set nic [{}] CableConnected({})", nic.getSlot(), connected);
+							LOG.debug("Set nic [{}] CableConnected({})",
+									nic.getSlot(), connected);
 							nic.setCableConnected(connected);
 						} else {
-							LOG.debug("Ignore disabled nic [{}] CableConnected({})", nic.getSlot(), connected);
+							LOG.debug(
+									"Ignore disabled nic [{}] CableConnected({})",
+									nic.getSlot(), connected);
 						}
 					}
 				} finally {

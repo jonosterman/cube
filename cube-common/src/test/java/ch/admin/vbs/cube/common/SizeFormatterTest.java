@@ -16,6 +16,7 @@
 
 package ch.admin.vbs.cube.common;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import ch.admin.vbs.cube.common.container.SizeFormatUtil;
@@ -23,9 +24,6 @@ import ch.admin.vbs.cube.common.container.SizeFormatUtil;
 /**
  * Test keyring creation and usage. Use CubeKeyring with DmCrypt encryption and
  * a test P12 file.
- * 
- * 
- * 
  */
 public class SizeFormatterTest {
 	private static final long KILO = 1024;
@@ -35,24 +33,21 @@ public class SizeFormatterTest {
 
 	@Test
 	public void testFormatting() throws Exception {
-		fmt(123);
-		fmt(KILO);
-		fmt(KILO + 123);
-		fmt(MEGA);
-		fmt(MEGA + KILO * 330);
-		fmt(GIGA);
-		fmt(GIGA + MEGA * 3300);
-		fmt(TERA);
-		fmt(TERA + GIGA * 33000);
-		fmt(7594676019l);
+		fmt(123, "123 bytes");
+		fmt(KILO, "1.0K");
+		fmt(KILO + 123, "1.1K");
+		fmt(MEGA, "1.0M");
+		fmt(MEGA + KILO * 330, "1.3M");
+		fmt(GIGA, "1.0G");
+		fmt(GIGA + MEGA * 330, "1.3G");
+		fmt(TERA, "1.0T");
+		fmt(TERA + GIGA * 330, "1.3T");
+		fmt(7594676019l, "7.2G");
+		System.out.println("Test user friendly formating ..... OK");
 	}
 
-	public void fmt(long l) {
-		System.out.printf("Format [%d] as '%s'\n", l, SizeFormatUtil.format(l));
-	}
-
-	public static void main(String[] args) throws Exception {
-		SizeFormatterTest t = new SizeFormatterTest();
-		t.testFormatting();
+	public void fmt(long l, String control) {
+		//System.out.printf("SizeFormatterTest: Format [%d] as '%s'\n", l, SizeFormatUtil.format(l));
+		Assert.assertEquals(control, SizeFormatUtil.format(l));
 	}
 }

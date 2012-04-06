@@ -29,40 +29,47 @@ import org.junit.Test;
 import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
 
 /**
- * Test RSA encrpytion util using a P12 file private/public key.
- * 
+ * Test RSA encrpytion/decryption util 'RSAEncryptUtil' using a P12 file
+ * private/public keys.
  */
 public class RsaUtilTest {
+	private static final String KEY_LENGTH = "2048";
 	private static final String testKeystorePassword = "111222";
 	private static final String testKeystoreFile = "/cube-01_pwd-is-111222.p12";
 	private Random rnd = new Random(System.currentTimeMillis());
+
 	@Test
 	public void testRsaUtil() throws Exception {
 		// Read test P12
-		File p12File = new File(getClass().getResource(testKeystoreFile).getFile());
-		Builder builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.PasswordProtection(testKeystorePassword.toCharArray()));
+		File p12File = new File(getClass().getResource(testKeystoreFile)
+				.getFile());
+		Builder builder = KeyStore.Builder.newInstance(
+				"PKCS12",
+				null,
+				p12File,
+				new KeyStore.PasswordProtection(testKeystorePassword
+						.toCharArray()));
 		KeyStore keystore = builder.getKeyStore();
+		// pick first alias in keystore and retrieve its private and public key
 		String alias = keystore.aliases().nextElement();
-		System.out.printf("Use certificate [%s]\n", alias);
 		PublicKey pubKey = keystore.getCertificate(alias).getPublicKey();
-		PrivateKey privKey = (PrivateKey) keystore.getKey(alias, testKeystorePassword.toCharArray());
-		System.out.println("Public ------------");
-		System.out.println(pubKey);
-		System.out.println("Private -----------");
-		System.out.println(privKey);
-		System.out.println("-------------------");
-		// test P12 use 1024 bits keys
-		System.setProperty(RSAEncryptUtil.KEYLENGTH_PROPERTY, "2048");
-		System.out.println("Use algorithm key size [" + System.getProperty(RSAEncryptUtil.KEYLENGTH_PROPERTY) + "]");
-		// rsa util
+		PrivateKey privKey = (PrivateKey) keystore.getKey(alias,
+				testKeystorePassword.toCharArray());
+		// set the right key length
+		System.setProperty(RSAEncryptUtil.KEYLENGTH_PROPERTY, KEY_LENGTH);
+		// create message to encrypt (random data)
 		byte[] original = new byte[4000];
 		rnd.nextBytes(original);
-		// encrypt
+		// encrypt message
 		byte[] encrypted = RSAEncryptUtil.encrypt(original, pubKey);
-		// decrypt
+		// decrypt message
 		byte[] decrypted = RSAEncryptUtil.decrypt(encrypted, privKey);
-		Assert.assertArrayEquals("decrypted text does not match original", original, decrypted);
-		System.out.println("done");
+		// assert both original and encrypted message are the same
+		Assert.assertArrayEquals("decrypted text does not match original",
+				original, decrypted);
+		System.out.println("Message of size [" + original.length
+				+ "] encrypted and decypted by [" + alias + "] with a key of ["
+				+ KEY_LENGTH + "] bits ..... OK");
 	}
 
 	public static void main(String[] args) throws Exception {

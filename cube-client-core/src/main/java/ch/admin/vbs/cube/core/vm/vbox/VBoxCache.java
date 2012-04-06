@@ -54,19 +54,29 @@ public class VBoxCache implements Runnable {
 		thread.start();
 	}
 
+	public void stop() {
+		running = false;
+	}
+
 	@Override
 	public void run() {
 		while (running) {
 			try {
 				sync();
 			} catch (WebServiceException e) {
-				LOG.error("Failed to synchronize machine list with VirtualBox. Reconnect", e);
+				LOG.error(
+						"Failed to synchronize machine list with VirtualBox. Reconnect",
+						e);
 				vprod.reconnect();
 			} catch (VBoxException e) {
-				LOG.error("Failed to synchronize machine list with VirtualBox. Reconnect", e);
+				LOG.error(
+						"Failed to synchronize machine list with VirtualBox. Reconnect",
+						e);
 				vprod.reconnect();
 			} catch (Exception e) {
-				LOG.error("Failed to synchronize machine list with VirtualBox.", e);
+				LOG.error(
+						"Failed to synchronize machine list with VirtualBox.",
+						e);
 			}
 			//
 			try {
