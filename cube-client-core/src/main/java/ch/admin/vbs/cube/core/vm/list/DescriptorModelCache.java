@@ -88,7 +88,7 @@ public class DescriptorModelCache implements IVmModelChangeListener {
 					int pi = 0;
 					for (String key : lcfg.getPropertyKeys()) {
 						writeProp(i, "vm[%d].properties." + pi + ".key", URLEncoder.encode(key, "ASCII"), p);
-						writeProp(i, "vm[%d].properties." + pi + ".value", URLEncoder.encode(lcfg.getPropertie(key), "ASCII"), p);
+						writeProp(i, "vm[%d].properties." + pi + ".value", URLEncoder.encode(lcfg.getProperty(key), "ASCII"), p);
 						pi++;
 					}
 					i++;
@@ -154,7 +154,7 @@ public class DescriptorModelCache implements IVmModelChangeListener {
 						String value = readProp(index, "vm[%s].properties." + pi + ".value", p);
 						key = URLDecoder.decode(key, "ASCII");
 						value = URLDecoder.decode(value, "ASCII");
-						lcfg.setPropertie(key, value);
+						lcfg.setProperty(key, value);
 					}
 					//
 					Vm vm = model.findByInstanceUid(rcfg.getId());

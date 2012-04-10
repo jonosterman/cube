@@ -458,7 +458,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 				VmModel m = activeSession.getModel();
 				Vm vm = m.findByInstanceUid(vmId);
 				if (vm != null) {
-					vm.getDescriptor().getLocalCfg().setPropertie(key, value);
+					vm.getDescriptor().getLocalCfg().setProperty(key, value);
 					m.fireVmUpdatedEvent(vm);
 					if (refreshAllVms) {
 						m.fireModelUpdatedEvent();

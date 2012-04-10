@@ -59,7 +59,7 @@ machines.
  sudo mkdir -p /opt/cube/client/certificates
  sudo mkdir -p /opt/cube/client/var
  sudo mkdir -p /opt/cube/client/scripts
- sudo chown -R $USERNAME /opt/cube
+ sudo chown -R $USER:$USER /opt/cube
 
 ## link script in /opt/cube/client/scripts. This way you will
 ## not have two copies of them.
@@ -100,6 +100,8 @@ unzip VirtualBoxSDK-<correct_version>.zip
 cd sdk/bindings/webservice/java/jax-ws/
 mvn install:install-file \
   -Dfile=./vboxjws.jar \
+  -Dsources=./vboxjws-src.jar \
+  -Djavadoc=./vboxjws-doc.jar \
   -DgroupId=virtualbox \
   -DartifactId=virtualbox \
   -Dversion=<correct_version like 4.1> \

@@ -92,7 +92,7 @@ public class Start extends AbstractCtrlTask {
 			vm.getExportFolder().mkdirs();
 			c.zap("configure vm object");
 			//
-			product.registerVm(vm); // register VM
+			product.registerVm(vm, vmModel); // register VM
 			c.zap("register vm");
 			vpnManager.openVpn(vm, keyring, new VpnListener() {
 				@Override
@@ -146,7 +146,7 @@ public class Start extends AbstractCtrlTask {
 			}); // open vpn
 			c.zap("VPN opened (in another thred)");
 
-			product.startVm(vm); // start VM
+			product.startVm(vm, vmModel); // start VM
 			c.zap("vm started");
 			/*
 			 * wait that the VM reach the state RUNNING. If it fails within the

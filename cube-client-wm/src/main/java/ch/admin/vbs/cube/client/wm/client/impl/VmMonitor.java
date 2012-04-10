@@ -81,7 +81,7 @@ public class VmMonitor implements IVmMonitor {
 	@Override
 	public String getVmProperty(VmHandle handle, String key) {
 		Vm vm = client.getVm(handle);
-		return vm == null ? "" : vm.getDescriptor().getLocalCfg().getPropertie(key);
+		return vm == null ? "" : vm.getDescriptor().getLocalCfg().getProperty(key);
 	}
 
 	// #######################################################

@@ -62,7 +62,7 @@ public class PowerOff extends AbstractCtrlTask {
 		}
 		// unregister VM
 		try {
-			product.unregisterVm(vm);
+			product.unregisterVm(vm, vmModel);
 		} catch (Exception e) {
 			LOG.error("Failed to unregister VM", e);
 		}

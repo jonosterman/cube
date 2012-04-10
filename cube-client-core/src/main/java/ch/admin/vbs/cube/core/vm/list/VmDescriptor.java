@@ -50,11 +50,11 @@ public class VmDescriptor {
 		private String runtimeContainerUid;
 		private Map<String, String> properties = Collections.synchronizedMap(new HashMap<String, String>());
 
-		public void setPropertie(String key, String value) {
+		public void setProperty(String key, String value) {
 			properties.put(key, value);
 		}
 
-		public String getPropertie(String key) {
+		public String getProperty(String key) {
 			return properties.get(key);
 		}
 

@@ -67,7 +67,7 @@ public class Save extends AbstractCtrlTask {
 		}
 		// unregister VM
 		try {
-			product.unregisterVm(vm);
+			product.unregisterVm(vm, vmModel);
 			LOG.debug("VM untregistered");
 		} catch (Exception e) {
 			LOG.error("Failed to unregister VM", e);
