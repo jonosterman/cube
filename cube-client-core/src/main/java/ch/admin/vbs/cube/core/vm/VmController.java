@@ -36,6 +36,7 @@ import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
+import ch.admin.vbs.cube.core.vm.ctrtasks.ConnectNic;
 import ch.admin.vbs.cube.core.vm.ctrtasks.Delete;
 import ch.admin.vbs.cube.core.vm.ctrtasks.InstallGuestAdditions;
 import ch.admin.vbs.cube.core.vm.ctrtasks.PowerOff;
@@ -128,6 +129,9 @@ public class VmController implements IVmProductListener {
 			} catch (VmException e) {
 				LOG.error("Failed to list usb devices", e);
 			}
+			break;
+		case CONNECT_NIC:
+			exec.execute(new ConnectNic(vm, product, option));
 			break;
 		default:
 			LOG.warn("Command not implemented [{}]", cmd);

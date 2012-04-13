@@ -71,6 +71,7 @@ import ch.admin.vbs.cube.core.usb.UsbDeviceEntry.DeviceEntryState;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.IVmProductListener;
+import ch.admin.vbs.cube.core.vm.NicOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
@@ -82,6 +83,7 @@ import ch.admin.vbs.cube.core.webservice.InstanceParameterHelper;
 import cube.cubemanager.services.InstanceConfigurationDTO;
 
 public class VBoxProduct implements VBoxCacheListener {
+	public static final String ORIGINAL_NETWORK_CONFIG = "{original}";
 	private static final int API_RETRY = 5;
 	private static final String CONTROLLER_NAME = "IDE Controller";
 	public static final String SNAPSHOT_DIRECTORY = "snapshots";
@@ -290,6 +292,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void startVm(Vm vm, VmModel model) throws VmException {
+		checkConnected();
 		lock.lock();
 		try {
 			ISession session = mgr.getSessionObject();
@@ -320,6 +323,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		} catch (Exception e) {
 			throw new VmException("Failed to start VM", e);
 		} finally {
+			unlockSession();
 			lock.unlock();
 		}
 	}
@@ -328,6 +332,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	 * Register and configure VM in VirtualBox based on cube's config file
 	 */
 	public void registerVm(Vm vm, VmModel model) throws VmException {
+		checkConnected();
 		// Create VBoxConfig object and use it to load the configuration file.
 		VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 		try {
@@ -417,9 +422,9 @@ public class VBoxProduct implements VBoxCacheListener {
 				safeUnlock(session);
 			}
 		} catch (Exception e) {
-			unlockSession();
 			throw new VmException("Failed to register VM", e);
 		} finally {
+			unlockSession();
 			lock.unlock();
 		}
 		try {
@@ -446,6 +451,11 @@ public class VBoxProduct implements VBoxCacheListener {
 		}
 	}
 
+	private void checkConnected() throws VmException {
+		if (vbox == null)
+			throw new VmException("Not connected to VirtualBox WebService yet.");
+	}
+
 	/**
 	 * power off machine
 	 * 
@@ -460,8 +470,10 @@ public class VBoxProduct implements VBoxCacheListener {
 	 * @param model
 	 * @throws InterruptedException
 	 * @throws CubeException
+	 * @throws VmException
 	 */
-	private void poweroffMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws InterruptedException, CubeException {
+	private void poweroffMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws InterruptedException, CubeException, VmException {
+		checkConnected();
 		// get shared lock (sufficient to control machine execution)
 		machine.lockMachine(session, LockType.Shared);
 		LOG.debug("Session locked [" + session.getState() + "," + session.getType() + "]");
@@ -524,9 +536,12 @@ public class VBoxProduct implements VBoxCacheListener {
 	 * @param model
 	 * @throws CubeException
 	 * @throws InterruptedException
+	 * @throws VmException
 	 * @throws Exception
 	 */
-	private void poweronMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws VBoxException, InterruptedException, CubeException {
+	private void poweronMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws VBoxException, InterruptedException, CubeException,
+			VmException {
+		checkConnected();
 		// where the snaphot may be
 		File snapshot = new File(vm.getRuntimeContainer().getMountpoint().getAbsoluteFile(), "state.sav");
 		IProgress progress = null;
@@ -595,7 +610,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	 * atta.getDevice()); machine.saveSettings(); atta.getMedium().close(); } }
 	 * }
 	 */
-	private void cleanupExistingMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws InterruptedException, CubeException {
+	private void cleanupExistingMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws InterruptedException, CubeException, VmException {
 		/**
 		 * Note about locking. Only lock the VM with a 'write' lock if
 		 * necessary. You may be able to power-off the VM with 'shared' lock
@@ -713,6 +728,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void poweroffVm(Vm vm, VmModel model) throws VmException {
+		checkConnected();
 		lock.lock();
 		try {
 			IMachine machine = getIMachineReference(vm.getId());
@@ -720,32 +736,43 @@ public class VBoxProduct implements VBoxCacheListener {
 		} catch (Exception e) {
 			throw new VmException("", e);
 		} finally {
+			unlockSession();
 			lock.unlock();
 		}
 	}
 
 	/**
 	 * Ensure that the session will be unlocked (typically in catch clause).
+	 * 
+	 * will NEVER throw an excetion since it is used in 'finally' clauses
 	 */
 	private void unlockSession() {
-		ISession session = mgr.getSessionObject();
-		// it is not clear how/when to unlock session...
-		if (session != null && session.getState() == SessionState.Locked) {
-			SessionType type = session.getType();
-			try {
-				session.unlockMachine();
-				LOG.warn("Orphan session unlocked [was: " + type + "]");
-			} catch (Exception e) {
-				LOG.error("Failed to unlock session [was: " + type + "]", e);
+		try {
+			if (vbox != null) {
+				ISession session = mgr.getSessionObject();
+				// it is not clear how/when to unlock session...
+				if (session != null && session.getState() == SessionState.Locked) {
+					SessionType type = session.getType();
+					try {
+						session.unlockMachine();
+						LOG.warn("Orphan session unlocked [was: " + type + "]");
+					} catch (Exception e) {
+						LOG.error("Failed to unlock session [was: " + type + "]", e);
+					}
+				} else {
+					LOG.debug("As excpected, session was not locked");
+				}
 			}
-		} else {
-			LOG.debug("As excpected, session was not locked");
+		} catch (Exception e) {
+			LOG.error("Failed to unlock session", e);
 		}
 	}
 
 	public void unregisterVm(Vm vm, VmModel model) throws VmException {
+		checkConnected();
 		IMachine machine = getIMachineReference(vm.getId());
 		if (machine != null) {
+			lock.lock();
 			try {
 				cleanupExistingMachine(machine, mgr.getSessionObject(), vm, model);
 				LOG.debug("VM has been unregistred");
@@ -753,6 +780,9 @@ public class VBoxProduct implements VBoxCacheListener {
 				// abort here (do not try to re-register the VM) by throwing
 				// an Exception.
 				throw new VmException("Failed to unregister VM with ID [" + vm.getId() + "]", e);
+			} finally {
+				unlockSession();
+				lock.unlock();
 			}
 		} else {
 			LOG.debug("No machine with ID [{}]. Skip unregister.", vm.getId());
@@ -768,6 +798,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void save(Vm vm, VmModel model) throws VmException {
+		checkConnected();
 		lock.lock();
 		try {
 			IMachine machine = getIMachineReference(vm.getId());
@@ -817,33 +848,11 @@ public class VBoxProduct implements VBoxCacheListener {
 		} catch (Exception e) {
 			throw new VmException("", e);
 		} finally {
+			unlockSession();
 			lock.unlock();
 		}
 	}
 
-	// /**
-	// * Sometimes session locking could return 'The given session is busy'. In
-	// * this case just try once again.
-	// */
-	// private IMachine lockMachine(String id, ISession session) throws
-	// Exception {
-	// Exception last = null;
-	// for (int i = 0; i < API_RETRY; i++) {
-	// try {
-	// IMachine machine = getIMachineReference(id);
-	// machine.lockMachine(session, LockType.Shared);
-	// machine = session.getMachine();
-	// return machine;
-	// } catch (Exception e) {
-	// last = e;
-	// LOG.debug("Failed to lock machine [" + id + "]. Retry... "
-	// + (i + 1) + "/" + API_RETRY + " times.", e);
-	// unlockSession();
-	// Thread.sleep(500);
-	// }
-	// }
-	// throw last;
-	// }
 	public boolean isConnected() {
 		return connected;
 	}
@@ -889,6 +898,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void listUsb(Vm vm, UsbDeviceEntryList list) throws VmException {
+		checkConnected();
 		if (lock.tryLock()) {
 			try {
 				// get IMachine reference
@@ -945,8 +955,9 @@ public class VBoxProduct implements VBoxCacheListener {
 			} catch (Exception e) {
 				throw new VmException("Failed to list USB devices", e);
 			} finally {
-				lock.unlock();
+				unlockSession();
 				list.setUpdated(true);
+				lock.unlock();
 			}
 		} else {
 			LOG.debug("VirtualBox webservice is busy. do not list USB.");
@@ -954,6 +965,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void attachUsb(Vm vm, UsbDevice dev) throws VmException {
+		checkConnected();
 		if (lock.tryLock()) {
 			try {
 				// get IMachine reference
@@ -971,6 +983,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			} catch (Exception e) {
 				throw new VmException("Failed to attach USB device [" + dev.getId() + "]", e);
 			} finally {
+				unlockSession();
 				lock.unlock();
 			}
 		} else {
@@ -979,6 +992,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void detachUsb(Vm vm, UsbDevice dev) throws VmException {
+		checkConnected();
 		if (lock.tryLock()) {
 			try {
 				// get IMachine reference
@@ -996,6 +1010,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			} catch (Exception e) {
 				throw new VmException("Failed to detach USB device [" + dev.getId() + "]", e);
 			} finally {
+				unlockSession();
 				lock.unlock();
 			}
 		} else {
@@ -1004,6 +1019,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	public void connectNic(Vm vm, boolean connected) throws VmException {
+		checkConnected();
 		if (lock.tryLock()) {
 			try {
 				// get IMachine reference
@@ -1012,23 +1028,73 @@ public class VBoxProduct implements VBoxCacheListener {
 				// lock IMachine
 				machine.lockMachine(session, LockType.Shared);
 				machine = session.getMachine();
-				try {
-					for (long i = 0L; i < 4L; i++) {
-						INetworkAdapter nic = machine.getNetworkAdapter(i);
-						if (nic.getEnabled()) {
-							LOG.debug("Set nic [{}] CableConnected({})", nic.getSlot(), connected);
-							nic.setCableConnected(connected);
-						} else {
-							LOG.debug("Ignore disabled nic [{}] CableConnected({})", nic.getSlot(), connected);
-						}
+				for (long i = 0L; i < 4L; i++) {
+					INetworkAdapter nic = machine.getNetworkAdapter(i);
+					if (nic.getEnabled()) {
+						LOG.debug("Set nic [{}] CableConnected({})", nic.getSlot(), connected);
+						nic.setCableConnected(connected);
+					} else {
+						LOG.debug("Ignore disabled nic [{}] CableConnected({})", nic.getSlot(), connected);
 					}
-				} finally {
-					// ensure that session is unlocked
-					unlockSession();
 				}
 			} catch (Exception e) {
 				throw new VmException("Failed to connect/disconnect NIC", e);
 			} finally {
+				unlockSession();
+				lock.unlock();
+			}
+		} else {
+			LOG.debug("VirtualBox webservice is busy. cannot connect/disconnect NIC.");
+		}
+	}
+
+	public void connectNic(Vm vm, NicOption option) throws VmException {
+		checkConnected();
+		if (lock.tryLock()) {
+			try {
+				if (option.getNic().equals(ORIGINAL_NETWORK_CONFIG)) {
+					// restore original nic config
+					VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
+					try {
+						cfg.load();
+					} catch (CubeException e) {
+						throw new VmException("Failed to load VM's configuration from VM's container", e);
+					}
+					ISession session = mgr.getSessionObject();
+					IMachine machine = getIMachineReference(vm.getId());
+					machine.lockMachine(session, LockType.Shared);
+					IMachine mutable = session.getMachine();
+					addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), cfg.getOption(VBoxOption.Nic1Mac), mutable);
+					addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), mutable);
+					addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), mutable);
+					addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), mutable);
+					mutable.saveSettings();
+					session.unlockMachine();
+				} else {
+					// connect first nic to the given interface and disconnect
+					// all other nics
+					ISession session = mgr.getSessionObject();
+					IMachine machine = getIMachineReference(vm.getId());
+					machine.lockMachine(session, LockType.Shared);
+					IMachine mutable = session.getMachine();
+					//
+					for (long nic = 0l; nic < 4l; nic++) {
+						mutable.getNetworkAdapter(nic).setCableConnected(false);
+						mutable.getNetworkAdapter(nic).setEnabled(false);
+					}
+					INetworkAdapter na = mutable.getNetworkAdapter(0l);
+					na.setAttachmentType(NetworkAttachmentType.Bridged);
+					na.setBridgedInterface(option.getNic());
+					na.setEnabled(true);
+					na.setCableConnected(true);
+					na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.AllowAll);
+					mutable.saveSettings();
+					session.unlockMachine();
+				}
+			} catch (Exception e) {
+				throw new VmException("Failed to connect/disconnect NIC to [" + option.getNic() + "]", e);
+			} finally {
+				unlockSession();
 				lock.unlock();
 			}
 		} else {

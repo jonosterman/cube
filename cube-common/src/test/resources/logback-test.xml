@@ -39,6 +39,9 @@
   <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
   <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>  
   
+  <!-- VirtualBox send infinte # of resize event during tests since mock screen are way too small -->  
+  <logger name="ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager" level="INFO"/>
+  
 <!--   <logger name="ch.admin.vbs.cube.common.container" level="INFO"/>
   <logger name="ch.admin.vbs.cube.common.AbstractProperties" level="INFO"/>
   <logger name="ch.admin.vbs.cube.core.vm.list" level="INFO"/>

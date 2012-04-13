@@ -43,6 +43,7 @@ import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
 import ch.admin.vbs.cube.core.vm.IVmStateChangeListener;
+import ch.admin.vbs.cube.core.vm.NicOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmModel;
 
@@ -352,6 +353,10 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 
 	public void detachUsbDevice(String vmId, UsbDevice usbDevice) {
 		controlVm(vmId, VmCommand.DETACH_USB, usbDevice);
+	}
+	
+	public void connectNic(String vmId, NicOption nic) {
+		controlVm(vmId, VmCommand.CONNECT_NIC, nic);		
 	}
 
 	public void setup(IClientFacade clientFacade, ISessionManager smanager) {

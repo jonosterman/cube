@@ -39,6 +39,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.core.ICoreFacade;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 
 import com.jidesoft.swing.JideTabbedPane;
 
@@ -261,13 +262,14 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	}
 
 	/** Injection 
-	 * @param cubeUI */
-	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI) {
+	 * @param cubeUI 
+	 * @param networkMgr */
+	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr) {
 		this.vmMon = vmMon;
 		client.addListener(this);
 		this.client = client;
 		cmp = new VmHandleHumanComparator(vmMon);
-		tabs.setup(vmCtrl, vmMon, core, client, cubeUI);
+		tabs.setup(vmCtrl, vmMon, core, client, cubeUI, networkMgr);
 	}
 
 	private int findTabComponentIndex(VmHandle h) {

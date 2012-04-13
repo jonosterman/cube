@@ -43,6 +43,7 @@ import ch.admin.vbs.cube.client.wm.xrandx.impl.AcpiListener.IAcpiEventListener;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.core.ICoreFacade;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 
 public class CubeUI implements ICubeUI/* , IXRListener */{
 	private static final Logger LOG = LoggerFactory.getLogger(CubeUI.class);
@@ -55,13 +56,14 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 	private IVmMonitor vmMonitor;
 	private IVmControl vmControl;
 	private ICubeUI cubeUI;
+	private INetworkManager networkMgr;
 	private XrandrTwoDisplayLayout layoutMgr;
 	private AcpiListener acpi;
 	private Layout currentLayout = Layout.AB;
 	private IUserInterface userIface;
 	private boolean started;
 
-	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI, IUserInterface userIface) {
+	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI, IUserInterface userIface, INetworkManager networkMgr) {
 		this.core = core;
 		this.client = client;
 		this.vmMonitor = vmMonitor;
@@ -69,6 +71,7 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 		this.cubeUI = cubeUI;
 		this.xrandr = xrandr;
 		this.userIface = userIface;
+		this.networkMgr = networkMgr;
 		// this.xrandr.addListener(this);
 		layoutMgr = new XrandrTwoDisplayLayout();
 		// force first sync
@@ -227,7 +230,7 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 			navBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), NavigationBar.FRAME_HEIGHT);
 			navbar = new NavigationBar(screen.getId());
 			navbar.setBounds(navBounds);
-			navbar.setup(vmMonitor, vmControl, core, client, cubeUI);
+			navbar.setup(vmMonitor, vmControl, core, client, cubeUI, networkMgr);
 			navbar.setVisible(active);
 		}
 

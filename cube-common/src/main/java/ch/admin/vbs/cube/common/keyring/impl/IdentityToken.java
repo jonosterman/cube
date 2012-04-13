@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.common.keyring.impl;
 
 import java.security.KeyStore;
@@ -23,6 +22,7 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.UnrecoverableEntryException;
 import java.security.cert.CertificateParsingException;
 import java.security.cert.X509Certificate;
@@ -49,13 +49,15 @@ public class IdentityToken implements IIdentityToken {
 	protected String uuid; // <-- Subject DN
 	protected String uuidHash;
 	protected String simpleName;
-	private final char[] password;
+	private byte[] password;
+	private byte[] xor;
 	private final Builder builder;
+	private static SecureRandom rnd = new SecureRandom();
 
 	public IdentityToken(KeyStore keystore, Builder builder, char[] password) {
 		this.keystore = keystore;
 		this.builder = builder;
-		this.password = password;
+		hidePassword(password);
 		try {
 			Enumeration<String> aliases = keystore.aliases();
 			while (aliases != null && aliases.hasMoreElements()) {
@@ -116,6 +118,29 @@ public class IdentityToken implements IIdentityToken {
 		}
 	}
 
+	/**
+	 * hide/show_password are used to keep a COPY of the password in a
+	 * not-so-easy-to-read form in memory
+	 */
+	private final void hidePassword(char[] clear) {
+		this.password = new byte[clear.length];
+		this.xor = new byte[clear.length];
+		// generate random mask
+		rnd.nextBytes(this.xor);
+		// store password mixed with mask
+		for(int i =0;i<clear.length;i++) {
+			this.password[i] = (byte)(clear[i] ^ xor[i]);
+		}
+	}
+
+	private char[] showPassword() {
+		char[] clear = new char[password.length];
+		for(int i =0;i<clear.length;i++) {
+			clear[i] = (char)(password[i] ^ xor[i]);
+		}		
+		return clear;
+	}
+
 	/** push certificate in local cache. Ensure the valid one is at the top. */
 	private void push(String alias, X509Certificate cert, KeyType type) {
 		LOG.debug("Found certificate of type [{}] named [{}]", type, alias);
@@ -148,7 +173,7 @@ public class IdentityToken implements IIdentityToken {
 		LinkedList<X509Certificate> list = certificates.get(type);
 		try {
 			return list == null || list.size() == 0 ? null : ((KeyStore.PrivateKeyEntry) keystore.getEntry(keystore.getCertificateAlias(list.peek()),
-					new PasswordProtection(password))).getPrivateKey();
+					new PasswordProtection(showPassword()))).getPrivateKey();
 		} catch (NoSuchAlgorithmException e) {
 			LOG.error("Failed to retrieve private key.", e);
 		} catch (UnrecoverableEntryException e) {
@@ -172,7 +197,8 @@ public class IdentityToken implements IIdentityToken {
 		if (list != null) {
 			for (X509Certificate c : list) {
 				try {
-					keys.add(((KeyStore.PrivateKeyEntry) keystore.getEntry(keystore.getCertificateAlias(c), new PasswordProtection(password))).getPrivateKey());
+					keys.add(((KeyStore.PrivateKeyEntry) keystore.getEntry(keystore.getCertificateAlias(c), new PasswordProtection(showPassword())))
+							.getPrivateKey());
 				} catch (NoSuchAlgorithmException e) {
 					LOG.error("Failed to retrieve private key.", e);
 				} catch (UnrecoverableEntryException e) {

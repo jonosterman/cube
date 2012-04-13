@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package demo;
+package ch.admin.vbs.cube.client.wm.demo;
 
 import java.io.File;
 
@@ -27,6 +27,9 @@ import ch.admin.vbs.cube.client.wm.client.impl.CubeClient;
 import ch.admin.vbs.cube.client.wm.client.impl.VmActionListener;
 import ch.admin.vbs.cube.client.wm.client.impl.VmControl;
 import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
+import ch.admin.vbs.cube.client.wm.mock.JMockDevice;
+import ch.admin.vbs.cube.client.wm.mock.MockAuthModule;
+import ch.admin.vbs.cube.client.wm.mock.MockNetworkManager;
 import ch.admin.vbs.cube.client.wm.mock.MockXrandr;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
@@ -48,6 +51,7 @@ import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
+import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 
 /**
  * This demo application is used to develop and test the user UI (tabs, pop-ups,
@@ -57,12 +61,12 @@ import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
  * emulate a logged user (session is open) with dummy VM.
  * 
  */
-public class DemoCompleteFakeScreens {
+public class DemoUI {
 	private IoC ioc = new IoC();
-	private static final Logger LOG = LoggerFactory.getLogger(DemoCompleteFakeScreens.class);
+	private static final Logger LOG = LoggerFactory.getLogger(DemoUI.class);
 
 	public static void main(String[] args) throws Exception {
-		DemoCompleteFakeScreens d = new DemoCompleteFakeScreens();
+		DemoUI d = new DemoUI();
 		d.run();
 	}
 
@@ -76,7 +80,7 @@ public class DemoCompleteFakeScreens {
 		// cleanup older containers
 		DmcryptContainerFactory.cleanup();
 		// create beans
-		ioc.addBean(new MockXrandr());
+		ioc.addBean(new MockXrandr(false));
 		ioc.addBean(new CubeUI());
 		ioc.addBean(new CubeClient());
 		ioc.addBean(new ClientFacade());
@@ -89,9 +93,10 @@ public class DemoCompleteFakeScreens {
 		ioc.addBean(new CubeCore());
 		ioc.addBean(new SessionManager());
 		ioc.addBean(new LoginMachine());
-		ioc.addBean(new ScAuthModule());
+		ioc.addBean(new MockAuthModule());
 		ioc.addBean(new DmcryptContainerFactory());
-		ioc.addBean(new ScTokenDevice());
+		ioc.addBean(new JMockDevice());
+		ioc.addBean(new MockNetworkManager());
 		// IoC
 		ioc.setupDependenciesOnAllBeans();
 		// exotic stuff (to be cleaned up)

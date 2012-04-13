@@ -16,6 +16,8 @@
 
 package ch.admin.vbs.cube.core.network;
 
+import java.util.List;
+
 /**
  * Interface to model network manager function for cube client
  * 
@@ -83,4 +85,7 @@ public interface INetworkManager {
 	public interface Listener {
 		void stateChanged(NetworkConnectionState old, NetworkConnectionState state);
 	}
+
+	/** @return a list of available network interfaces (eth* and wlan*) */
+	List<String> getNetworkInterfaces();
 }

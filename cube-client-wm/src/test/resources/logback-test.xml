@@ -28,26 +28,11 @@
   <logger name="ch.admin.vbs.cube.core.transfer.TransferMonitor" level="INFO"/>
   <logger name="org.springframework" level="INFO"/>
   <logger name="org.apache.cxf" level="INFO"/>
-  
   <logger name="ch.admin.vbs.cube.common.shell" level="DEBUG"/>
-
   <logger name="ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater" level="INFO"/>
-  
   <logger name="ch.admin.vbs.cube.client.wm.cube" level="DEBUG"/>
-  <logger name="ch.admin.vbs.cube.client.wm.ui" level="DEBUG"/>
+  <logger name="ch.admin.vbs.cube.client.wm.ui" level="INFO"/>
 
-  <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
-  <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>  
-  
-<!--   <logger name="ch.admin.vbs.cube.common.container" level="INFO"/>
-  <logger name="ch.admin.vbs.cube.common.AbstractProperties" level="INFO"/>
-  <logger name="ch.admin.vbs.cube.core.vm.list" level="INFO"/>
-  <logger name="ch.admin.vbs.cube.common.IdentityToken" level="INFO"/>
-  <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
-  <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>
- 
-  -->
- 
   <root level="debug">
     <appender-ref ref="STDOUT" />
   </root>

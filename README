@@ -48,7 +48,9 @@ machines.
 ##   - virtualbox-4.1: ...
 ##   - openjdk7-jdk: ...
 
- sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven openjdk-7-jdk
+ sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven openjdk-7-jdk cryptsetup-luks uml-utilities numlockx whois libwww-perl libx11-dev
+
+
 
 ## Create some directories to holds scripts and 
 ## certificates (thus may be changed through cube's 
@@ -68,6 +70,11 @@ machines.
    echo $f
    ln -s $f /opt/cube/client/scripts/`basename $f`
  done
+ for f in `ls $HOME/dev/cube/cube-client-core/src/main/resources/scripts/*.pl`; do
+   echo $f
+   ln -s $f /opt/cube/client/scripts/`basename $f`
+ done
+
 
 ##  update /etc/sudoers.d/cube :
  echo '###############

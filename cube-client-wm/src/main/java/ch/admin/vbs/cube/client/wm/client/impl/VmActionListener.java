@@ -23,6 +23,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.IVmActionListener;
 import ch.admin.vbs.cube.core.ICoreFacade;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
+import ch.admin.vbs.cube.core.vm.NicOption;
 
 public class VmActionListener implements IVmActionListener {
 	private ICoreFacade coreFacade;
@@ -120,6 +121,17 @@ public class VmActionListener implements IVmActionListener {
 				coreFacade.setVmProperty(h.getVmId(), key, value, refreshAllVms);
 			}
 		});
+	}
+	
+	@Override
+	public void connectNic(final VmHandle h, final NicOption nic) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				coreFacade.connectNic(h.getVmId(), nic);
+			}
+		});
+		
 	}
 
 	public void setup(ICoreFacade coreFacade) {

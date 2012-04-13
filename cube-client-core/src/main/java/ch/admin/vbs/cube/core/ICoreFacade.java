@@ -21,6 +21,7 @@ import java.net.URL;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
+import ch.admin.vbs.cube.core.vm.NicOption;
 
 /**
  * The core facade is the interface between the window manager and the core
@@ -130,6 +131,9 @@ public interface ICoreFacade {
 	 */
 	void installGuestAdditions(String vmId);
 
+	/** Unclassified VMs may be connected directly to a real network interface. */
+	void connectNic(String vmId, NicOption nic);
+
 	// ==========================================
 	// USB stuff
 	// ==========================================
@@ -145,5 +149,6 @@ public interface ICoreFacade {
 	// Properties
 	// ==========================================
 	void setVmProperty(String vmId, String key, String value, boolean refreshAllVms);
+
 
 }

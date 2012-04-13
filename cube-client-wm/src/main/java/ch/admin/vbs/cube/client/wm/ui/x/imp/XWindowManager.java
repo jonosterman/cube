@@ -376,7 +376,7 @@ public final class XWindowManager implements IXWindowManager {
 				// work!
 				X11.XResizeRequestEvent resizeRequest = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
 				if (LOG.isDebugEnabled()) {
-					LOG.debug("ResizeRequest for window " + resizeRequest.window.longValue());
+					LOG.debug("ResizeRequest for window " + resizeRequest.window.longValue()+" ["+getWindowName(resizeRequest.window)+"]");
 				}
 				reactOnResizeRequest(resizeRequest.window, resizeRequest.width, resizeRequest.height);
 				break;

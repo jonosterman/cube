@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.core.network.impl;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import org.freedesktop.NMApplet;
 import org.freedesktop.NMApplet.NmState;
@@ -29,6 +30,8 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.common.shell.ShellUtil;
+import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 
@@ -112,6 +115,26 @@ public class CNMStateMachine implements INetworkManager {
 	public void removeListener(Listener l) {
 		listeners.remove(l);
 	}
+	
+	@Override
+	public List<String> getNetworkInterfaces() {
+		ArrayList<String> list = new ArrayList<String>();
+		ShellUtil su = new ShellUtil();
+		try {
+			su.run(null, ShellUtil.NO_TIMEOUT, "ifconfig");
+			for(String line : su.getStandardOutput().toString().split("\n")) {
+				if (line.startsWith("eth") | line.startsWith("wlan")) {
+					// input validation
+					if (line.matches("eth[0-9] .*") || line.matches("wlan[0-9] .*")) {
+						list.add(line.split(" +",2)[0]);					
+					}
+				}
+			}
+		} catch (ShellUtilException e) {
+			e.printStackTrace();
+		}		
+		return list;
+	}
 
 	/** DBUS Signal listener */
 	public class StateChangedHandler implements DBusSigHandler<NetworkManager.StateChanged> {
@@ -123,7 +146,7 @@ public class CNMStateMachine implements INetworkManager {
 			synchronized (this) {
 				// convert signal into the corresponding enumeration reference
 				NmState sig = nmApplet.getEnumConstant(signal.state.intValue(), NmState.class);
-				LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);
+				LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);			
 				//
 				switch (sig) {
 				case NM_STATE_CONNECTED:

@@ -37,7 +37,7 @@ public interface ISession {
 	 * ICoreFacad and IClientFacad (if we have time to do and test it).
 	 */
 	public enum VmCommand {
-		START, POWER_OFF, SAVE, STAGE, DELETE, TRANSFER_FILE, INSTALL_GUESTADDITIONS, ATTACH_USB, DETACH_USB, LIST_USB
+		START, POWER_OFF, SAVE, STAGE, DELETE, TRANSFER_FILE, INSTALL_GUESTADDITIONS, ATTACH_USB, DETACH_USB, LIST_USB, CONNECT_NIC
 	}
 
 	//

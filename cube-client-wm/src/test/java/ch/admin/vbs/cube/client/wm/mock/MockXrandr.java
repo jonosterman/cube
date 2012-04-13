@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.mock;
 
 import java.awt.BorderLayout;
@@ -46,18 +45,19 @@ public class MockXrandr implements IXrandr {
 	private Object lock = new Object();
 	private DefaultListModel list = new DefaultListModel();
 
-	public MockXrandr() {
+	public MockXrandr(boolean twoScreens) {
 		freqs.add("50.0");
 		res.add(new XRResolution(320, 200, freqs));
 		res.add(new XRResolution(640, 480, freqs));
 		res.add(new XRResolution(800, 600, freqs));
-		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(1), "50.0"));
-		screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(2), "50.0"));
+		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(2), "50.0"));
 		list.addElement(screens.get(0));
-		list.addElement(screens.get(1));
+		if (twoScreens) {
+			screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(1), "50.0"));
+			list.addElement(screens.get(1));
+		}
 	}
 
-	
 	@Override
 	public void reloadConfiguration() {
 		// TODO Auto-generated method stub
