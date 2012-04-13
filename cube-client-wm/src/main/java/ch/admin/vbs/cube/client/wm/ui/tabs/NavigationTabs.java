@@ -280,10 +280,11 @@ public class NavigationTabs extends JideTabbedPane {
 		}
 		//
 		//
-		LOG.debug("show mouse popup at [{}:{}]", event.getX(), event.getY());
+		LOG.debug("show mouse popup at [{}:{}]", event.getXOnScreen(), event.getYOnScreen());
+		LOG.debug("               (was [{}:{}])", event.getX(), event.getY());
 		// show popup
 		JComponent comp = (JComponent) event.getSource();
-		vmPopupMenu.show(parent, event.getX(), event.getY());
+		vmPopupMenu.show(parent, event.getXOnScreen(), event.getYOnScreen());
 	}
 
 	private void populateNicMenu(final VmHandle h, final JMenu nicMenu) {
