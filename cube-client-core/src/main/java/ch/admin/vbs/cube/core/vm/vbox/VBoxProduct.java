@@ -1077,8 +1077,8 @@ public class VBoxProduct implements VBoxCacheListener {
 					IMachine machine = getIMachineReference(vm.getId());
 					machine.lockMachine(session, LockType.Shared);
 					IMachine mutable = session.getMachine();
-					//
-					for (long nic = 0l; nic < 4l; nic++) {
+					// disable other devices
+					for (long nic = 1l; nic < 4l; nic++) {
 						mutable.getNetworkAdapter(nic).setCableConnected(false);
 						mutable.getNetworkAdapter(nic).setEnabled(false);
 					}

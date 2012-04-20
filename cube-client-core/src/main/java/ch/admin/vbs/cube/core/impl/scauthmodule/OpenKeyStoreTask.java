@@ -77,6 +77,7 @@ class OpenKeyStoreTask implements Runnable, CallbackHandler {
 			// initialize provider
 			StringBuilder buf = new StringBuilder();
 			buf.append("library = ").append(this.scAuthModule.pkcs11LibraryPath).append("\nname = Cube\n");
+			LOG.debug("## PKCS11 Config ##########\n"+buf.toString()+"\n############");
 			provider = new sun.security.pkcs11.SunPKCS11(new ByteArrayInputStream(buf.toString().getBytes()));
 			Security.addProvider(provider);
 			cronos.zap("New provider added");
