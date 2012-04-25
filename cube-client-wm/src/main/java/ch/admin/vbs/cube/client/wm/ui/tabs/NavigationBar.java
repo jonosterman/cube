@@ -241,23 +241,27 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	}
 
 	private String formatTooltip(VmHandle h) {
-		String m = vmMon.getVmProgressMessage(h);
+		String message = vmMon.getVmProgressMessage(h);
 		int p = vmMon.getVmProgress(h);
 		String label = "";
-		if (m == null) {
-			m = "";
+		if (message == null || message.trim().length() == 0) {
+			message = "";
+		} else if (p<0) {
+			label = "Progress:";
+			message = String.format("%s", message);			
 		} else {
 			label = "Progress:";
-			m = String.format("%s (%d%%)", m, p);
+			message = String.format("%s (%d%%)", message, p);
 		}
 		String tooltip = String
-				.format("<html><table><tr><td>Name:</td><td>%s</td></tr><tr><td>Domain:</td><td>%s (%s)</td></tr><tr><td>State:</td><td>%s</td></tr><tr>%s</td><td>%s</td></tr></table></html>", //
+				.format("<html><table><tr><td>Name:</td><td>%s</td></tr><tr><td>Domain:</td><td>%s (%s)</td></tr><tr><td>State:</td><td>%s</td></tr><tr><td>Description:</td><td>%s</td></tr><tr>%s</td><td>%s</td></tr></table></html>", //
 				vmMon.getVmName(h), //
 						vmMon.getVmDomain(h), //
 						vmMon.getVmClassification(h), //
 						vmMon.getVmState(h), //
+						vmMon.getVmDescription(h), //
 						label, //
-						m);
+						message);
 		return tooltip;
 	}
 

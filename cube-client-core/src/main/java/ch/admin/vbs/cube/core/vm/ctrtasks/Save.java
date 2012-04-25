@@ -22,6 +22,8 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
+import ch.admin.vbs.cube.common.shell.ShellUtil;
+import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
@@ -57,6 +59,13 @@ public class Save extends AbstractCtrlTask {
 			LOG.debug("VM state saved.");
 		} catch (Exception e) {
 			LOG.error("Failed to save VM", e);
+		}
+		ShellUtil su = new ShellUtil();
+		try {
+			su.run("sync");
+			Thread.sleep(2500);
+		} catch (Exception e1) {
+			LOG.error("Failed to wait snapshot to be effectively written on disk before trying to unmount its volume.",e1);
 		}
 		// stop VPN
 		vm.setVpnState(VmVpnState.NOT_CONNECTED);

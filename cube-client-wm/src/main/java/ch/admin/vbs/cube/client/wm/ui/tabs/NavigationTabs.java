@@ -52,6 +52,7 @@ import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLayoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAttachUsbDevice;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAudioAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmConnectNic;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDeleteAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDetachUsbDevice;
@@ -217,6 +218,7 @@ public class NavigationTabs extends JideTabbedPane {
 			vmPopupMenu.add(new VmPoweroffAction(h));
 			vmPopupMenu.addSeparator();
 			vmPopupMenu.add(new VmInstallAdditionsAction(h));
+			vmPopupMenu.add(new VmAudioAction(h, vmMon.getVmName(h)));
 			// allows to connect USB device to VM
 			JideMenu usbMenu = new JideMenu(I18nBundleProvider.getBundle().getString("cube.action.connectusb.text"));
 			vmPopupMenu.add(usbMenu);

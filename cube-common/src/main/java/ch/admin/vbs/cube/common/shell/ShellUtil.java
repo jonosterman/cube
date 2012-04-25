@@ -54,6 +54,10 @@ public class ShellUtil {
 		run(Arrays.asList(commandWithArgs), workingDirectory, timeout);
 	}
 
+	public final void run(String... commandWithArgs) throws ShellUtilException {
+		run(Arrays.asList(commandWithArgs), null, NO_TIMEOUT);
+	}
+
 	public final void run(List<String> commandWithArgs) throws ShellUtilException {
 		run(commandWithArgs, null, NO_TIMEOUT);
 	}
