@@ -53,6 +53,11 @@ public class AudioDialog extends CubeWizard {
 		uiType.slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
 		uiType.cbox = new JCheckBox("muted");
 		uiType.label = new JLabel("Volume");
+		if (entry == null) {
+			uiType.slider.setEnabled(false);
+			uiType.cbox.setEnabled(false);
+			return;
+		}
 		//
 		JSlider slider = uiType.slider;
 		slider.setValue(entry.getVolume());
