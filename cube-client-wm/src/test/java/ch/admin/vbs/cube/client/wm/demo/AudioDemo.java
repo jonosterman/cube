@@ -1,22 +1,19 @@
-package ch.admin.vbs.cube.core;
+package ch.admin.vbs.cube.client.wm.demo;
 
 import org.junit.Assert;
-import org.junit.Test;
 
+import ch.admin.vbs.cube.client.wm.ui.dialog.AudioDialog;
+import ch.admin.vbs.cube.core.MockContainerUtil;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
-import ch.admin.vbs.cube.core.vm.VmAudioControl.Type;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
-public class AudioVolumeTest {
-
+public class AudioDemo {
 	private static final int CONNECT_VBOXWS_TIMEOUT = 30000;
 	private VBoxProduct vbox;
 	private MockContainerUtil util = new MockContainerUtil();
 
-	@Test
 	public void startAndConnectVboxsrv() throws Exception {
-		
 		// connect web service
 		connect();
 		// register a new VM
@@ -25,19 +22,9 @@ public class AudioVolumeTest {
 		// start VM
 		vbox.startVm(vm, null);
 		Thread.sleep(1000);
-
-		new VmAudioControl().setVolume(vm.getId(), Type.AUDIO, 20);
-		int vol = new VmAudioControl().getAudio(vm.getId(), Type.AUDIO)
-				.getVolume();
-
-		Assert.assertEquals("volume not set", 20, vol);
-
-		new VmAudioControl().setMuted(vm.getId(), Type.AUDIO, true);
-		boolean muted = new VmAudioControl().getAudio(vm.getId(), Type.AUDIO)
-				.isMuted();
-
-		Assert.assertEquals("Muted not set", true, muted);
-
+		VmAudioControl ctrl = new VmAudioControl();
+		AudioDialog dial = new AudioDialog(null, "test-id-A", ctrl);
+		dial.displayWizard();
 		// stop VM
 		vbox.poweroffVm(vm, null);
 		// unregister VM
@@ -53,12 +40,14 @@ public class AudioVolumeTest {
 		long timeout = System.currentTimeMillis() + CONNECT_VBOXWS_TIMEOUT;
 		while (!vbox.isConnected()) {
 			if (System.currentTimeMillis() > timeout) {
-				Assert.assertTrue("Not able to connect VirtualBox WebService",
-						false);
+				Assert.assertTrue("Not able to connect VirtualBox WebService", false);
 			}
 			Thread.sleep(500);
 		}
 		System.out.println("Connect to VirtualBox WebService ..... OK");
 	}
 
+	public static void main(String[] args) throws Exception {
+		new AudioDemo().startAndConnectVboxsrv();
+	}
 }

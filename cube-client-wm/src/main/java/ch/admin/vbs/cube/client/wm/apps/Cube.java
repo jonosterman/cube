@@ -50,6 +50,7 @@ import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
 import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
+import ch.admin.vbs.cube.core.vm.VmAudioControl;
 
 /**
  * This class is the entry point to start the cube secure client.
@@ -96,6 +97,7 @@ public final class Cube {
 	
 	private void run() throws Exception {
 		// init UI Default
+		new VmAudioControl().setMainVolume(120);
 		CubeUIDefaults.initDefaults();
 		// initalize directories
 		new File(CubeCommonProperties.getProperty("cube.mountpoints.dir")).mkdirs();

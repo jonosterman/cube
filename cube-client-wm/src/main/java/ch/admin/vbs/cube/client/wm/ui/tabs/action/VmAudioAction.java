@@ -31,36 +31,9 @@ public class VmAudioAction extends AbstractAction {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
 			public void run() {
-				final String key = vmHandle.getVmId();
-				// final String key = "ubuntu11_10";
-				final AudioDialog dial = new AudioDialog(null);
+				final String vmId = vmHandle.getVmId();
 				final VmAudioControl vmc = new VmAudioControl();
-				dial.initVolumeSlider("Vol " + vmName, vmc.getAudio(key, Type.AUDIO), new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						int vol = ((Integer) e.getSource());
-						vmc.setVolume(key, Type.AUDIO, vol);
-					}
-				}, new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						boolean b = ((Boolean) e.getSource());
-						vmc.setMuted(key, Type.AUDIO, b);
-					}
-				});
-				dial.initMicSlider("Mic " + vmName, vmc.getAudio(key, Type.MIC), new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						int vol = ((Integer) e.getSource());
-						vmc.setVolume(key, Type.MIC, vol);
-					}
-				}, new ActionListener() {
-					@Override
-					public void actionPerformed(ActionEvent e) {
-						boolean b = ((Boolean) e.getSource());
-						vmc.setMuted(key, Type.MIC, b);
-					}
-				});
+				final AudioDialog dial = new AudioDialog(null, vmId, vmc);
 				dial.displayWizard();
 			}
 		});
