@@ -1089,9 +1089,9 @@ public class VBoxProduct implements VBoxCacheListener {
 					na.setAttachmentType(NetworkAttachmentType.Bridged);
 					na.setBridgedInterface(option.getNic());
 					na.setEnabled(true);
-					na.setCableConnected(true);
 					na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.AllowAll);
 					mutable.saveSettings();
+					na.setCableConnected(true);
 					session.unlockMachine();
 				}
 			} catch (Exception e) {
