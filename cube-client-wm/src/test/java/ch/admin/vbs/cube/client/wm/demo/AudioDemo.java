@@ -1,5 +1,7 @@
 package ch.admin.vbs.cube.client.wm.demo;
 
+import javax.swing.SwingUtilities;
+
 import org.junit.Assert;
 
 import ch.admin.vbs.cube.client.wm.ui.dialog.AudioDialog;
@@ -22,9 +24,15 @@ public class AudioDemo {
 		// start VM
 		vbox.startVm(vm, null);
 		Thread.sleep(1000);
-		VmAudioControl ctrl = new VmAudioControl();
-		AudioDialog dial = new AudioDialog(null, "test-id-A", ctrl);
-		dial.displayWizard();
+		
+		SwingUtilities.invokeAndWait(new Runnable() {
+			@Override
+			public void run() {
+				VmAudioControl ctrl = new VmAudioControl();		
+				AudioDialog dial = new AudioDialog(null, "test-id-A", ctrl);		
+				dial.displayWizard();
+			}
+		});
 		// stop VM
 		vbox.poweroffVm(vm, null);
 		// unregister VM

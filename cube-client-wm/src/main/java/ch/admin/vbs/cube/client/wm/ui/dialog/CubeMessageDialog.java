@@ -174,6 +174,7 @@ public class CubeMessageDialog extends CubeWizard {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				setVisible(false);
+				dispose();
 			}
 		}, true);
 		return super.createButtonPanel();

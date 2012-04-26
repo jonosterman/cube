@@ -35,6 +35,7 @@ import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
+import ch.admin.vbs.cube.core.vm.VmNetworkState;
 import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.VmVpnState;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
@@ -103,7 +104,9 @@ public class Start extends AbstractCtrlTask {
 							Thread.sleep(500);
 						}
 						// connect VM's network card to trigger guest's network manager
-						product.connectNic(vm, true);
+						if (vm.getNetworkState() == VmNetworkState.CUBE) {
+							product.connectNic(vm, true);
+						}
 						vm.setVpnState(VmVpnState.CONNECTED);
 					} catch (Exception e) {
 						LOG.error("VM's VPN was opened but we failed to connect VM's NIC", e);
@@ -114,7 +117,9 @@ public class Start extends AbstractCtrlTask {
 				@Override
 				public void closed() {
 					try {
-						product.connectNic(vm, false);
+						if (vm.getNetworkState() == VmNetworkState.CUBE) {
+							product.connectNic(vm, false);
+						}
 					} catch (VmException e) {
 						LOG.error("Failed to disconnect NIC",e);
 					}
@@ -124,7 +129,9 @@ public class Start extends AbstractCtrlTask {
 				@Override
 				public void connecting() {	
 					try {
-						product.connectNic(vm, false);
+						if (vm.getNetworkState() == VmNetworkState.CUBE) {
+							product.connectNic(vm, false);
+						}						
 						vm.setVpnState(VmVpnState.CONNECTING);
 					} catch (VmException e) {
 						LOG.error("Failed to connect NIC",e);
@@ -136,7 +143,9 @@ public class Start extends AbstractCtrlTask {
 				@Override
 				public void failed() {
 					try {
-						product.connectNic(vm, false);
+						if (vm.getNetworkState() == VmNetworkState.CUBE) {
+							product.connectNic(vm, false);
+						}
 					} catch (VmException e) {
 						LOG.error("VM's VPN failed and we failed to disconnect NIC", e);
 					}

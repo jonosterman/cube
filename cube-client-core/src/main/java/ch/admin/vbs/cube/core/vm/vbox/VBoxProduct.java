@@ -75,6 +75,7 @@ import ch.admin.vbs.cube.core.vm.NicOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
+import ch.admin.vbs.cube.core.vm.VmNetworkState;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxCache.VBoxCacheListener;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxConfig.VBoxOption;
 import ch.admin.vbs.cube.core.webservice.FileDownloader;
@@ -1054,6 +1055,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			try {
 				if (option.getNic().equals(ORIGINAL_NETWORK_CONFIG)) {
 					// restore original nic config
+					vm.setNetworkState(VmNetworkState.CUBE);
 					VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 					try {
 						cfg.load();
@@ -1073,6 +1075,7 @@ public class VBoxProduct implements VBoxCacheListener {
 				} else {
 					// connect first nic to the given interface and disconnect
 					// all other nics
+					vm.setNetworkState(VmNetworkState.LOCAL);
 					ISession session = mgr.getSessionObject();
 					IMachine machine = getIMachineReference(vm.getId());
 					machine.lockMachine(session, LockType.Shared);

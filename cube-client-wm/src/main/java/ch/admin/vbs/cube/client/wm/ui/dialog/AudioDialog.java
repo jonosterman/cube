@@ -15,6 +15,7 @@ import javax.swing.SpringLayout;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
 import ch.admin.vbs.cube.core.vm.AudioEntry;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
 import ch.admin.vbs.cube.core.vm.VmAudioControl.Type;
@@ -120,12 +121,13 @@ public class AudioDialog extends CubeWizard {
 
 	@Override
 	public ButtonPanel createButtonPanel() {
-		addWizardAction(new AbstractAction("OK") {
+		addWizardAction(new AbstractAction(I18nBundleProvider.getBundle().getString("audiodialog.button.close")) {
 			private static final long serialVersionUID = 1L;
 
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				setVisible(false);
+				dispose();
 			}
 		}, true);
 		return super.createButtonPanel();

@@ -10,9 +10,16 @@ import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 
+/**
+ * Use pulse audio commands to manage VM's audio volume (speakers and
+ * microphone).
+ */
 public class VmAudioControl {
 	private static final Logger LOG = LoggerFactory.getLogger(VmAudioControl.class);
 
+	/**
+	 * sink (speaker) and source (microphone)
+	 */
 	public enum Type {
 		AUDIO("Sink Input", "sink-input"), MIC("Source Output", "source-output");
 		public final String header;
@@ -24,10 +31,14 @@ public class VmAudioControl {
 		}
 	}
 
+	/**
+	 * @return the audio entry for a VM of the given type
+	 */
 	public synchronized AudioEntry getAudio(String vmId, Type type) {
 		return getVolumeEntry(vmId, type);
 	}
 
+	/** Set main output volume (typically at startup) */
 	public synchronized void setMainVolume(int volPC) {
 		ShellUtil pacmd = new ShellUtil();
 		try {
@@ -37,6 +48,9 @@ public class VmAudioControl {
 		}
 	}
 
+	/**
+	 * Set a VM volume level for the given sink/source. Volume is specified in %
+	 */
 	public synchronized void setVolume(String vmId, final Type type, int volPC) {
 		final AudioEntry volEntry = getVolumeEntry(vmId, type);
 		if (volEntry != null) {
@@ -49,6 +63,7 @@ public class VmAudioControl {
 		}
 	}
 
+	/** Mute the given sink/source */
 	public synchronized void setMuted(String vmId, final Type type, final boolean muted) {
 		final AudioEntry ve = getVolumeEntry(vmId, type);
 		if (ve != null) {
@@ -67,7 +82,7 @@ public class VmAudioControl {
 		try {
 			int pid = getPID(vmId);
 			pacmd.run("pactl", "list");
-			//pacmd.run("ssh", "cube001_home.cube", "su cube -c 'pactl list'");
+			// pacmd.run("ssh", "cube001_home.cube", "su cube -c 'pactl list'");
 			StringBuffer sb = pacmd.getStandardOutput();
 			StringReader r = new StringReader(sb.toString());
 			BufferedReader rr = new BufferedReader(r);
@@ -91,17 +106,16 @@ public class VmAudioControl {
 					currentIndex = headerMatch.group(2);
 					vmIdFound = false;
 					headerFound = type.header.equals(currentHeader);
-					currentVolume = "100"; // default since not always in 'pactl list'
-					currentMute = "no"; // default since not always in 'pactl list'
-				}
-				if (headerFound) {
-					System.out.println(line);
+					currentVolume = "100"; // default since not always in 'pactl
+											// list'
+					currentMute = "no"; // default since not always in 'pactl
+										// list'
 				}
 				/**
 				 * lookup for VM's ID in the paragraph (where it is exactly
 				 * found may vary with VirtualBox version).
 				 */
-				if (headerFound && line.contains("application.process.id = \""+pid+"\"")) {
+				if (headerFound && line.contains("application.process.id = \"" + pid + "\"")) {
 					vmIdFound = true;
 				}
 				// lookup for volume value
@@ -131,15 +145,20 @@ public class VmAudioControl {
 		return null;
 	}
 
+	/**
+	 * we need to find the VMs' PID in order to search the VM's channels in
+	 * pactl's output. We tried to use 'application.name' but it is truncated
+	 * and does not contains the whole VM's ID.
+	 */
 	private int getPID(final String key) {
 		ShellUtil pacmd = new ShellUtil();
 		try {
-			//pacmd.run("ssh", "cube001_home.cube", "pgrep -f "+key);
+			// pacmd.run("ssh", "cube001_home.cube", "pgrep -f "+key);
 			pacmd.run("pgrep", "-f", key);
 		} catch (Exception e) {
 			LOG.error(e.toString(), e);
 		}
-		String outp = pacmd.getStandardOutput().toString().trim();		
+		String outp = pacmd.getStandardOutput().toString().trim();
 		return outp.length() == 0 ? -1 : Integer.parseInt(outp);
 	}
 }

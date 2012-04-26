@@ -1,5 +1,10 @@
 package ch.admin.vbs.cube.core.vm;
 
+/**
+ * Holds information about a channel volume configuration. It is not
+ * synchronized with the effective configuration in pulseaudio and should
+ * therefore be re-fetched each time.
+ */
 public class AudioEntry {
 	private final int index;
 	private final int volume;

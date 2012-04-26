@@ -32,6 +32,7 @@ public class Vm implements Cloneable {
 	private int progress;
 	private String progressMessage;
 	private VmVpnState vpnState;
+	private VmNetworkState networkState;
 	private File exportFolder;
 	private File importFolder;
 	private File tempFolder;
@@ -39,8 +40,9 @@ public class Vm implements Cloneable {
 	public Vm(VmDescriptor descriptor) {
 		this.setDescriptor(descriptor);
 		// the current identifier of a vm is the vm name
-		this.vmState = VmState.UNKNOWN;
-		this.setVpnState(VmVpnState.NOT_CONNECTED);
+		vmState = VmState.UNKNOWN;
+		vpnState = VmVpnState.NOT_CONNECTED;
+		networkState = VmNetworkState.CUBE;
 	}
 
 	public Container getVmContainer() {
@@ -164,5 +166,13 @@ public class Vm implements Cloneable {
 
 	public void setVpnState(VmVpnState vpnState) {
 		this.vpnState = vpnState;
+	}
+
+	public VmNetworkState getNetworkState() {
+		return networkState;
+	}
+
+	public void setNetworkState(VmNetworkState networkState) {
+		this.networkState = networkState;
 	}
 }

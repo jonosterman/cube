@@ -122,6 +122,7 @@ public class CubeConfirmationDialog extends CubeWizard {
 				public void actionPerformed(ActionEvent arg0) {
 					setDialogResult(1);
 					setVisible(false);
+					dispose();
 				}
 			}, true);
 			JButton cancelButton = addWizardAction(new AbstractAction(resourceBundle.getString("messagedialog.option.cancel")) {
@@ -131,6 +132,7 @@ public class CubeConfirmationDialog extends CubeWizard {
 				public void actionPerformed(ActionEvent arg0) {
 					setDialogResult(0);
 					setVisible(false);
+					dispose();
 				}
 			}, true);
 			setDefaultAction(cancelButton.getAction());
