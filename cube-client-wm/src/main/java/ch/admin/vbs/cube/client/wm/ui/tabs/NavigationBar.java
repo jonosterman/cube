@@ -132,13 +132,13 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 						// update map
 						cmpMap.put(h, c);
 						// add new tab
-						tabs.insertTab(vmMon.getVmName(h), TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h)), c, formatTooltip(h), getSortedIndex(h));
+						tabs.insertTab(vmMon.getVmName(h), TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h),vmMon.getVmNetworkState(h)), c, formatTooltip(h), getSortedIndex(h));
 					}
 					for (VmHandle h : updatedVms) {
 						// update tab icon
 						int idx = findTabComponentIndex(h);
 						tabs.setTitleAt(idx, vmMon.getVmName(h));
-						tabs.setIconAt(idx, TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h)));
+						tabs.setIconAt(idx, TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h),vmMon.getVmNetworkState(h)));
 						tabs.setToolTipTextAt(idx, formatTooltip(h));
 					}
 					for (VmHandle h : removedVms) {
@@ -215,7 +215,8 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 				int i = findTabComponentIndex(h);
 				if (i >= 0) {
 					// update icon
-					tabs.setIconAt(i, TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h)));
+					LOG.error(" net state {}",vmMon.getVmNetworkState(h));
+					tabs.setIconAt(i, TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h),vmMon.getVmNetworkState(h)));
 					// update tooltip
 					tabs.setToolTipTextAt(i, formatTooltip(h));
 				}

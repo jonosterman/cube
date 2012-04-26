@@ -131,7 +131,7 @@ public class VmController implements IVmProductListener {
 			}
 			break;
 		case CONNECT_NIC:
-			exec.execute(new ConnectNic(vm, product, option));
+			exec.execute(new ConnectNic(vm, product, model, option));
 			break;
 		default:
 			LOG.warn("Command not implemented [{}]", cmd);

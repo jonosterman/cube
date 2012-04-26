@@ -18,7 +18,11 @@ package ch.admin.vbs.cube.client.wm.ui.tabs;
 
 import javax.swing.ImageIcon;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
+import ch.admin.vbs.cube.core.vm.VmNetworkState;
 import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.VmVpnState;
 
@@ -26,88 +30,36 @@ import ch.admin.vbs.cube.core.vm.VmVpnState;
  * Provide status icon based on VM state and progress
  */
 public class TabIconProvider {
-	private static final int STAGING_PROGRESS_25 = 25;
-	private static final int STAGING_PROGRESS_50 = 50;
-	private static final int STAGING_PROGRESS_75 = 75;
-
+//	private static final int STAGING_PROGRESS_25 = 25;
+//	private static final int STAGING_PROGRESS_50 = 50;
+//	private static final int STAGING_PROGRESS_75 = 75;
+	private static final Logger LOG = LoggerFactory.getLogger(TabIconProvider.class);
 	/**
 	 * @param vm
 	 *            the vm for which the icon is asked for
 	 * @return Returns the status image icon for the given vm, depending on its
 	 *         state.
 	 */
-	// public static final ImageIcon getStatusIcon(Vm vm) {
-	// ImageIcon icon = null;
-	// if (vm != null) {
-	// VmState vmState = vm.getVmState();
-	// switch (vmState) {
-	// case RUNNING:
-	// switch (vm.getVpnState()) {
-	// case CONNECTING:
-	// icon = IconManager.getInstance().getIcon("vm_running_connecting.gif");
-	// break;
-	// case NOT_CONNECTED:
-	// icon = IconManager.getInstance().getIcon("vm_running_offline.png");
-	// break;
-	// case CONNECTED:
-	// default:
-	// icon = IconManager.getInstance().getIcon("vm_running.png");
-	// break;
-	// }
-	// break;
-	// case STARTING:
-	// case STOPPING:
-	// icon = IconManager.getInstance().getIcon("vm_processing.gif");
-	// break;
-	// case STAGABLE:
-	// icon = IconManager.getInstance().getIcon("vm_stagable.png");
-	// break;
-	// case STAGING:
-	// int stagingProgress = vm.getProgress();
-	// if (stagingProgress >= STAGING_PROGRESS_75) {
-	// icon = IconManager.getInstance().getIcon("vm_staging_75.gif");
-	// } else if (stagingProgress >= STAGING_PROGRESS_50) {
-	// icon = IconManager.getInstance().getIcon("vm_staging_50.gif");
-	// } else if (stagingProgress >= STAGING_PROGRESS_25) {
-	// icon = IconManager.getInstance().getIcon("vm_staging_25.gif");
-	// } else {
-	// icon = IconManager.getInstance().getIcon("vm_staging_0.gif");
-	// }
-	// break;
-	// case STOPPED:
-	// icon = IconManager.getInstance().getIcon("vm_stopped.png");
-	// break;
-	// case ERROR:
-	// case UNKNOWN:
-	// default:
-	// icon = IconManager.getInstance().getIcon("vm_error.png");
-	// break;
-	// }
-	// }
-	// return icon;
-	// }
-	/**
-	 * @param vm
-	 *            the vm for which the icon is asked for
-	 * @return Returns the status image icon for the given vm, depending on its
-	 *         state.
-	 */
-	public static final ImageIcon getStatusIcon(VmState vmState, VmVpnState vpnState) {
+	public static final ImageIcon getStatusIcon(VmState vmState, VmVpnState vpnState, VmNetworkState netState) {
 		ImageIcon icon = null;
 		if (vmState != null) {
 			switch (vmState) {
 			case RUNNING:
-				switch (vpnState) {
-				case CONNECTING:
-					icon = IconManager.getInstance().getIcon("vm_running_connecting.gif");
-					break;
-				case NOT_CONNECTED:
-					icon = IconManager.getInstance().getIcon("vm_running_offline.png");
-					break;
-				case CONNECTED:
-				default:
-					icon = IconManager.getInstance().getIcon("vm_running.png");
-					break;
+				if (netState == VmNetworkState.LOCAL) {
+					icon = IconManager.getInstance().getIcon("vm_running_local.png");
+				} else {
+					switch (vpnState) {
+					case CONNECTING:
+						icon = IconManager.getInstance().getIcon("vm_running_connecting.gif");
+						break;
+					case NOT_CONNECTED:
+						icon = IconManager.getInstance().getIcon("vm_running_offline.png");
+						break;
+					case CONNECTED:
+					default:
+						icon = IconManager.getInstance().getIcon("vm_running.png");
+						break;
+					}
 				}
 				break;
 			case STARTING:

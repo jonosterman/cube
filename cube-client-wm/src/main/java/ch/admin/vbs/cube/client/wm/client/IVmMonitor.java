@@ -17,6 +17,7 @@
 package ch.admin.vbs.cube.client.wm.client;
 
 import ch.admin.vbs.cube.common.CubeClassification;
+import ch.admin.vbs.cube.core.vm.VmNetworkState;
 import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.VmVpnState;
 
@@ -45,4 +46,6 @@ public interface IVmMonitor {
 	CubeClassification getVmClassification(VmHandle handle);
 
 	String getVmProperty(VmHandle handle, String key);
+
+	VmNetworkState getVmNetworkState(VmHandle h);
 }

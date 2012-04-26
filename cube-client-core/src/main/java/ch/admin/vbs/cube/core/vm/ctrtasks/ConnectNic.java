@@ -20,9 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.core.ISession.IOption;
-import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.vm.NicOption;
 import ch.admin.vbs.cube.core.vm.Vm;
+import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public class ConnectNic implements Runnable {
@@ -30,10 +30,12 @@ public class ConnectNic implements Runnable {
 	private final VBoxProduct product;
 	private final IOption option;
 	private final Vm vm;
+	private final VmModel vmModel;
 
-	public ConnectNic(Vm vm, VBoxProduct product, IOption option) {
+	public ConnectNic(Vm vm, VBoxProduct product, VmModel vmModel,IOption option) {
 		this.vm = vm;
 		this.product = product;
+		this.vmModel = vmModel;
 		this.option = option;
 	}
 
@@ -44,5 +46,6 @@ public class ConnectNic implements Runnable {
 		} catch (Exception e) {
 			LOG.error("Failed to connect USB device", e);
 		}
+		vmModel.fireVmStateUpdatedEvent(vm);
 	}
 }

@@ -282,10 +282,14 @@ public class NavigationTabs extends JideTabbedPane {
 		}
 		//
 		//
+		LOG.debug("show mouse on monitor [{}]", monitorId);
+		LOG.debug("List of monitors: ");
+		for (CubeScreen c : screens) {
+			LOG.debug("   screen[{}] width:[{}]",c.getId(),c.getBackgroundFrame().getWidth());
+		}
 		LOG.debug("show mouse popup at [{}:{}]", event.getX(), event.getY());
-		LOG.debug("               (was [{}:{}])", event.getXOnScreen(), event.getYOnScreen());
+		LOG.debug("          (onscreen [{}:{}])", event.getXOnScreen(), event.getYOnScreen());
 		// show popup
-		JComponent comp = (JComponent) event.getSource();
 		vmPopupMenu.show(parent, event.getX(), event.getY());
 	}
 
