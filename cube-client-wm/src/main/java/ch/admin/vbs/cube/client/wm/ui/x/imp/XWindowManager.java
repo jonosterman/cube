@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 import java.awt.Color;
 import java.awt.Rectangle;
+import java.util.ArrayList;
 import java.util.Collection;
 
 import org.slf4j.Logger;
@@ -376,7 +376,7 @@ public final class XWindowManager implements IXWindowManager {
 				// work!
 				X11.XResizeRequestEvent resizeRequest = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
 				if (LOG.isDebugEnabled()) {
-					LOG.debug("ResizeRequest for window " + resizeRequest.window.longValue()+" ["+getWindowName(resizeRequest.window)+"]");
+					LOG.debug("ResizeRequest for window " + resizeRequest.window.longValue() + " [" + getWindowName(resizeRequest.window) + "]");
 				}
 				reactOnResizeRequest(resizeRequest.window, resizeRequest.width, resizeRequest.height);
 				break;
@@ -492,61 +492,61 @@ public final class XWindowManager implements IXWindowManager {
 		this.cb = cb;
 	}
 
-	// private ArrayList<Window> listWindows() {
-	// ArrayList<Window> wins = new ArrayList<X11.Window>();
-	// Display display = x11.XOpenDisplay(displayName);
-	// // get the root window
-	// Window rootWindow = x11.XRootWindow(display, screenIndex);
-	// LOG.debug("---------------------------");
-	// long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
-	// for (long windowId : childrenWindowIdArray) {
-	// Window window = new Window(windowId);
-	// // get window attributes
-	// XWindowAttributes attributes = new XWindowAttributes();
-	// x11.XGetWindowAttributes(display, window, attributes);
-	// // get window title
-	// XTextProperty windowTitle = new XTextProperty();
-	// x11.XFetchName(display, window, windowTitle);
-	// // filter windows with attributes which our windows do not have
-	// if (!attributes.override_redirect && windowTitle.value != null) {
-	// wins.add(window);
-	// }
-	// }
-	// LOG.debug("---------------------------");
-	// // close display
-	// x11.XCloseDisplay(display);
-	// return wins;
-	// }
-	// private void dumpWindows() {
-	// Display display = x11.XOpenDisplay(displayName);
-	// // get the root window
-	// Window rootWindow = x11.XRootWindow(display, screenIndex);
-	// LOG.debug("---------------------------");
-	//
-	// dumpWindowsRec(display, rootWindow, 0);
-	//
-	// LOG.debug("---------------------------");
-	// // close display
-	// x11.XCloseDisplay(display);
-	// }
-	// private void dumpWindowsRec(Display display, Window parent, int stage) {
-	// // get the root window
-	// long[] childrenWindowIdArray = getChildrenList(display, parent);
-	// if (childrenWindowIdArray.length == 0) {
-	// String spaces = "";
-	// for (int i = 0; i < stage; i++) {
-	// spaces += '-';
-	// }
-	// XTextProperty windowTitle = new XTextProperty();
-	// x11.XFetchName(display, parent, windowTitle);
-	// LOG.debug("DUMP " + spaces + " => [{}] [{}]", parent, windowTitle.value);
-	// } else {
-	// for (long windowId : childrenWindowIdArray) {
-	// Window window = new Window(windowId);
-	// dumpWindowsRec(display, window, stage+1);
-	// }
-	// }
-	// }
+	public ArrayList<Window> debug_listWindows() {
+		ArrayList<Window> wins = new ArrayList<X11.Window>();
+		Display display = x11.XOpenDisplay(displayName);
+		// get the root window
+		Window rootWindow = x11.XRootWindow(display, screenIndex);
+		LOG.debug("---------------------------");
+		long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
+		for (long windowId : childrenWindowIdArray) {
+			Window window = new Window(windowId);
+			// get window attributes
+			XWindowAttributes attributes = new XWindowAttributes();
+			x11.XGetWindowAttributes(display, window, attributes);
+			// get window title
+			XTextProperty windowTitle = new XTextProperty();
+			x11.XFetchName(display, window, windowTitle);
+			// filter windows with attributes which our windows do not have
+			if (!attributes.override_redirect && windowTitle.value != null) {
+				wins.add(window);
+			}
+		}
+		LOG.debug("---------------------------");
+		// close display
+		x11.XCloseDisplay(display);
+		return wins;
+	}
+	public void debug_dumpWindows() {
+		Display display = x11.XOpenDisplay(displayName);
+		// get the root window
+		Window rootWindow = x11.XRootWindow(display, screenIndex);
+		LOG.info("---------------------------");
+		debug_dumpWindowsRec(display, rootWindow, 0);
+		LOG.info("---------------------------");
+		// close display
+		x11.XCloseDisplay(display);
+	}
+
+	private void debug_dumpWindowsRec(Display display, Window parent, int stage) {
+		// get the root window
+		long[] childrenWindowIdArray = getChildrenList(display, parent);
+		if (childrenWindowIdArray.length == 0) {
+			String spaces = "";
+			for (int i = 0; i < stage; i++) {
+				spaces += '-';
+			}
+			XTextProperty windowTitle = new XTextProperty();
+			x11.XFetchName(display, parent, windowTitle);
+			System.out.printf("DUMP " + spaces + " => [%s] [%s]\n", parent, windowTitle.value);
+		} else {
+			for (long windowId : childrenWindowIdArray) {
+				Window window = new Window(windowId);
+				debug_dumpWindowsRec(display, window, stage + 1);
+			}
+		}
+	}
+
 	/**
 	 * Detectes and sets the current operation system architecture. Default is
 	 * 32Bit.

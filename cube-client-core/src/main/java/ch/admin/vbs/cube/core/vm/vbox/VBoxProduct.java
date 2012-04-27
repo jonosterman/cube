@@ -37,8 +37,15 @@ import org.virtualbox_4_1.ClipboardMode;
 import org.virtualbox_4_1.DeviceType;
 import org.virtualbox_4_1.HWVirtExPropertyType;
 import org.virtualbox_4_1.IConsole;
+import org.virtualbox_4_1.IEvent;
+import org.virtualbox_4_1.IEventListener;
+import org.virtualbox_4_1.IEventSource;
+import org.virtualbox_4_1.IGuestPropertyChangedEvent;
 import org.virtualbox_4_1.IHostUSBDevice;
 import org.virtualbox_4_1.IMachine;
+import org.virtualbox_4_1.IMachineDataChangedEvent;
+import org.virtualbox_4_1.IMachineEvent;
+import org.virtualbox_4_1.IMachineStateChangedEvent;
 import org.virtualbox_4_1.IMedium;
 import org.virtualbox_4_1.INetworkAdapter;
 import org.virtualbox_4_1.IProgress;
@@ -55,8 +62,10 @@ import org.virtualbox_4_1.SessionState;
 import org.virtualbox_4_1.SessionType;
 import org.virtualbox_4_1.StorageBus;
 import org.virtualbox_4_1.StorageControllerType;
+import org.virtualbox_4_1.VBoxEventType;
 import org.virtualbox_4_1.VBoxException;
 import org.virtualbox_4_1.VirtualBoxManager;
+import org.virtualbox_4_1.jaxws.VboxPortType;
 
 import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.UuidGenerator;
@@ -891,6 +900,31 @@ public class VBoxProduct implements VBoxCacheListener {
 					vbox = mgr.getVBox();
 					connected = true;
 					LOG.info("VirtualBox Web Service connected [{}]", vbox.getVersion());
+					// try to get events
+					IEventSource es = vbox.getEventSource();
+					IEventListener listener = es.createListener();
+					ArrayList<VBoxEventType> types = new ArrayList<VBoxEventType>();
+					types.add(VBoxEventType.MachineEvent);
+					es.registerListener(listener, types, false /* active */);
+					// register passive listener
+					while (connected) {
+						IEvent ev = es.getEvent(listener, 1000);
+						// wait up to one second for event to happen
+						if (ev != null) {
+							IMachineEvent machineId = IMachineEvent.queryInterface(ev);
+							switch (ev.getType()) {
+							case OnGuestPropertyChanged:
+								IGuestPropertyChangedEvent x = IGuestPropertyChangedEvent.queryInterface(ev);
+								LOG.debug("Got VM event: [event: {}] [vmId: {}] ["+x.getName()+" = "+x.getValue()+"]", ev.getType(), machineId.getMachineId());
+								break;
+							default:
+								LOG.debug("Got VM event: [event: {}] [vmId: {}]", ev.getType(), machineId.getMachineId());
+								break;
+							}
+							es.eventProcessed(listener, ev);
+						}
+					}
+					// es.unregisterListener(listener);
 				} catch (Exception e) {
 					LOG.error("VirtualBox Web Service not connected (http://localhost:18083). Is vboxwebsrv running? [" + e.getMessage() + "]", e);
 				}
@@ -1070,7 +1104,9 @@ public class VBoxProduct implements VBoxCacheListener {
 					addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), mutable);
 					addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), mutable);
 					addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), mutable);
+					// save settings
 					mutable.saveSettings();
+					// unlock machine
 					session.unlockMachine();
 				} else {
 					// connect first nic to the given interface and disconnect
@@ -1081,17 +1117,24 @@ public class VBoxProduct implements VBoxCacheListener {
 					machine.lockMachine(session, LockType.Shared);
 					IMachine mutable = session.getMachine();
 					// disable other devices
-					for (long nic = 1l; nic < 4l; nic++) {
-						mutable.getNetworkAdapter(nic).setCableConnected(false);
-						mutable.getNetworkAdapter(nic).setEnabled(false);
+					LOG.debug("Unconfigure NIC1 NIC2 and NIC3");
+					for (long nic = 1l; nic <= 3l; nic++) {
+						INetworkAdapter na = mutable.getNetworkAdapter(nic);
+						na.setCableConnected(false);
+						na.setAttachmentType(NetworkAttachmentType.Null);
+						na.setEnabled(false);
 					}
+					LOG.debug("Configure NIC0");
 					INetworkAdapter na = mutable.getNetworkAdapter(0l);
+					na.setEnabled(true);
 					na.setAttachmentType(NetworkAttachmentType.Bridged);
 					na.setBridgedInterface(option.getNic());
-					na.setEnabled(true);
 					na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.AllowAll);
-					mutable.saveSettings();
+					LOG.debug("Connect NIC0");
 					na.setCableConnected(true);
+					// save settings
+					mutable.saveSettings();
+					// unlock machine
 					session.unlockMachine();
 				}
 			} catch (Exception e) {
