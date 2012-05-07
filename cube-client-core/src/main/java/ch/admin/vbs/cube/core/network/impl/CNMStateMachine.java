@@ -146,7 +146,11 @@ public class CNMStateMachine implements INetworkManager {
 			synchronized (this) {
 				// convert signal into the corresponding enumeration reference
 				NmState sig = nmApplet.getEnumConstant(signal.state.intValue(), NmState.class);
-				LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);			
+				LOG.debug("Got DBus signal [NetworkManager.StateChanged] - [{}]", sig);	
+				if (sig == null) {
+					LOG.error("Unknown NmState signal [{}].",signal.state.intValue());
+					return;
+				}
 				//
 				switch (sig) {
 				case NM_STATE_CONNECTED:

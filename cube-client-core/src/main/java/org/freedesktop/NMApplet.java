@@ -21,7 +21,10 @@ import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Vector;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -54,7 +57,25 @@ public class NMApplet {
 	private static final Logger LOG = LoggerFactory.getLogger(NMApplet.class);
 
 	public enum NmState {
-		NM_STATE_UNKNOWN, NM_STATE_ASLEEP, NM_STATE_CONNECTING, NM_STATE_CONNECTED, NM_STATE_DISCONNECTED
+		NM_STATE_UNKNOWN(0), NM_STATE_ASLEEP(10), NM_STATE_CONNECTING(40), NM_STATE_CONNECTED(70), NM_STATE_DISCONNECTED(20);
+		private static final Map<Integer, NmState> lookup = new HashMap<Integer, NmState>();
+		static {
+			for (NmState s : EnumSet.allOf(NmState.class))
+				lookup.put(s.getCode(), s);
+		}
+		private int code;
+
+		private NmState(int code) {
+			this.code = code;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public static NmState get(int code) {
+			return lookup.get(code);
+		}
 	}
 
 	public enum ActiveConnectionState {
@@ -106,6 +127,11 @@ public class NMApplet {
 	}
 
 	public <E> E getEnumConstant(int stateId, Class<E> x) {
+		if (x.equals(NmState.class)) {
+			NmState s = NmState.get(stateId);
+			s = s != null ? s : NmState.NM_STATE_UNKNOWN;
+			return (E) s;
+		}
 		if (stateId < 0 || stateId >= x.getEnumConstants().length) {
 			return null;
 		} else {
@@ -113,7 +139,6 @@ public class NMApplet {
 		}
 	}
 
-	
 	public boolean isIpReachable(String ip) {
 		// convert ip to int
 		int ipToCheck = ipToInt(ip);
@@ -124,10 +149,10 @@ public class NMApplet {
 				for (InterfaceAddress nic : intf.getInterfaceAddresses()) {
 					byte[] arr = nic.getAddress().getAddress();
 					// only handle IPV4 since cube is still IPV4
-					if (arr.length == 4 && nic.getNetworkPrefixLength()>0) {
-						LOG.debug("check IP address [{}]",nic.getAddress());
-						int nicIp = arr[0] << 24 | arr[1]<<16 | arr[2]<<8 | arr[3];
-						int mask = ((1 << nic.getNetworkPrefixLength()) - 1) << (32 - nic.getNetworkPrefixLength());
+					if (arr.length == 4 && nic.getNetworkPrefixLength() > 0) {
+						LOG.debug("check IP address [{}]", nic.getAddress());
+						int nicIp = (arr[0] << 24) & 0xff000000 | (arr[1] << 16) & 0x00ff0000 | (arr[2] << 8) & 0x0000ff00 | arr[3] & 0x000000ff;
+						int mask = (0xffffffff) << (32 - nic.getNetworkPrefixLength());
 						if ((nicIp & mask) == (ipToCheck & mask)) {
 							return true;
 						}
@@ -189,16 +214,18 @@ public class NMApplet {
 					if (su.getExitValue() == 0) {
 						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_ACTIVATED);
 					} else {
-						LOG.debug("Failed to connect Cube VPN [script returned: "+su.getExitValue()+"]. \nSTDOUT:\n"+su.getStandardOutput()+"\nSTDERR:\n"+su.getStandardError());
+						LOG.debug("Failed to connect Cube VPN [script returned: " + su.getExitValue() + "]. \nSTDOUT:\n" + su.getStandardOutput()
+								+ "\nSTDERR:\n" + su.getStandardError());
 						fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 					}
 				} catch (Exception e) {
-					LOG.error("Failed to start Cube VPN",e);
+					LOG.error("Failed to start Cube VPN", e);
 					fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 				}
 			}
 		});
 	}
+
 	public void closeVpn() {
 		try {
 			LOG.debug("Close Cube VPN");
@@ -211,7 +238,7 @@ public class NMApplet {
 			LOG.debug(su.getStandardError().toString());
 			fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_DISCONNECTED);
 		} catch (Exception e) {
-			LOG.error("Failed to start OpenVpn",e);
+			LOG.error("Failed to start OpenVpn", e);
 			fireVpnConnectionState(VpnConnectionState.CUBEVPN_CONNECTION_STATE_FAILED);
 		}
 	}
@@ -269,6 +296,4 @@ public class NMApplet {
 	public static interface VpnStateListener {
 		public void handle(VpnConnectionState sig);
 	}
-
-
 }
