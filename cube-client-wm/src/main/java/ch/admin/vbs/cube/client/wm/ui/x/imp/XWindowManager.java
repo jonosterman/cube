@@ -124,7 +124,7 @@ public final class XWindowManager implements IXWindowManager {
 	}
 
 	@Override
-	public void reparentWindow(Window parentWindow, Window insideWindow) {
+	public void reparentClientWindow(Window parentWindow, Window insideWindow, Rectangle x) {
 		synchronized (XWindowManager.this) {
 			// register window for events
 			registerWindowForEvents(insideWindow);
@@ -305,8 +305,9 @@ public final class XWindowManager implements IXWindowManager {
 		LOG.debug("unmap and reparentWindow() - child[{} / {}]  to root\n", getWindowName(window), window);
 	}
 
+
 	@Override
-	public void reparentWindowAndResize(Window parentWindow, Window childWindow, Rectangle bounds) {
+	public void reparentWindowAndResize(Window parentWindow, Window childWindow, Rectangle bounds, Window aaa, Rectangle bbb) {
 		LOG.debug("Reparent window [{}] to parent [{}]", childWindow, parentWindow);
 		Display display = x11.XOpenDisplay(displayName);
 		// move border window to new CubeFrame
@@ -395,7 +396,6 @@ public final class XWindowManager implements IXWindowManager {
 			case X11.CreateNotify: {
 				X11.XCreateWindowEvent xe = (X11.XCreateWindowEvent) event.getTypedValue(X11.XCreateWindowEvent.class);
 				registerWindowForExtraEvents(xe.window);
-				notifyWindowCreated(xe.window);
 			}
 				break;
 			case X11.ClientMessage: {
@@ -429,11 +429,7 @@ public final class XWindowManager implements IXWindowManager {
 	}
 
 	private void notifyWindowUpdated(Window window) {
-		cb.windowUpdated(window);
-	}
-
-	private void notifyWindowCreated(Window window) {
-		cb.windowCreated(window);
+		cb.windowTitleUpdated(window, getWindowName(window));
 	}
 
 	private void notifyWindowDestroyed(Window window) {

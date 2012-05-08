@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.client.ICubeClient;
+import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
 import ch.admin.vbs.cube.client.wm.client.VmHandle;
@@ -51,6 +52,7 @@ import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLayoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeWifiAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAttachUsbDevice;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAudioAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmConnectNic;
@@ -94,6 +96,7 @@ public class NavigationTabs extends JideTabbedPane {
 	private INetworkManager networkMgr;
 	private HashMap<String, String> selectedNics = new HashMap<String, String>();
 	private Executor exec = Executors.newCachedThreadPool();
+	private IUserInterface userUI;
 
 	public NavigationTabs(String monitorId) {
 		this.monitorId = monitorId;
@@ -409,18 +412,20 @@ public class NavigationTabs extends JideTabbedPane {
 		cubePopupMenu.add(showMenu);
 		//
 		cubePopupMenu.addSeparator();
-		cubePopupMenu.add(new JideMenu("WiFi Configuration..."));
+		cubePopupMenu.add(new CubeWifiAction(cubeUI,  I18nBundleProvider.getBundle().getString("cube.action.wifi.text"), userUI));
+		
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());
 	}
 
-	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr) {
+	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr, IUserInterface userUI) {
 		this.vmCtrl = vmCtrl;
 		this.vmMon = vmMon;
 		this.client = client;
 		this.cubeUI = cubeUI;
 		this.networkMgr = networkMgr;
+		this.userUI = userUI;
 		colorProvider.setVmMon(vmMon);
 		this.core = core;
 	}

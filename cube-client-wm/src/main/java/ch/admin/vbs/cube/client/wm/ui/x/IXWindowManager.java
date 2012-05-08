@@ -56,7 +56,7 @@ public interface IXWindowManager {
 	 *            the bounds of the new x11 window with the border
 	 * @return the new x11 window
 	 */
-	public abstract Window createBorderWindow(Window parentWindow, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds);
+	public abstract Window createBorderWindow(Window frame, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds);
 
 	/**
 	 * Removes the window with all his child windows.
@@ -75,8 +75,11 @@ public interface IXWindowManager {
 	 *            the child window to be reparent
 	 * @param bounds
 	 *            the bound to which the child should be resized and moved
+	 * @param rectangle 
+	 * @param client 
+	 * @param innerBounds 
 	 */
-	public abstract void reparentWindowAndResize(Window parentWindow, Window childWindow, Rectangle bounds);
+	public abstract void reparentWindowAndResize(Window frame, Window border, Rectangle bounds, Window client, Rectangle clientBounds);
 
 	/**
 	 * Destroys all thread by shutting down them.
@@ -87,7 +90,7 @@ public interface IXWindowManager {
 
 	public abstract String getWindowName(Window w);
 
-	public abstract void reparentWindow(Window borderWindow, Window w);
+	public abstract void reparentClientWindow(Window borderWindow, Window w, Rectangle bounds);
 
 	/** unmap and reparent to root */
 	public abstract void hideAndReparentToRoot(Window window);

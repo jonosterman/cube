@@ -564,11 +564,11 @@ public class VBoxProduct implements VBoxCacheListener {
 			session.getConsole().adoptSavedState(snapshot.getAbsolutePath());
 			safeUnlock(session);
 			// launch VM
-			progress = machine.launchVMProcess(session, "sdl", null);
+			progress = machine.launchVMProcess(session, "gui", null);
 		} else {
 			// power on machine
 			fireVmStateUpdate(model, vm, "Powering on", 0);
-			progress = machine.launchVMProcess(session, "sdl", null);
+			progress = machine.launchVMProcess(session, "gui", null);
 		}
 		// wait until completed
 		while (!progress.getCompleted()) {

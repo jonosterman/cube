@@ -31,6 +31,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.client.ICubeClient;
+import ch.admin.vbs.cube.client.wm.client.IUserInterface;
 import ch.admin.vbs.cube.client.wm.client.IVmChangeListener;
 import ch.admin.vbs.cube.client.wm.client.IVmControl;
 import ch.admin.vbs.cube.client.wm.client.IVmMonitor;
@@ -268,13 +269,14 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 
 	/** Injection 
 	 * @param cubeUI 
-	 * @param networkMgr */
-	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr) {
+	 * @param networkMgr 
+	 * @param userUI */
+	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr, IUserInterface userUI) {
 		this.vmMon = vmMon;
 		client.addListener(this);
 		this.client = client;
 		cmp = new VmHandleHumanComparator(vmMon);
-		tabs.setup(vmCtrl, vmMon, core, client, cubeUI, networkMgr);
+		tabs.setup(vmCtrl, vmMon, core, client, cubeUI, networkMgr, userUI);
 	}
 
 	private int findTabComponentIndex(VmHandle h) {

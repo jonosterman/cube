@@ -230,7 +230,7 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 			navBounds = new Rectangle(screen.getPosX(), screen.getPosY(), screen.getCurrentWidth(), NavigationBar.FRAME_HEIGHT);
 			navbar = new NavigationBar(screen.getId());
 			navbar.setBounds(navBounds);
-			navbar.setup(vmMonitor, vmControl, core, client, cubeUI, networkMgr);
+			navbar.setup(vmMonitor, vmControl, core, client, cubeUI, networkMgr, userIface);
 			navbar.setVisible(active);
 		}
 

@@ -16,12 +16,14 @@
 
 package ch.admin.vbs.cube.client.wm.ui.x;
 
+import java.awt.Rectangle;
+
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IWindowManagerCallback {
-	void windowCreated(Window window);
-
 	void windowDestroyed(Window window);
 
-	void windowUpdated(Window window);
+	void windowTitleUpdated(Window client, String title);
+	
+	Rectangle getPreferedClientBounds(Window window);
 }
