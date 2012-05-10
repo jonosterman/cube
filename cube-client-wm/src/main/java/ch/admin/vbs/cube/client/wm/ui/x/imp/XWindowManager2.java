@@ -23,6 +23,8 @@ import java.util.Collection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.awt.motif.X11Dingbats;
+
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
@@ -30,6 +32,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XConfigureEvent;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XSizeHints;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XTextProperty;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XWindowAttributes;
 
@@ -152,10 +155,13 @@ public final class XWindowManager2 implements IXWindowManager {
 		x11.XChangeSaveSet(display, client, X11.SetModeInsert);
 		// resize
 		x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
+
+//		x11.XSetWMSizeHints(display, client, hints, x11.XInternAtom(display, "WM_NORMAL_HINTS", false));
+		sendResizeEvent(display, client, clientBounds);
 		//
 		x11.XFlush(display);
 		// x11.XCloseDisplay(display);
-		LOG.debug(String.format("reparentWindow() [%d] - unmapped client[%s / %s] as child of border[%s]\n", result, getWindowName(client), client, border));
+		LOG.debug(String.format("reparentWindow() [%d] - unmapped client[%s / %s] as child of border[%s]", result, getWindowName(client), client, border));
 	}
 
 	@Override
@@ -290,6 +296,7 @@ public final class XWindowManager2 implements IXWindowManager {
 		// border in width)
 		x11.XMoveResizeWindow(display, border, bounds.x, bounds.y, bounds.width, bounds.height);
 		x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
+		sendResizeEvent(display, client, clientBounds);
 		x11.XMapWindow(display, client);
 		x11.XMapWindow(display, border);
 		x11.XFlush(display);
@@ -324,7 +331,8 @@ public final class XWindowManager2 implements IXWindowManager {
 				// VirtualBox to trigger guest resize..
 				Rectangle bnd = cb.getPreferedClientBounds(e.window);
 				if (bnd != null) {
-					x11.XMoveWindow(display, e.window, 1, 1);
+					//x11.XMoveWindow(display, e.window, 1, 1);
+					sendResizeEvent(display, e.window, bnd);
 					x11.XFlush(display);
 				}
 				// ----------------
@@ -513,10 +521,18 @@ public final class XWindowManager2 implements IXWindowManager {
 
 	private void sendResizeEvent(Display display, Window client, Rectangle bounds) {
 		LOG.debug("---> sendResizeEvent() to [{}] name[{}]", client, getWindowName(client));
+		
+//		
+//		XSizeHints hints = x11.XAllocSizeHints();
+//		hints.base_width = bounds.height;
+//		hints.base_height = bounds.width;
+//		hints.flags = new NativeLong(X11.PBaseSize);
+//		x11.XSetWMNormalHints(display, client, hints);
+		
 		// Send an event to force application (VirtualBox) to resize. It is
 		// needed if we move the VM on a 2nd screen with another resolution
 		// than the first one.
-		NativeLong event_mask = new NativeLong(X11.ConfigureNotify);
+		NativeLong event_mask = new NativeLong(X11.StructureNotifyMask);
 		XConfigureEvent event = new XConfigureEvent();
 		event.type = X11.ConfigureNotify;
 		event.display = display;

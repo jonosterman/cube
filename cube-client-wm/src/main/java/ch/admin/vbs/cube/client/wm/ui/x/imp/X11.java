@@ -1172,6 +1172,9 @@ public interface X11 extends Library {
 
 	int XDefaultDepthOfScreen(Screen screen);
 
+	
+	void XSetWMSizeHints(Display display, Window w, XSizeHints hints, Atom property);
+	
 	/***************************************************************************
 	 * RESERVED RESOURCE AND CONSTANT DEFINITIONS.
 	 **************************************************************************/
