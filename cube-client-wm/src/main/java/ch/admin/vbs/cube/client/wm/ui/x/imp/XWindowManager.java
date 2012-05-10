@@ -653,4 +653,9 @@ public final class XWindowManager implements IXWindowManager {
 			x11.XSendEvent(display, window, 1, event_mask, event);
 		}
 	}
+	@Override
+	public void adjustClientSize(Window w, Rectangle bound) {
+		// TODO Auto-generated method stub
+		
+	}
 }

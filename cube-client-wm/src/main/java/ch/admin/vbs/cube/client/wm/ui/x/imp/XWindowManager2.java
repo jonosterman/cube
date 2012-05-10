@@ -62,7 +62,6 @@ public final class XWindowManager2 implements IXWindowManager {
 	 * a Display which must be held open during the whole life time, so that the
 	 * registered events can be caught.
 	 */
-	private Display eventDisplay;
 	private Display display;
 	private IWindowManagerCallback cb;
 
@@ -102,9 +101,8 @@ public final class XWindowManager2 implements IXWindowManager {
 		 * register root window's events to be notified when a new window pops
 		 * up
 		 */
-		eventDisplay = x11.XOpenDisplay(displayName);
-		display = eventDisplay;// x11.XOpenDisplay(displayName);
-		x11.XSelectInput(eventDisplay, x11.XRootWindow(eventDisplay, screenIndex), new NativeLong(X11.SubstructureNotifyMask | X11.PropertyChangeMask
+		display = x11.XOpenDisplay(displayName);
+		x11.XSelectInput(display, x11.XRootWindow(display, screenIndex), new NativeLong(X11.SubstructureNotifyMask | X11.PropertyChangeMask
 				| X11.StructureNotifyMask));
 		/* start event thread */
 		eventThread = new Thread(new Runnable() {
@@ -115,8 +113,8 @@ public final class XWindowManager2 implements IXWindowManager {
 					while (!destroyed) {
 						try {
 							// check for new events
-							while (x11.XPending(eventDisplay) > 0) {
-								x11.XNextEvent(eventDisplay, event);
+							while (x11.XPending(display) > 0) {
+								x11.XNextEvent(display, event);
 								processEvent(event);
 							}
 							Thread.sleep(CHECKING_INTERVAL_FOR_NEW_EVENTS);
@@ -124,7 +122,6 @@ public final class XWindowManager2 implements IXWindowManager {
 							LOG.error("Error during catching events", e);
 						}
 					}
-					x11.XCloseDisplay(eventDisplay);
 					x11.XCloseDisplay(display);
 				} catch (Exception e) {
 					LOG.error("XEvent Thread Failed");
@@ -141,10 +138,8 @@ public final class XWindowManager2 implements IXWindowManager {
 		// - EnterWindowMask: to force focus on current VM
 		// - SubstructureNotifyMask: to get ConfigureNotify events
 		// - StructureNotifyMask: to get ConfigureNotify events
-		x11.XSelectInput(eventDisplay, client, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask
-				| X11.StructureNotifyMask));
+		x11.XSelectInput(display, client, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask | X11.StructureNotifyMask));
 		// re-parent the x window and unmap it
-		// Display display = x11.XOpenDisplay(displayName);
 		// Unmap client window (will be mapped only when explicitly displayed)
 		x11.XUnmapWindow(display, client);
 		x11.XFlush(display);
@@ -155,12 +150,9 @@ public final class XWindowManager2 implements IXWindowManager {
 		x11.XChangeSaveSet(display, client, X11.SetModeInsert);
 		// resize
 		x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
-
-//		x11.XSetWMSizeHints(display, client, hints, x11.XInternAtom(display, "WM_NORMAL_HINTS", false));
 		sendResizeEvent(display, client, clientBounds);
 		//
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 		LOG.debug(String.format("reparentWindow() [%d] - unmapped client[%s / %s] as child of border[%s]", result, getWindowName(client), client, border));
 	}
 
@@ -170,7 +162,6 @@ public final class XWindowManager2 implements IXWindowManager {
 		 * Look in the root window if there is a window with this name
 		 */
 		Window foundWindow = null;
-		// Display display = x11.XOpenDisplay(displayName);
 		// get the root window
 		Window rootWindow = x11.XRootWindow(display, screenIndex);
 		long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
@@ -192,7 +183,6 @@ public final class XWindowManager2 implements IXWindowManager {
 			}
 		}
 		// close display
-		// x11.XCloseDisplay(display);
 		x11.XFlush(display);
 		if (foundWindow == null) {
 			LOG.error("No XWindow found that match name [{}]", name);
@@ -204,7 +194,6 @@ public final class XWindowManager2 implements IXWindowManager {
 	public synchronized void showOnlyTheseWindow(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
 		LOG.debug("showOnlyTheseWindow()");
 		// connection to the x server)
-		// Display display = x11.XOpenDisplay(displayName);
 		if (showWindowList != null) {
 			// maps and sets all show window
 			for (Window window : showWindowList) {
@@ -212,6 +201,7 @@ public final class XWindowManager2 implements IXWindowManager {
 				// map window
 				x11.XMapWindow(display, window);
 				x11.XMapRaised(display, window);
+				// 
 			}
 		}
 		if (hideWindowList != null) {
@@ -228,7 +218,6 @@ public final class XWindowManager2 implements IXWindowManager {
 		}
 		// commit changes and close display
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 	}
 
 	@Override
@@ -237,7 +226,6 @@ public final class XWindowManager2 implements IXWindowManager {
 		 * connection to the x server and set resources permanent, otherwise
 		 * window would be destroyed by calling XCloseDisplay
 		 */
-		// Display display = x11.XOpenDisplay(displayName);
 		x11.XSetCloseDownMode(display, X11.RetainPermanent);
 		/*
 		 * Create window which will hold the virtual machine window and paints a
@@ -255,30 +243,25 @@ public final class XWindowManager2 implements IXWindowManager {
 				backgroundColor.getRGB());
 		LOG.debug("Bordered window created [{}]", borderWindow);
 		// close display
-		// x11.XCloseDisplay(display);
 		return borderWindow;
 	}
 
 	@Override
 	public void removeWindow(Window window) {
 		LOG.debug("Remove Window [{}]", window);
-		// Display display = x11.XOpenDisplay(displayName);
 		x11.XDestroyWindow(display, window);
 		// commit changes and close display
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 	}
 
 	@Override
 	public void hideAndReparentToRoot(Window window) {
-		// Display display = x11.XOpenDisplay(displayName);
 		// Map the virtual machine window as child to the border window
 		x11.XUnmapWindow(display, window);
 		Window rootWindow = x11.XRootWindow(display, screenIndex);
 		x11.XReparentWindow(display, window, rootWindow, 0, 0);
 		// commit changes and close display
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 		LOG.debug("unmap and reparentWindow() - child[{} / {}]  to root\n", getWindowName(window), window);
 	}
 
@@ -286,7 +269,6 @@ public final class XWindowManager2 implements IXWindowManager {
 	public void reparentWindowAndResize(Window frame, Window border, Rectangle bounds, Window client, Rectangle clientBounds) {
 		// (used when moving a VM from a monitor to another one)
 		LOG.debug("Reparent window [{}] to parent [{}]", border, frame);
-		// Display display = x11.XOpenDisplay(displayName);
 		// move border window to new CubeFrame
 		x11.XUnmapWindow(display, border);
 		x11.XUnmapWindow(display, client);
@@ -300,9 +282,6 @@ public final class XWindowManager2 implements IXWindowManager {
 		x11.XMapWindow(display, client);
 		x11.XMapWindow(display, border);
 		x11.XFlush(display);
-		// close display
-		// sendResizeEvent(display, border, outerBounds);
-		// x11.XCloseDisplay(display);
 	}
 
 	@Override
@@ -325,42 +304,28 @@ public final class XWindowManager2 implements IXWindowManager {
 			switch (event.type) {
 			case X11.ResizeRequest: {
 				X11.XResizeRequestEvent e = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
-				// this events are sent from VM's window. Does not process them
-				// ----------------
-				// Completely hacked XMoveWindow() in order to
-				// VirtualBox to trigger guest resize..
-				Rectangle bnd = cb.getPreferedClientBounds(e.window);
-				if (bnd != null) {
-					//x11.XMoveWindow(display, e.window, 1, 1);
-					sendResizeEvent(display, e.window, bnd);
-					x11.XFlush(display);
-				}
-				// ----------------
-				// Rectangle bnd = cb.getPreferedClientBounds(e.window);
-				// if (bnd != null) {
-				// LOG.debug(String.format("XResizeRequestEvent (%s) (%dx%d) -> executed(%dx%d)",
-				// getWindowName(e.window), e.width, e.height, bnd.width,
-				// bnd.height));
-				// Display display = x11.XOpenDisplay(displayName);
-				// x11.XResizeWindow(display, e.window, bnd.width, bnd.height);
-				// sendResizeEvent(display, e.window, bnd);
-				// x11.XCloseDisplay(display);
-				// } else {
-				LOG.debug(String.format("XResizeRequestEvent (%s) (%dx%d) -> ignored", getWindowName(e.window), e.width, e.height));
-				// }
+				LOG.debug(String.format("ResizeRequest for managed window [%s] (%d:%d)", getWindowName(e.window), e.width, e.height));
 			}
 				break;
 			case X11.EnterNotify:
 				// we catch EnterNotify to ensure that the visible VM will get
 				// the keyboard focus.
 				X11.XCrossingEvent enterWindowEvent = (X11.XCrossingEvent) event.getTypedValue(X11.XCrossingEvent.class);
-				x11.XSetInputFocus(eventDisplay, enterWindowEvent.window, X11.RevertToParent, new NativeLong(0));
+				x11.XSetInputFocus(display, enterWindowEvent.window, X11.RevertToParent, new NativeLong(0));
+				x11.XFlush(display);
+//				// vbox hack
+//				Rectangle bound = cb.getPreferedClientBounds(enterWindowEvent.window);
+//				if (bound != null) {
+//					LOG.debug("adjustClientSize [{}]", getWindowName(enterWindowEvent.window));
+//					x11.XMoveResizeWindow(display, enterWindowEvent.window, bound.x, bound.y, bound.width, bound.height-1);
+//					x11.XFlush(display);
+//				}
 				break;
 			case X11.PropertyNotify: {
 				// we catch PropertyNotify to identify VM's window as soon as
 				// its title is set and re-parent it in a border window
 				X11.XPropertyEvent xe = (X11.XPropertyEvent) event.getTypedValue(X11.XPropertyEvent.class);
-				String atomName = x11.XGetAtomName(eventDisplay, xe.atom);
+				String atomName = x11.XGetAtomName(display, xe.atom);
 				if ("WM_NAME".equals(atomName)) {
 					LOG.debug("Window name changed [{}]", getWindowName(xe.window));
 					notifyWindowTitleChange(xe.window);
@@ -371,8 +336,8 @@ public final class XWindowManager2 implements IXWindowManager {
 				// we catch CreateNotify to register an event listener to get
 				// PropertyNotify for this window (see above)
 				X11.XCreateWindowEvent xe = (X11.XCreateWindowEvent) event.getTypedValue(X11.XCreateWindowEvent.class);
-				x11.XSelectInput(eventDisplay, xe.window, new NativeLong(X11.PropertyChangeMask));
-				x11.XFlush(eventDisplay);
+				x11.XSelectInput(display, xe.window, new NativeLong(X11.PropertyChangeMask));
+				x11.XFlush(display);
 			}
 				break;
 			case X11.DestroyNotify: {
@@ -382,45 +347,22 @@ public final class XWindowManager2 implements IXWindowManager {
 				notifyWindowDestroyed(xe.window);
 			}
 				break;
-			// case X11.MapNotify: {
-			// X11.XMapEvent e = (X11.XMapEvent)
-			// event.getTypedValue(X11.XMapEvent.class);
-			// Display display = x11.XOpenDisplay(displayName);
-			// // Completely hacked XMoveWindow() in order to
-			// // VirtualBox to trigger guest resize..
-			// x11.XMoveWindow(display, e.window, 1, 1);
-			// x11.XFlush(display);
-			// //
-			// x11.XCloseDisplay(display);
-			// }
-			// break;
 			case X11.ConfigureNotify: {
 				// we catch ConfigureNotify to enforce the desired frame size on
 				// VM's windows.
 				X11.XConfigureEvent e = (X11.XConfigureEvent) event.getTypedValue(X11.XConfigureEvent.class);
-				if (e.window == null) {
-					LOG.debug(String.format("ConfigureNotify for unmanaged window [%s] (%d:%d)(%dx%d)", e.window, e.x, e.y, e.width, e.height));
-				} else {
-					Rectangle prefBnds = cb.getPreferedClientBounds(e.window);
-					if (prefBnds == null) {
-						LOG.debug(String.format("ConfigureNotify for unmanaged window [%s/%s] (%d:%d)(%dx%d)", e.window, getWindowName(e.window), e.x, e.y,
-								e.width, e.height));
-					} else {
-						LOG.debug(String.format("ConfigureNotify for managed window [%s] (%d:%d)(%dx%d)", getWindowName(e.window), e.x, e.y, e.width, e.height));
-						// check client
-						// if (e.width != prefBnds.width || e.height !=
-						// prefBnds.getHeight()) {
-						// LOG.debug("Force client resizing ({}x{})",
-						// prefBnds.width, prefBnds.height);
-						// // force resize
-						// x11.XMoveResizeWindow(display, e.window, prefBnds.x,
-						// prefBnds.y, prefBnds.width, prefBnds.height);
-						// }
-						if (e.x != prefBnds.x || e.y != prefBnds.x) {
-							LOG.debug("Force client moving ({}:{})", prefBnds.x, prefBnds.y);
-							// force move at the right place
-							x11.XMoveWindow(display, e.window, prefBnds.x, prefBnds.y);
-						}
+				Rectangle prefBnds = (e.window == null) ? null : cb.getPreferedClientBounds(e.window);
+				if (prefBnds != null) {
+					LOG.debug(String.format("ConfigureNotify for managed window [%s] (%d:%d)(%dx%d)", getWindowName(e.window), e.x, e.y, e.width, e.height));
+					final boolean origineOk = (e.x == prefBnds.x && e.y == prefBnds.x);
+					final boolean sizeOk = (prefBnds.width == e.width && prefBnds.height == e.height);
+					if (!origineOk  || !sizeOk ) {
+						// force resize
+						LOG.debug(String.format("ConfigureNotify (%s) (%dx%d) -> force resize (0:0)(%dx%d)", getWindowName(e.window), e.width, e.height,
+								prefBnds.width, prefBnds.height));
+						x11.XMoveResizeWindow(display, e.window, 0, 0, prefBnds.width, prefBnds.height);
+						sendResizeEvent(display, e.window, prefBnds);
+						x11.XFlush(display);
 					}
 				}
 			}
@@ -445,13 +387,20 @@ public final class XWindowManager2 implements IXWindowManager {
 		if (w == null)
 			return null;
 		XTextProperty windowTitle = new XTextProperty();
-		x11.XFetchName(eventDisplay, w, windowTitle);
+		x11.XFetchName(display, w, windowTitle);
 		return windowTitle.value;
 	}
 
 	@Override
 	public void setWindowManagerCallBack(IWindowManagerCallback cb) {
 		this.cb = cb;
+	}
+
+	@Override
+	public void adjustClientSize(Window client, Rectangle bound) {
+		LOG.debug("adjustClientSize [{}]", getWindowName(client));
+		x11.XMoveResizeWindow(display, client, bound.x, bound.y, bound.width, bound.height-2);
+		x11.XFlush(display);
 	}
 
 	/**
@@ -496,39 +445,31 @@ public final class XWindowManager2 implements IXWindowManager {
 	}
 
 	public void resize(Window client, int w, int h) {
-		// Display display = x11.XOpenDisplay(displayName);
 		LOG.debug("RESIZE [{}]", getWindowName(client));
 		x11.XResizeWindow(display, client, w, h);
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 	}
 
 	public void moveResize(Window client, int x, int y, int w, int h) {
-		// Display display = x11.XOpenDisplay(displayName);
 		LOG.debug("MOVE+RESIZE [{}]", getWindowName(client));
 		x11.XMoveResizeWindow(display, client, x, y, w, h);
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 	}
 
 	public void move(Window client, int x, int y) {
-		// Display display = x11.XOpenDisplay(displayName);
 		LOG.debug("MOVE [{}]", getWindowName(client));
 		x11.XMoveWindow(display, client, x, y);
 		x11.XFlush(display);
-		// x11.XCloseDisplay(display);
 	}
 
 	private void sendResizeEvent(Display display, Window client, Rectangle bounds) {
 		LOG.debug("---> sendResizeEvent() to [{}] name[{}]", client, getWindowName(client));
-		
-//		
-//		XSizeHints hints = x11.XAllocSizeHints();
-//		hints.base_width = bounds.height;
-//		hints.base_height = bounds.width;
-//		hints.flags = new NativeLong(X11.PBaseSize);
-//		x11.XSetWMNormalHints(display, client, hints);
-		
+		//
+		// XSizeHints hints = x11.XAllocSizeHints();
+		// hints.base_width = bounds.height;
+		// hints.base_height = bounds.width;
+		// hints.flags = new NativeLong(X11.PBaseSize);
+		// x11.XSetWMNormalHints(display, client, hints);
 		// Send an event to force application (VirtualBox) to resize. It is
 		// needed if we move the VM on a 2nd screen with another resolution
 		// than the first one.

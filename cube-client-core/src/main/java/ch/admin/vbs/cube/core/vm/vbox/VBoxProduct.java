@@ -385,8 +385,8 @@ public class VBoxProduct implements VBoxCacheListener {
 			machine.setHWVirtExProperty(HWVirtExPropertyType.NestedPaging, cfg.getOptionAsBoolean(VBoxOption.Pae));
 			machine.setMemorySize(cfg.getOptionAsLong(VBoxOption.BaseMemory));
 			machine.setVRAMSize(cfg.getOptionAsLong(VBoxOption.VideoMemory));
-			machine.setAccelerate2DVideoEnabled(false);
-			machine.setAccelerate3DEnabled(false);
+			machine.setAccelerate2DVideoEnabled(true);
+			machine.setAccelerate3DEnabled(true);
 			machine.setCPUCount(1l);
 			machine.setCPUProperty(CPUPropertyType.PAE, true);
 			machine.getUSBController().setEnabled(true);

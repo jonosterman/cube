@@ -69,4 +69,7 @@ public interface IUserInterface {
 	void refresh();
 
 	void setSessionStateIcon(ConnectionIcon icon);
+	
+	void adjustGuestSize(String vmId);
+	
 }

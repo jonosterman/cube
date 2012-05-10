@@ -94,4 +94,6 @@ public interface IXWindowManager {
 
 	/** unmap and reparent to root */
 	public abstract void hideAndReparentToRoot(Window window);
+	
+	public abstract void adjustClientSize(Window w, Rectangle bound);
 }

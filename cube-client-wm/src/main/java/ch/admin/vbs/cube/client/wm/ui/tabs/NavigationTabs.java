@@ -58,6 +58,7 @@ import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAudioAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmConnectNic;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDeleteAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmDetachUsbDevice;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmGuestSizeAdjustAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmHideAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmInstallAdditionsAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmPoweroffAction;
@@ -142,6 +143,8 @@ public class NavigationTabs extends JideTabbedPane {
 									VmHandle h = comp.getVmHandle();
 									if (comp != null && h != null) {
 										vmCtrl.showVm(h);
+										// adjust size (VirtualBox hack)
+										userUI.adjustGuestSize(h.getVmId());
 									} else {
 										vmCtrl.hideAllVms(NavigationTabs.this.monitorId);
 									}
@@ -232,6 +235,7 @@ public class NavigationTabs extends JideTabbedPane {
 				vmPopupMenu.add(nicMenu);
 				populateNicMenu(h, nicMenu);
 			}
+			vmPopupMenu.add(new VmGuestSizeAdjustAction(h, userUI));
 			break;
 		case STAGABLE:
 			vmPopupMenu.add(new VmStageAction(h));
