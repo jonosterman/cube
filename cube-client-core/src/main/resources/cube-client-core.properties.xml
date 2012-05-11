@@ -57,5 +57,8 @@
     <entry key="INetworkManager.vpnKey">/etc/openvpn/keys/__HOSTNAME__.key</entry>
     
     <!-- ip to check to decide if a VPN is needed to connect cube -->
+
+	<!-- cryptsetup -->
+	<entry key="cryptsetup.dev">/dev/sda5</entry>
     
 </properties>

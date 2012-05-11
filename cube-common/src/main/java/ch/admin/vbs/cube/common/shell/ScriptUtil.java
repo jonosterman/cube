@@ -50,4 +50,13 @@ public class ScriptUtil {
 		shell.run(baseDir, ShellUtil.NO_TIMEOUT, commandWithArgs);
 		return shell;
 	}
+	/**
+	 * Execute command in script directory
+	 */
+	public ShellUtil executeWithStdin(String stdin, String... commandWithArgs) throws ShellUtilException {
+		ShellUtil shell = new ShellUtil();
+		shell.setStdIn(stdin);
+		shell.run(baseDir, ShellUtil.NO_TIMEOUT, commandWithArgs);
+		return shell;
+	}
 }

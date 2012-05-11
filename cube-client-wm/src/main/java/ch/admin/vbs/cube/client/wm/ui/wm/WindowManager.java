@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.client.wm.ui.wm;
 
 import java.awt.Color;
@@ -56,6 +55,7 @@ import ch.admin.vbs.cube.client.wm.ui.CubeUI.CubeScreen;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.IWindowsControl;
 import ch.admin.vbs.cube.client.wm.ui.dialog.ButtonLessDialog;
+import ch.admin.vbs.cube.client.wm.ui.dialog.CryptPasswordDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeConfirmationDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeInitialDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialog;
@@ -520,6 +520,19 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 	}
 
+	@Override
+	public void showDiskPasswordChangeDialog() {
+		LOG.debug("showDiskPasswordChangeDialog()");
+		synchronized (lock) {
+			closeCurrentDialog();
+			hideNavigationBarAndVms();
+			// dialog is non-blocking
+			final CryptPasswordDialog msgdialog = new CryptPasswordDialog(getDefaultParentFrame());
+			dialog = msgdialog;
+			swingOpen(msgdialog);
+		}
+	}
+
 	private void swingOpen(final CubeWizard msgdialog) {
 		SwingUtilities.invokeLater(new Runnable() {
 			@Override
@@ -706,14 +719,14 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 	}
 
-	
 	@Override
 	public void adjustGuestSize(String vmId) {
 		ManagedWindow m = managedModel.getManaged(vmId);
-		if (m!=null && m.client!=null) {
+		if (m != null && m.client != null) {
 			xwm.adjustClientSize(m.client, m.getClientBounds());
 		}
 	}
+
 	// ###############################################
 	// Injections
 	// ###############################################

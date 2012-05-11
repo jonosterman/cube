@@ -17,8 +17,11 @@
 package ch.admin.vbs.cube.common.shell;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -45,6 +48,7 @@ public class ShellUtil {
 	private int exitCode = NOT_INITIALIZED;
 	private StringBuffer stdOut;
 	private StringBuffer stdErr;
+	private ArrayList<String> stdIn;
 
 	/** Constructor. */
 	public ShellUtil() {
@@ -78,6 +82,15 @@ public class ShellUtil {
 			}
 			// start process
 			proc = pb.start();
+			if (stdIn != null && stdIn.size() > 0) {
+				BufferedWriter b = new BufferedWriter(new OutputStreamWriter(
+						proc.getOutputStream()));
+				for (String inp : stdIn) {
+					b.write(inp);
+				}
+
+				b.close();
+			}
 			// create BufferedReaders to read standard and error output
 			bufferedStdOutput = new BufferedReader(new InputStreamReader(proc.getInputStream()));
 			bufferedStdError = new BufferedReader(new InputStreamReader(proc.getErrorStream()));
@@ -274,5 +287,12 @@ public class ShellUtil {
 		}
 		// remove last space
 		return sb.substring(0, sb.length() - 1);
+	}
+
+	public void setStdIn(String... stdIn) {
+		this.stdIn = new ArrayList<String>();
+		for(String s : stdIn) {
+			this.stdIn.add(s);
+		}
 	}
 }

@@ -49,6 +49,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI.CubeScreen;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
+import ch.admin.vbs.cube.client.wm.ui.tabs.action.CryptPasswdChangeAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLayoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeLogoutAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeShutdownAction;
@@ -417,6 +418,8 @@ public class NavigationTabs extends JideTabbedPane {
 		//
 		cubePopupMenu.addSeparator();
 		cubePopupMenu.add(new CubeWifiAction(cubeUI,  I18nBundleProvider.getBundle().getString("cube.action.wifi.text"), userUI));
+		cubePopupMenu.addSeparator();
+		cubePopupMenu.add(new CryptPasswdChangeAction(userUI));
 		
 		// place menu under the logo button
 		JComponent comp = (JComponent) mouseEvent.getSource();

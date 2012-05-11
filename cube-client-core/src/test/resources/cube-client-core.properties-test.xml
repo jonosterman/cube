@@ -32,6 +32,7 @@
 	
 	<!-- where to store pipe files -->
 	<entry key="pipe.baseDir">/tmp</entry>
+<entry key="cryptsetup.dev">/root/</entry>
 
 	<!-- VmManager type/factory mapping -->
 	<entry key="vmManager.managerFactory.VirtualBox">ch.admin.vbs.cube.core.vm.vbox.VboxProductManager</entry>
