@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package ch.admin.vbs.cube.client.wm.xrandx.impl;
 
 import java.io.BufferedReader;
@@ -31,7 +30,7 @@ public class AcpiListener implements Runnable {
 	private BufferedReader bufferedStdOutput;
 	private static final Logger LOG = LoggerFactory.getLogger(AcpiListener.class);
 	private ArrayList<IAcpiEventListener> listeners = new ArrayList<AcpiListener.IAcpiEventListener>(2);
-	
+
 	public enum AcpiEventType {
 		EXTERN_DISPLAY_BUTTON, LID_EVENT
 	}
@@ -62,14 +61,16 @@ public class AcpiListener implements Runnable {
 			while (running) {
 				String line = bufferedStdOutput.readLine();
 				LOG.debug("Got ACPI command [{}]", line);
-				if (screenSwitchHotkeyPtrn.matcher(line).matches()) {
-					fireEvent(new AcpiEvent(AcpiEventType.EXTERN_DISPLAY_BUTTON));
-				} else if (lidOpenedPtrn.matcher(line).matches()) {
-					fireEvent(new AcpiEvent(AcpiEventType.LID_EVENT));
+				if (line != null) {
+					if (screenSwitchHotkeyPtrn.matcher(line).matches()) {
+						fireEvent(new AcpiEvent(AcpiEventType.EXTERN_DISPLAY_BUTTON));
+					} else if (lidOpenedPtrn.matcher(line).matches()) {
+						fireEvent(new AcpiEvent(AcpiEventType.LID_EVENT));
+					}
 				}
 			}
 		} catch (Exception e) {
-			LOG.error("ACPI Listener exit abnormaly",e);
+			LOG.error("ACPI Listener exit abnormaly", e);
 		}
 	}
 

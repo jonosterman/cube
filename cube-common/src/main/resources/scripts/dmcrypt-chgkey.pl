@@ -86,8 +86,8 @@ sub changekey {
 		die "[ERROR] device [$device] does not exist.";
 	}
 
-	#execCmd("cryptsetup luksChangeKey $device") == 0 or die "Failed change Key on device [$device]. $?";
-	execCmd("cryptsetup luksAddKey $device") == 0 or die "Failed change Key on device [$device]. $?";
+	execCmd("cryptsetup luksChangeKey $device") == 0 or die "Failed change Key on device [$device]. $?";
+	#execCmd("cryptsetup luksAddKey $device") == 0 or die "Failed change Key on device [$device]. $?";
 }
 
 ##########################################

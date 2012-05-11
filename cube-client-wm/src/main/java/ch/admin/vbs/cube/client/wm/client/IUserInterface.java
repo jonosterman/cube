@@ -62,7 +62,7 @@ public interface IUserInterface {
 	 */
 	void showConfirmationDialog(String messageKey, String requestId);
 
-	void showDiskPasswordChangeDialog();
+	void showBootPasswordDialog();
 	
 	
 	/** close current dialog. */

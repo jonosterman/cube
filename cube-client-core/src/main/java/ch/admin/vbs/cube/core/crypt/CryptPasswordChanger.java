@@ -12,7 +12,8 @@ import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 public class CryptPasswordChanger {
 	private static final Logger LOG = LoggerFactory
 			.getLogger(CryptPasswordChanger.class);
-	private static Pattern valid = Pattern.compile("[-a-zA-Z0-9_+*%()&/\\?!\\[\\]\\{\\}\\.,:;@#\\|]+");
+	public static final String US_KBD_ALLOWED_REGEX = "^[-\\w+/.,\\\\';\\]\\[=`~!@#$%^&*()_+}{|\":?><]+$";
+	private static Pattern valid = Pattern.compile(US_KBD_ALLOWED_REGEX);
 	public boolean changePassword(final String oldPw, final String newPw) {
 		String dev = CubeClientCoreProperties.getProperty("cryptsetup.dev");
 		if (dev == null) {

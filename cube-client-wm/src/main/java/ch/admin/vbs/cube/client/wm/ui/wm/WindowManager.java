@@ -37,7 +37,6 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextField;
-import javax.swing.ListModel;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
 
@@ -54,17 +53,16 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI.CubeScreen;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.IWindowsControl;
+import ch.admin.vbs.cube.client.wm.ui.dialog.BootPasswordDialog;
+import ch.admin.vbs.cube.client.wm.ui.dialog.BootPasswordDialog.BootPasswordListener;
 import ch.admin.vbs.cube.client.wm.ui.dialog.ButtonLessDialog;
-import ch.admin.vbs.cube.client.wm.ui.dialog.CryptPasswordDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeConfirmationDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeInitialDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialogListener;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
-import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager.ManagedWindow;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager2;
 import ch.admin.vbs.cube.common.RelativeFile;
@@ -521,13 +519,19 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	}
 
 	@Override
-	public void showDiskPasswordChangeDialog() {
+	public void showBootPasswordDialog() {
 		LOG.debug("showDiskPasswordChangeDialog()");
 		synchronized (lock) {
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// dialog is non-blocking
-			final CryptPasswordDialog msgdialog = new CryptPasswordDialog(getDefaultParentFrame());
+			final BootPasswordDialog msgdialog = new BootPasswordDialog(getDefaultParentFrame());
+			msgdialog.addPasswordDialogListener(new BootPasswordListener() {
+				@Override
+				public void closed() {
+					showNavigationBarAndVms(true);
+				}
+			});
 			dialog = msgdialog;
 			swingOpen(msgdialog);
 		}
