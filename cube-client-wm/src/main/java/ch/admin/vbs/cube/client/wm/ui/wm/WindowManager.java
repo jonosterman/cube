@@ -529,6 +529,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			msgdialog.addPasswordDialogListener(new BootPasswordListener() {
 				@Override
 				public void closed() {
+					closeCurrentDialog();
 					showNavigationBarAndVms(true);
 				}
 			});
