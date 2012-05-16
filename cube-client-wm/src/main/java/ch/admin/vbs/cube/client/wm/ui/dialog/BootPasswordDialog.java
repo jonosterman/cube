@@ -2,14 +2,10 @@
 package ch.admin.vbs.cube.client.wm.ui.dialog;
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -18,7 +14,6 @@ import java.util.concurrent.Executors;
 
 import javax.swing.AbstractAction;
 import javax.swing.JButton;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -28,8 +23,6 @@ import javax.swing.SpringLayout;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sun.misc.JavaLangAccess;
 
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
 import ch.admin.vbs.cube.client.wm.utils.IconManager;

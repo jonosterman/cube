@@ -43,9 +43,7 @@ import org.virtualbox_4_1.IEventSource;
 import org.virtualbox_4_1.IGuestPropertyChangedEvent;
 import org.virtualbox_4_1.IHostUSBDevice;
 import org.virtualbox_4_1.IMachine;
-import org.virtualbox_4_1.IMachineDataChangedEvent;
 import org.virtualbox_4_1.IMachineEvent;
-import org.virtualbox_4_1.IMachineStateChangedEvent;
 import org.virtualbox_4_1.IMedium;
 import org.virtualbox_4_1.INetworkAdapter;
 import org.virtualbox_4_1.IProgress;
@@ -65,7 +63,6 @@ import org.virtualbox_4_1.StorageControllerType;
 import org.virtualbox_4_1.VBoxEventType;
 import org.virtualbox_4_1.VBoxException;
 import org.virtualbox_4_1.VirtualBoxManager;
-import org.virtualbox_4_1.jaxws.VboxPortType;
 
 import ch.admin.vbs.cube.common.CubeException;
 import ch.admin.vbs.cube.common.UuidGenerator;

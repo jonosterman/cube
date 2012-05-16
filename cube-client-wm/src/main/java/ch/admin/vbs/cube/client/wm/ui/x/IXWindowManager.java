@@ -39,7 +39,7 @@ public interface IXWindowManager {
 	 * @param showWindowList
 	 *            the list of showing windows (normally just one)
 	 */
-	public abstract void showOnlyTheseWindow(Collection<Window> hideWindowList, Collection<Window> showWindowList);
+	public abstract void showOnlyTheseWindows(Collection<Window> hideWindowList, Collection<Window> showWindowList);
 
 	/**
 	 * Creates a new x11 window with a border and binds it to the given parent.

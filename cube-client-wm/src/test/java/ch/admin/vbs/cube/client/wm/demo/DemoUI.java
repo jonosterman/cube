@@ -48,10 +48,7 @@ import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.impl.CubeCore;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
-import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
-import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
-import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
 
 /**
  * This demo application is used to develop and test the user UI (tabs, pop-ups,
@@ -88,7 +85,7 @@ public class DemoUI {
 		ioc.addBean(new VmMonitor());
 		ioc.addBean(new VmActionListener());
 		ioc.addBean(new CubeActionListener());
-		ioc.addBean(XWindowManager.getInstance());
+		ioc.addBean(new XWindowManager());
 		ioc.addBean(new WindowManager());
 		ioc.addBean(new CubeCore());
 		ioc.addBean(new SessionManager());

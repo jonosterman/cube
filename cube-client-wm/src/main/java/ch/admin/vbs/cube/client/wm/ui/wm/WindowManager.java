@@ -64,7 +64,7 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager2;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 
@@ -93,7 +93,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private ICubeClient client;
 	private ICubeUI cubeUI;
 	private ManagedWindowModel managedModel = new ManagedWindowModel();
-	private JFrame xframe;
+	private JFrame debugWindow;
 
 	public WindowManager() {
 	}
@@ -134,13 +134,11 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		ArrayList<Window> show = new ArrayList<Window>();
 		// add all bordered windows into 'hide' list.
 		for (ManagedWindow managed : managedModel.list()) {
-			Window border = managed.border;
-			if (border != null)
-				hide.add(border);
+			if (managed.border != null)
+				hide.add(managed.border);
 		}
 		// add also NavigationBar frames to 'hide' list
 		for (CubeScreen n : cubeUI.getScreens()) {
-			LOG.trace("Hide navigation bar [{}]", n.getNavigationBar().getTitle());
 			hide.add(getXWindow(n.getNavigationBar()));
 		}
 		// add window to show
@@ -149,7 +147,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		}
 		// apply changes
 		synchronized (xwm) {
-			xwm.showOnlyTheseWindow(hide, show);
+			xwm.showOnlyTheseWindows(hide, show);
 		}
 	}
 
@@ -186,15 +184,15 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				}
 			}
 			// show windows
-			// --
-			if (xframe != null) {
-				Window x = getXWindow(xframe);
+			// -- debug window --
+			if (debugWindow != null) {
+				Window x = getXWindow(debugWindow);
 				if (x != null)
 					show.add(x);
 			}
-			// --
+			// -- debug window --
 			synchronized (xwm) {
-				xwm.showOnlyTheseWindow(hide, show);
+				xwm.showOnlyTheseWindows(hide, show);
 			}
 		}
 	}
@@ -218,7 +216,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			this.frame = frame;
 			// since we do not have a reference to the corresponding handle yet,
 			// we are unable to find out the right border color.
-			// @TODO update borderr color when handle is updated
+			// @TODO update border color when handle is updated
 			borderBounds = computeBounds(frame);
 			Color borderColor = Color.GRAY;
 			border = xwm.createBorderWindow(xwm.findWindowByTitle(frame.getTitle()), BORDER_SIZE, borderColor, BACKGROUND_COLOR, getBorderBoundsForX());
@@ -251,7 +249,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 		/** X does not include border bound in total width */
 		public Rectangle getBorderBoundsForX() {
-			return new Rectangle(borderBounds.x, borderBounds.y, borderBounds.width - 2 * BORDER_SIZE, borderBounds.height - 2 * BORDER_SIZE);
+			return new Rectangle(borderBounds.x, borderBounds.y, borderBounds.width - (2 * BORDER_SIZE), borderBounds.height - (2 * BORDER_SIZE));
 		}
 
 		/** client window bounds within border window */
@@ -267,7 +265,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		public String isManagable(String windowTitle) {
 			Matcher appMx = windowPatternVirtualMachine.matcher(windowTitle);
 			if (appMx.matches()) {
-				// This is a VirtualBox Window. create a cache entry
+				// This is a VirtualBox Window. return VM's ID extracted from window title
 				return appMx.group(1);
 			}
 			return null;
@@ -529,6 +527,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			msgdialog.addPasswordDialogListener(new BootPasswordListener() {
 				@Override
 				public void closed() {
+					LOG.debug("BootPassword dialog closed. Display VMs again.");
+					closeCurrentDialog();
 					showNavigationBarAndVms(true);
 				}
 			});
@@ -652,12 +652,10 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		LOG.trace("refresh()");
 		synchronized (lock) {
 			if (dialog == null) {
-				LOG.trace("Refresh WM: show VMs + navbar");
+				LOG.trace("refresh() -> show VMs + navbar");
 				showNavigationBarAndVms(true);
 			} else {
-				LOG.trace("Refresh WM: show Dialog");
-				ArrayList<Window> show = new ArrayList<Window>();
-				ArrayList<Window> hide = new ArrayList<Window>();
+				LOG.trace("refresh() -> show Dialog");
 				// hide VMs' windows
 				hideNavigationBarAndVms(xwm.findWindowByTitle(CubeWizard.WIZARD_WINDOW_TITLE));
 			}
@@ -752,12 +750,12 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		panel.setPreferredSize(new Dimension(600, 300));
 		SpringLayout layout = new SpringLayout();
 		panel.setLayout(layout);
-		if (xframe != null) {
-			xframe.setVisible(false);
-			xframe.dispose();
+		if (debugWindow != null) {
+			debugWindow.setVisible(false);
+			debugWindow.dispose();
 		}
-		xframe = new JFrame("xyz");
-		xframe.setContentPane(panel);
+		debugWindow = new JFrame("xyz");
+		debugWindow.setContentPane(panel);
 		JLabel lw = new JLabel("Width");
 		JLabel lh = new JLabel("Height");
 		JLabel lx = new JLabel("X");
@@ -837,7 +835,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				ManagedWindow w = (ManagedWindow) windowl.getSelectedValue();
 				if (w != null) {
 					LOG.debug("move + resize!");
-					((XWindowManager2) xwm).moveResize(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()),
+					((XWindowManager) xwm).moveResize(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()),
 							Integer.parseInt(fw.getText()), Integer.parseInt(fh.getText()));
 				}
 			}
@@ -848,20 +846,20 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				ManagedWindow w = (ManagedWindow) windowl.getSelectedValue();
 				if (w != null) {
 					LOG.debug("move!");
-					((XWindowManager2) xwm).move(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()));
+					((XWindowManager) xwm).move(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()));
 				}
 			}
 		});
 		bclose.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				xframe.setVisible(false);
-				xframe.dispose();
+				debugWindow.setVisible(false);
+				debugWindow.dispose();
 			}
 		});
 		//
-		xframe.setLocation(100, 100);
-		xframe.pack();
-		xframe.setVisible(true);
+		debugWindow.setLocation(100, 100);
+		debugWindow.pack();
+		debugWindow.setVisible(true);
 	}
 }

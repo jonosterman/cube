@@ -219,16 +219,17 @@ public class NavigationTabs extends JideTabbedPane {
 		case STOPPED:
 			vmPopupMenu.add(new VmStartAction(h));
 			vmPopupMenu.add(new VmDeleteAction(h));
+			vmPopupMenu.add(new VmHideAction(h, false));
 			break;
 		case RUNNING:
 			vmPopupMenu.add(new VmSaveAction(h));
 			vmPopupMenu.add(new VmPoweroffAction(h));
 			vmPopupMenu.addSeparator();
-			vmPopupMenu.add(new VmInstallAdditionsAction(h));
+			vmPopupMenu.add(new VmGuestSizeAdjustAction(h, userUI));
 			vmPopupMenu.add(new VmAudioAction(h, vmMon.getVmName(h)));
-			// allows to connect USB device to VM
 			JideMenu usbMenu = new JideMenu(I18nBundleProvider.getBundle().getString("cube.action.connectusb.text"));
 			vmPopupMenu.add(usbMenu);
+			// allows to connect USB device to VM
 			populateUsbMenu(h, usbMenu);
 			// allows unclassified VMs to be reconnected to local NICs
 			if (vmMon.getVmClassification(h) == CubeClassification.UNCLASSIFIED) {
@@ -236,10 +237,12 @@ public class NavigationTabs extends JideTabbedPane {
 				vmPopupMenu.add(nicMenu);
 				populateNicMenu(h, nicMenu);
 			}
-			vmPopupMenu.add(new VmGuestSizeAdjustAction(h, userUI));
+			vmPopupMenu.addSeparator();
+			vmPopupMenu.add(new VmInstallAdditionsAction(h));
 			break;
 		case STAGABLE:
 			vmPopupMenu.add(new VmStageAction(h));
+			vmPopupMenu.add(new VmHideAction(h, false));
 			break;
 		case STAGING:
 			vmPopupMenu.add(new VmStageAction(h, false));
@@ -247,7 +250,6 @@ public class NavigationTabs extends JideTabbedPane {
 		case STARTING:
 		case STOPPING:
 			vmPopupMenu.add(new VmSaveAction(h, false));
-			// popupMenu.add(new VmStopAction(vmId, false));
 			vmPopupMenu.add(new VmPoweroffAction(h, false));
 			break;
 		// internal errors
@@ -259,14 +261,6 @@ public class NavigationTabs extends JideTabbedPane {
 		default:
 			LOG.error("No menu for state [" + state + "]");
 			return;
-		}
-		// add USB menu
-		if (state == VmState.RUNNING) {
-		}
-		// add Hide menu
-		if (state == VmState.STOPPED || state == VmState.STAGABLE) {
-			vmPopupMenu.addSeparator();
-			vmPopupMenu.add(new VmHideAction(h, false));
 		}
 		// add Monitor move menu
 		List<CubeScreen> screens = cubeUI.getScreens();

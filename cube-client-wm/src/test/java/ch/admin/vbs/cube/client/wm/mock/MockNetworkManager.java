@@ -2,7 +2,6 @@ package ch.admin.vbs.cube.client.wm.mock;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
 
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;

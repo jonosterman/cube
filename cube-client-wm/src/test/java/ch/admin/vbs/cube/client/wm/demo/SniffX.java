@@ -1,22 +1,18 @@
 package ch.admin.vbs.cube.client.wm.demo;
 
-import java.awt.Rectangle;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sun.jna.NativeLong;
-import com.sun.jna.ptr.IntByReference;
-import com.sun.jna.ptr.PointerByReference;
-
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager2;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XTextProperty;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XWindowAttributes;
+
+import com.sun.jna.NativeLong;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 
 public class SniffX {
 	private static final Logger LOG = LoggerFactory.getLogger(SniffX.class);

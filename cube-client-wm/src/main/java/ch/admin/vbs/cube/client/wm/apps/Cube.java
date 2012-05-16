@@ -32,7 +32,7 @@ import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.VmAbstractAction;
 import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager2;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager;
 import ch.admin.vbs.cube.client.wm.utils.CubeUIDefaults;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
@@ -117,7 +117,7 @@ public final class Cube {
 		ioc.addBean(new CubeActionListener());
 //		ioc.addBean(XWindowManager.getInstance());
 		ioc.addBean(new WindowManager());
-		ioc.addBean(new XWindowManager2());
+		ioc.addBean(new XWindowManager());
 		ioc.addBean(new CubeCore());
 		ioc.addBean(new SessionManager());
 		ioc.addBean(new LoginMachine());
@@ -137,7 +137,7 @@ public final class Cube {
 		ioc.getBean(IXrandr.class).start();
 		ioc.getBean(ICubeUI.class).start();
 //		ioc.getBean(XWindowManager.class).start();
-		ioc.getBean(XWindowManager2.class).start();
+		ioc.getBean(XWindowManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();
 		ioc.getBean(IAuthModule.class).start();

@@ -23,7 +23,6 @@ import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
-import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;

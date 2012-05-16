@@ -1,7 +1,6 @@
 package ch.admin.vbs.cube.client.wm.ui.tabs.action;
 
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
@@ -10,7 +9,6 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.ui.dialog.AudioDialog;
 import ch.admin.vbs.cube.client.wm.utils.I18nBundleProvider;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
-import ch.admin.vbs.cube.core.vm.VmAudioControl.Type;
 
 public class VmAudioAction extends AbstractAction {
 	private static final long serialVersionUID = 1L;
