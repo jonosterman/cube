@@ -27,6 +27,7 @@ public class AudioDialog extends CubeWizard {
 	private static final Dimension MINIMUM_DIALOG_SIZE = new Dimension(400, 247);
 	private final String vmId;
 	private final VmAudioControl vmc;
+	private final String vmName;
 
 	private enum TypeUI {
 		AUDIO, MIC;
@@ -41,10 +42,11 @@ public class AudioDialog extends CubeWizard {
 		}
 	}
 
-	public AudioDialog(JFrame owner, String vmId, VmAudioControl vmc) {
+	public AudioDialog(JFrame owner, String vmId, VmAudioControl vmc, String vmName) {
 		super(owner);
 		this.vmId = vmId;
 		this.vmc = vmc;
+		this.vmName = vmName;
 		// set initial sliders and checkbox values
 		initSlider(TypeUI.AUDIO, vmc.getAudio(vmId, Type.AUDIO), Type.AUDIO);
 		initSlider(TypeUI.MIC, vmc.getAudio(vmId, Type.MIC), Type.MIC);
@@ -53,7 +55,7 @@ public class AudioDialog extends CubeWizard {
 	private void initSlider(final TypeUI uiType, AudioEntry entry, final Type type) {
 		uiType.slider = new JSlider(JSlider.HORIZONTAL, 0, 100, 50);
 		uiType.cbox = new JCheckBox("muted");
-		uiType.label = new JLabel("Volume");
+		uiType.label = new JLabel("Volume for VM ["+vmName+"]");
 		if (entry == null) {
 			uiType.slider.setEnabled(false);
 			uiType.cbox.setEnabled(false);

@@ -29,7 +29,7 @@ public class AudioDemo {
 			@Override
 			public void run() {
 				VmAudioControl ctrl = new VmAudioControl();		
-				AudioDialog dial = new AudioDialog(null, "test-id-A", ctrl);		
+				AudioDialog dial = new AudioDialog(null, "test-id-A", ctrl, "blah");		
 				dial.displayWizard();
 			}
 		});

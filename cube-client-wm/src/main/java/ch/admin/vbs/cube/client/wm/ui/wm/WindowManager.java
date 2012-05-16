@@ -80,7 +80,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private static final int WINDOW_LOCATION_Y = 25;
 	public static final int BORDER_SIZE = 5;
 	/** Logger */
-	private static final ArrayList<Window> EMPTY_WINDOW_LIST = new ArrayList<Window>();
 	private static final Logger LOG = LoggerFactory.getLogger(WindowManager.class);
 	private static final String VIRTUALMACHINE_WINDOWFMT = "^%s - .*Oracle VM VirtualBox.*$";
 	private Pattern windowPatternVirtualMachine = Pattern.compile(String.format(VIRTUALMACHINE_WINDOWFMT, "(.*)"));
@@ -247,6 +246,14 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			xwm.removeWindow(border);
 		}
 
+		public void setHandle(VmHandle handle) {
+			this.handle = handle;
+		}
+		
+		public VmHandle getHandle() {
+			return handle;
+		}
+
 		/** X does not include border bound in total width */
 		public Rectangle getBorderBoundsForX() {
 			return new Rectangle(borderBounds.x, borderBounds.y, borderBounds.width - (2 * BORDER_SIZE), borderBounds.height - (2 * BORDER_SIZE));
@@ -265,7 +272,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		public String isManagable(String windowTitle) {
 			Matcher appMx = windowPatternVirtualMachine.matcher(windowTitle);
 			if (appMx.matches()) {
-				// This is a VirtualBox Window. return VM's ID extracted from window title
+				// This is a VirtualBox Window. return VM's ID extracted from
+				// window title
 				return appMx.group(1);
 			}
 			return null;
@@ -312,7 +320,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 		public ArrayList<ManagedWindow> list() {
 			synchronized (managedWindows) {
-				return (ArrayList<ManagedWindow>) managedWindows.clone();
+				return new ArrayList<WindowManager.ManagedWindow>(managedWindows);
 			}
 		}
 
@@ -463,7 +471,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					LOG.debug("managed created [{}]", managed.vmId);
 				} else {
 					// update ManagedWindow
-					managed.handle = handle;
+					managed.setHandle(handle);
 					LOG.debug("managed updated [{}]", managed.vmId);
 				}
 			}
@@ -480,7 +488,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					LOG.debug("managed removed [{}]", managed.vmId);
 				} else {
 					// client window is there -> just clear handle field
-					managed.handle = null;
+					managed.setHandle(null);
 					LOG.debug("managed updated (handle cleared) [{}]", managed.vmId);
 				}
 			}
@@ -835,8 +843,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				ManagedWindow w = (ManagedWindow) windowl.getSelectedValue();
 				if (w != null) {
 					LOG.debug("move + resize!");
-					((XWindowManager) xwm).moveResize(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()),
-							Integer.parseInt(fw.getText()), Integer.parseInt(fh.getText()));
+					((XWindowManager) xwm).moveResize(w.client, Integer.parseInt(fx.getText()), Integer.parseInt(fy.getText()), Integer.parseInt(fw.getText()),
+							Integer.parseInt(fh.getText()));
 				}
 			}
 		});

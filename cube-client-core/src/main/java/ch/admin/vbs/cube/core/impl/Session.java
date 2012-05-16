@@ -366,6 +366,11 @@ public class Session implements Runnable, ISession {
 		LOG.error("Not all VMs have been saved during logout");
 	}
 
+	@Override
+	public NetworkConnectionState getConnectionState() {
+		return connectionState;
+	}
+
 	public static class SessionStateDTO implements ISessionStateDTO {
 		private final boolean online;
 		private final IIdentityToken id;

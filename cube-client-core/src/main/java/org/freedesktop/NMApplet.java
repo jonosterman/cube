@@ -126,6 +126,7 @@ public class NMApplet {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public <E> E getEnumConstant(int stateId, Class<E> x) {
 		if (x.equals(NmState.class)) {
 			NmState s = NmState.get(stateId);

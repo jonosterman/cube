@@ -120,10 +120,13 @@ public class BootPasswordDialog extends CubeWizard {
 		boolean badChars = !a.matches(CryptPasswordChanger.US_KBD_ALLOWED_REGEX);
 		if (pwdShort) {
 			messageLbl.setText(resourceBundle.getString("passwordWizard.warn.short"));
+			LOG.debug("Password is too short");
 		} else if (badChars) {
 			messageLbl.setText(resourceBundle.getString("passwordWizard.warn.badchars"));
+			LOG.debug("Bad char(s) in submitted password");
 		} else if (!a.equals(b)) {
 			messageLbl.setText("");
+			LOG.debug("good password");
 		}
 		isNewPwdValid = !pwdShort && !badChars;
 		okButton.setEnabled(isNewPwdValid && a.equals(b));

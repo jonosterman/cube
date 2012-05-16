@@ -71,4 +71,6 @@ public interface ISession {
 	}
 
 	void notifyConnectionState(NetworkConnectionState state);
+
+	NetworkConnectionState getConnectionState();
 }

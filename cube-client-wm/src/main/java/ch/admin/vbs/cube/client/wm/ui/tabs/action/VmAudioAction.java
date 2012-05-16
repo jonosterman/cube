@@ -31,7 +31,7 @@ public class VmAudioAction extends AbstractAction {
 			public void run() {
 				final String vmId = vmHandle.getVmId();
 				final VmAudioControl vmc = new VmAudioControl();
-				final AudioDialog dial = new AudioDialog(null, vmId, vmc);
+				final AudioDialog dial = new AudioDialog(null, vmId, vmc, vmName);
 				dial.displayWizard();
 			}
 		});

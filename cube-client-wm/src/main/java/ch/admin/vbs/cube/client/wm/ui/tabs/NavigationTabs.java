@@ -411,7 +411,7 @@ public class NavigationTabs extends JideTabbedPane {
 		cubePopupMenu.add(showMenu);
 		//
 		cubePopupMenu.addSeparator();
-		cubePopupMenu.add(new CubeWifiAction(cubeUI,  I18nBundleProvider.getBundle().getString("cube.action.wifi.text"), userUI));
+		cubePopupMenu.add(new CubeWifiAction(I18nBundleProvider.getBundle().getString("cube.action.wifi.text"), userUI));
 		cubePopupMenu.addSeparator();
 		cubePopupMenu.add(new CryptPasswdChangeAction(userUI));
 		

@@ -18,9 +18,6 @@ package ch.admin.vbs.cube.client.wm.ui.tabs;
 
 import javax.swing.ImageIcon;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.core.vm.VmNetworkState;
 import ch.admin.vbs.cube.core.vm.VmState;
@@ -33,7 +30,7 @@ public class TabIconProvider {
 //	private static final int STAGING_PROGRESS_25 = 25;
 //	private static final int STAGING_PROGRESS_50 = 50;
 //	private static final int STAGING_PROGRESS_75 = 75;
-	private static final Logger LOG = LoggerFactory.getLogger(TabIconProvider.class);
+//	private static final Logger LOG = LoggerFactory.getLogger(TabIconProvider.class);
 	/**
 	 * @param vm
 	 *            the vm for which the icon is asked for

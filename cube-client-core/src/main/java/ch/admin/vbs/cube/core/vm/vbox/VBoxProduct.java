@@ -91,12 +91,12 @@ import cube.cubemanager.services.InstanceConfigurationDTO;
 
 public class VBoxProduct implements VBoxCacheListener {
 	public static final String ORIGINAL_NETWORK_CONFIG = "{original}";
-	private static final int API_RETRY = 5;
+	// private static final int API_RETRY = 5;
 	private static final String CONTROLLER_NAME = "IDE Controller";
 	public static final String SNAPSHOT_DIRECTORY = "snapshots";
 	private static final String DISK1 = "disk1";
-	private static final long MAX_SHUTDOWN_TIME = 60000; // 1 minute
-	private static final long MAX_SAVE_TIME = 60000; // 1 minute
+	// private static final long MAX_SHUTDOWN_TIME = 60000; // 1 minute
+	// private static final long MAX_SAVE_TIME = 60000; // 1 minute
 	private static final long MEGA = 1048576;
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VBoxProduct.class);
@@ -576,6 +576,7 @@ public class VBoxProduct implements VBoxCacheListener {
 					progress.getOperationDescription(), //
 					progress.getOperationPercent(), //
 					progress.getOperationWeight());
+			LOG.debug("launchVMProcess -> "+msg);
 			fireVmStateUpdate(model, vm, progress);
 			Thread.sleep(1000);
 		}
@@ -912,7 +913,8 @@ public class VBoxProduct implements VBoxCacheListener {
 							switch (ev.getType()) {
 							case OnGuestPropertyChanged:
 								IGuestPropertyChangedEvent x = IGuestPropertyChangedEvent.queryInterface(ev);
-								LOG.debug("Got VM event: [event: {}] [vmId: {}] ["+x.getName()+" = "+x.getValue()+"]", ev.getType(), machineId.getMachineId());
+								LOG.debug("Got VM event: [event: {}] [vmId: {}] [" + x.getName() + " = " + x.getValue() + "]", ev.getType(),
+										machineId.getMachineId());
 								break;
 							default:
 								LOG.debug("Got VM event: [event: {}] [vmId: {}]", ev.getType(), machineId.getMachineId());

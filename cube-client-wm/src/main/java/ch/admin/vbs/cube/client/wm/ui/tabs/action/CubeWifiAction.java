@@ -22,7 +22,6 @@ import javax.swing.AbstractAction;
 import javax.swing.SwingUtilities;
 
 import ch.admin.vbs.cube.client.wm.client.IUserInterface;
-import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager;
 
 /**
@@ -30,7 +29,6 @@ import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager;
  */
 public class CubeWifiAction extends AbstractAction {
 	private static final long serialVersionUID = 0;
-	private final ICubeUI cubeUI;
 	private WindowManager wm;
 
 	/**
@@ -39,9 +37,8 @@ public class CubeWifiAction extends AbstractAction {
 	 * @param cubeUI 
 	 * @param b 
 	 */
-	public CubeWifiAction(ICubeUI cubeUI, String text, IUserInterface userUI) {
+	public CubeWifiAction(String text, IUserInterface userUI) {
 		super(text);
-		this.cubeUI = cubeUI;
 		this.wm = (WindowManager)userUI;
 	}
 	

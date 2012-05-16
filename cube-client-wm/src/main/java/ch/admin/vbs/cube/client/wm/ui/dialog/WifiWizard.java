@@ -34,6 +34,7 @@ import com.jidesoft.dialog.ButtonPanel;
 /**
  * This dialog allows to choose a destination for the transferred files.
  */
+@SuppressWarnings("unused")
 public class WifiWizard extends CubeWizard {
 	private static final long serialVersionUID = 0L;
 	final static String CONNECTIONSLISTPANEL = "Connections List";

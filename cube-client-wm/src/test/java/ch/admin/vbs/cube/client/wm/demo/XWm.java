@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import ch.admin.vbs.cube.client.wm.demo.XWm.IClientWindowLayout.WinType;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
-import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.EWMH;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
@@ -123,7 +122,7 @@ public class XWm {
 		LOG.debug("Bordered window created [{}]", borderWindow);
 		// reparent
 		System.err.println("target window: [" + target + "]");
-		EWMH ewmh = new EWMH(display);
+		//EWMH ewmh = new EWMH(display);
 		// ewmh.readIntProperty(target, x11.XInternAtom(display, "", false));
 		// if (0 == System.currentTimeMillis()) {
 		// unmap so the actual WM (if any) will unmanage it

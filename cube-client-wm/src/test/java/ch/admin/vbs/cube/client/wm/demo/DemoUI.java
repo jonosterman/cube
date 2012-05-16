@@ -63,6 +63,7 @@ public class DemoUI {
 	private static final Logger LOG = LoggerFactory.getLogger(DemoUI.class);
 
 	public static void main(String[] args) throws Exception {
+		LOG.info("Demo started");
 		DemoUI d = new DemoUI();
 		d.run();
 	}
