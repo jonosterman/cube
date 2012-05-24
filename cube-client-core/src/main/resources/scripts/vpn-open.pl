@@ -111,7 +111,7 @@ sub vpnopen() {
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined (openvpn create the tap device)
-	my $timeout = 15; 
+	my $timeout = 60;
 	while (int(`ifconfig -a | grep "$tap"| wc -l`) == 0 && $timeout-- > 0) {
 		print "[DEBUG] wait tap to be configured ($timeout)..\n";
 		sleep(1);
