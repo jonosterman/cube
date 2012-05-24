@@ -270,6 +270,7 @@ public class WSDescriptorUpdater implements Runnable {
 				}
 			}
 		} else {
+			srv = null;
 			try {
 				Thread.sleep(1000);
 			} catch (InterruptedException e) {

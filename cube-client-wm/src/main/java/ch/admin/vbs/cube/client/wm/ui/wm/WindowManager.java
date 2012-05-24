@@ -249,7 +249,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		public void setHandle(VmHandle handle) {
 			this.handle = handle;
 		}
-		
+
 		public VmHandle getHandle() {
 			return handle;
 		}
@@ -466,11 +466,15 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				ManagedWindow managed = managedModel.getManaged(handle.getVmId());
 				if (managed == null) {
 					// not already managed. add a new ManagedWindow to model.
+					LOG.debug("new vmHandle [{}] on monitor [{}]", handle.getVmId(), handle.getMonitorId());
 					managed = new ManagedWindow(handle, getDefaultParentFrame());
+					// TODO set or consider handle.monitorId ??
 					managedModel.add(managed);
 					LOG.debug("managed created [{}]", managed.vmId);
 				} else {
 					// update ManagedWindow
+					// TODO : check if monitor has changed, eventually move
+					// managed window on new monitor or update handle ?
 					managed.setHandle(handle);
 					LOG.debug("managed updated [{}]", managed.vmId);
 				}
