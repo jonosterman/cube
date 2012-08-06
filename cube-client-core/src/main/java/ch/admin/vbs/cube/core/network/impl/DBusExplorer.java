@@ -36,20 +36,9 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
 public class DBusExplorer {
-//	private DocumentBuilder db;
 
 	public DBusExplorer() {
-//		try {
-//			DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-//			dbf.setValidating(false);
-//			dbf.setFeature("http://xml.org/sax/features/namespaces", false);
-//			dbf.setFeature("http://xml.org/sax/features/validation", false);
-//			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
-//			dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
-//			db = dbf.newDocumentBuilder();
-//		} catch (ParserConfigurationException e) {
-//			e.printStackTrace();
-//		}
+
 	}
 
 	public <A> A getProperty(DBusConnection connection, String busname, String objectPath, String ifaceName, String property) throws DBusException  {

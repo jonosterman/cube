@@ -152,6 +152,7 @@ public class CNMStateMachine implements INetworkManager {
 					return;
 				}
 				//
+				LOG.error("Process NmState signal [{}].",sig);
 				switch (sig) {
 				case NM_STATE_CONNECTED:
 					// set connected flag. see
