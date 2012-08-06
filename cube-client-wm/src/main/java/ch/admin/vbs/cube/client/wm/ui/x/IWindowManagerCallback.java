@@ -25,5 +25,6 @@ public interface IWindowManagerCallback {
 
 	void windowTitleUpdated(Window client, String title);
 	
-	Rectangle getPreferedClientBounds(Window window);
+	Rectangle getPreferedClientBounds(Window client);
+	
 }

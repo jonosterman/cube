@@ -61,6 +61,7 @@ import ch.admin.vbs.cube.client.wm.ui.dialog.CubeInitialDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialog;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubePasswordDialogListener;
 import ch.admin.vbs.cube.client.wm.ui.dialog.CubeWizard;
+import ch.admin.vbs.cube.client.wm.ui.wm.WindowManager.ManagedWindow;
 import ch.admin.vbs.cube.client.wm.ui.x.IWindowManagerCallback;
 import ch.admin.vbs.cube.client.wm.ui.x.IXWindowManager;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
@@ -724,14 +725,15 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	}
 
 	@Override
-	public Rectangle getPreferedClientBounds(Window window) {
-		ManagedWindow managed = managedModel.getManaged(window);
+	public Rectangle getPreferedClientBounds(Window client) {
+		ManagedWindow managed = managedModel.getManaged(client);
 		if (managed == null) {
 			return null;
 		} else {
 			return managed.getClientBounds();
 		}
 	}
+	
 
 	@Override
 	public void adjustGuestSize(String vmId) {

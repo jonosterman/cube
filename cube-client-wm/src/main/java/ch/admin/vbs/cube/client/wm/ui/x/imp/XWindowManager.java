@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ch.admin.vbs.cube.client.wm.ui.x.imp;
 
 import java.awt.Color;
@@ -163,6 +164,7 @@ public final class XWindowManager implements IXWindowManager {
 			XWindowAttributes attributes = new XWindowAttributes();
 			x11.XGetWindowAttributes(display, window, attributes);
 			// get window title
+			// @TODO: 11.6.2012: XTextProperty locked forever! any workaround??
 			XTextProperty windowTitle = new XTextProperty();
 			x11.XFetchName(display, window, windowTitle);
 			// filter windows with attributes which our windows do not have
@@ -189,8 +191,7 @@ public final class XWindowManager implements IXWindowManager {
 		// maps and sets all show window
 		for (Window window : showWindowList) {
 			LOG.debug(" -> show [{}/{}]", window, getWindowName(window));
-			// map window
-			x11.XMapWindow(display, window);
+			// map+raise window
 			x11.XMapRaised(display, window);
 		}
 		// set all visible window hidden

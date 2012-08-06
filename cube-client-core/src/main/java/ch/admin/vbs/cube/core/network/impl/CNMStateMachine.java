@@ -123,9 +123,9 @@ public class CNMStateMachine implements INetworkManager {
 		try {
 			su.run(null, ShellUtil.NO_TIMEOUT, "ifconfig");
 			for(String line : su.getStandardOutput().toString().split("\n")) {
-				if (line.startsWith("eth") | line.startsWith("wlan")) {
+				if (line.startsWith("eth") || line.startsWith("wlan")|| line.startsWith("usb")) {
 					// input validation
-					if (line.matches("eth[0-9] .*") || line.matches("wlan[0-9] .*")) {
+					if (line.matches("eth[0-9] .*") || line.matches("wlan[0-9] .*")|| line.matches("usb[0-9] .*")) {
 						list.add(line.split(" +",2)[0]);					
 					}
 				}
