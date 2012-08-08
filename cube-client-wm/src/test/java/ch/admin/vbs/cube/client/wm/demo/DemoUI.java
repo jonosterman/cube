@@ -49,6 +49,9 @@ import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.impl.CubeCore;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.SessionManager;
+import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.vm.IVmController;
+import ch.admin.vbs.cube.core.vm.VmController;
 
 /**
  * This demo application is used to develop and test the user UI (tabs, pop-ups,
@@ -89,6 +92,7 @@ public class DemoUI {
 		ioc.addBean(new XWindowManager());
 		ioc.addBean(new WindowManager());
 		ioc.addBean(new CubeCore());
+		ioc.addBean(new VmController());
 		ioc.addBean(new SessionManager());
 		ioc.addBean(new LoginMachine());
 		ioc.addBean(new MockAuthModule());
@@ -104,6 +108,8 @@ public class DemoUI {
 		ioc.getBean(IXrandr.class).start();
 		ioc.getBean(ICubeUI.class).start();
 		ioc.getBean(XWindowManager.class).start();
+		ioc.getBean(IVmController.class).start();
+		ioc.getBean(INetworkManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();
 		ioc.getBean(IAuthModule.class).start();

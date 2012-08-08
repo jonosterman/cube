@@ -30,6 +30,8 @@ import ch.admin.vbs.cube.common.container.ContainerFactoryProvider;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
+import ch.admin.vbs.cube.core.ILogin;
+import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
 import ch.admin.vbs.cube.core.network.INetworkManager;
@@ -47,7 +49,7 @@ import ch.admin.vbs.cube.core.vm.ctrtasks.UsbDetach;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
-public class VmController implements IVmProductListener {
+public class VmController implements IVmProductListener, IVmController {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VmController.class);
 	private HashMap<VmModel, ModelListener> lIndex = new HashMap<VmModel, VmController.ModelListener>();
@@ -65,10 +67,13 @@ public class VmController implements IVmProductListener {
 		vpnManager = new VpnManager();
 	}
 
-	public void setNetworkManager(INetworkManager networkManager) {
-		vpnManager.setNetworkManager(networkManager);
-	}
-
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.admin.vbs.cube.core.vm.IVmController#setNetworkManager(ch.admin.vbs
+	 * .cube.core.network.INetworkManager)
+	 */
 	/** @see refreshVmState() */
 	public void setTempStatus(Vm vm, VmState temp) {
 		synchronized (tempStatus) {
@@ -90,6 +95,19 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.admin.vbs.cube.core.vm.IVmController#controlVm(ch.admin.vbs.cube.core
+	 * .vm.Vm, ch.admin.vbs.cube.core.vm.VmModel,
+	 * ch.admin.vbs.cube.core.ISession.VmCommand,
+	 * ch.admin.vbs.cube.common.keyring.IIdentityToken,
+	 * ch.admin.vbs.cube.common.keyring.IKeyring,
+	 * ch.admin.vbs.cube.common.container.Container,
+	 * ch.admin.vbs.cube.core.ISession.IOption)
+	 */
+	@Override
 	public void controlVm(final Vm vm, final VmModel model, VmCommand cmd, final IIdentityToken id, final IKeyring keyring, final Container transfer,
 			final IOption option) {
 		LOG.debug("controlVm [{}]", cmd);
@@ -139,6 +157,12 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ch.admin.vbs.cube.core.vm.IVmController#start()
+	 */
+	@Override
 	public void start() {
 		stagger = new Stager(this, product);
 		vpnManager.start();
@@ -151,6 +175,14 @@ public class VmController implements IVmProductListener {
 		product.start();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.admin.vbs.cube.core.vm.IVmController#registerVmModel(ch.admin.vbs.
+	 * cube.core.vm.VmModel)
+	 */
+	@Override
 	public void registerVmModel(VmModel vmModel) {
 		synchronized (lIndex) {
 			ModelListener l = new ModelListener(vmModel);
@@ -159,6 +191,14 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * ch.admin.vbs.cube.core.vm.IVmController#unregisterVmModel(ch.admin.vbs
+	 * .cube.core.vm.VmModel)
+	 */
+	@Override
 	public void unregisterVmModel(VmModel vmModel) {
 		synchronized (lIndex) {
 			ModelListener l = lIndex.remove(vmModel);
@@ -289,6 +329,12 @@ public class VmController implements IVmProductListener {
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see ch.admin.vbs.cube.core.vm.IVmController#findVmById(java.lang.String)
+	 */
+	@Override
 	public Vm findVmById(String id) {
 		synchronized (lIndex) {
 			for (VmModel m : lIndex.keySet()) {
@@ -349,5 +395,10 @@ public class VmController implements IVmProductListener {
 		default:
 			break;
 		}
+	}
+
+	// Dependencies injection
+	public void setup(INetworkManager networkManager) {
+		vpnManager.setNetworkManager(networkManager);
 	}
 }

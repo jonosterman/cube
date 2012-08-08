@@ -30,10 +30,14 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
+import ch.admin.vbs.cube.core.ILogin;
+import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.vm.IVmController;
 
 /**
  * Implements INetworkManager state machine. Use NMApplet in order to monitor
@@ -75,6 +79,7 @@ public class CNMStateMachine implements INetworkManager {
 			nmApplet.addListener(new VpnStateChangedHandler());
 			// Restart NetworkManager in order to sync this StateMachine and the
 			// NetworkManager states.
+			
 			new Thread(new Runnable() {
 				@Override
 				public void run() {
@@ -249,5 +254,9 @@ public class CNMStateMachine implements INetworkManager {
 				setCurrentState(NetworkConnectionState.NOT_CONNECTED);
 			}
 		}
+	}
+	
+	// Dependencies injection
+	public void setup() {
 	}
 }

@@ -45,12 +45,12 @@ public class Stager {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(Stager.class);
 	private HashMap<String, StagingThead> sthread = new HashMap<String, Stager.StagingThead>();
-	private VmController controller;
+	private IVmController controller;
 	private final VBoxProduct product;
 	private IContainerFactory containerFactory;
 	private VpnManager vpnManager;
 
-	public Stager(VmController controller, VBoxProduct product) {
+	public Stager(IVmController controller, VBoxProduct product) {
 		this.controller = controller;
 		this.product = product;
 		vpnManager = new VpnManager();

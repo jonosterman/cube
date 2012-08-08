@@ -23,14 +23,14 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmController;
+import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 
 public abstract class AbstractCtrlTask implements Runnable {
 	protected EncryptionKey vmKey;
 	protected EncryptionKey rtKey;
-	protected final VmController ctrl;
+	protected final IVmController ctrl;
 	protected final IKeyring keyring;
 	protected final Vm vm;
 	protected final IContainerFactory containerFactory;
@@ -40,9 +40,9 @@ public abstract class AbstractCtrlTask implements Runnable {
 	protected final VmModel vmModel;
 	protected final IOption option;
 
-	public AbstractCtrlTask(VmController vmController,  IKeyring keyring, Vm vm, IContainerFactory containerFactory,
+	public AbstractCtrlTask(IVmController IVmController,  IKeyring keyring, Vm vm, IContainerFactory containerFactory,
 			VpnManager vpnManager, VBoxProduct product, Container transfer, VmModel vmModel, IOption option) {
-		this.ctrl = vmController;
+		this.ctrl = IVmController;
 		this.keyring = keyring;
 		this.vm = vm;
 		this.containerFactory = containerFactory;

@@ -33,8 +33,8 @@ import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmController;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.VmState;
 import ch.admin.vbs.cube.core.vm.list.DescriptorModelCache;
@@ -70,11 +70,11 @@ public class Session implements Runnable, ISession {
 	private DescriptorModelCache descModelCache;
 	private VmModel vmModel;
 	private WSDescriptorUpdater descWs;
-	private final VmController vmController;
+	private final IVmController vmController;
 	private Executor exec = Executors.newCachedThreadPool();
 	private NetworkConnectionState connectionState;
 
-	public Session(IIdentityToken id, ISessionUI clientUI, VmController vmController) {
+	public Session(IIdentityToken id, ISessionUI clientUI, IVmController vmController) {
 		this.id = id;
 		this.sessionUI = clientUI;
 		this.vmController = vmController;
