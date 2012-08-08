@@ -222,7 +222,7 @@ public class Session implements Runnable, ISession {
 				break;
 			case lock:
 				// lock session (actually do nothing)
-				LOG.error("session locked");
+				LOG.debug("session locked");
 				// and wait
 				synchronized (lock) {
 					if (flag == stateCnt) {
@@ -272,7 +272,7 @@ public class Session implements Runnable, ISession {
 		synchronized (lock) {
 			state = State.open;
 			stateCnt++;
-			lock.notifyAll();
+//			lock.notifyAll(); removed since seems nonsense here (drf 7.8.2012)
 		}
 	}
 
@@ -282,7 +282,7 @@ public class Session implements Runnable, ISession {
 		synchronized (lock) {
 			state = State.lock;
 			stateCnt++;
-			lock.notifyAll();
+//			lock.notifyAll(); removed since seems nonsense here (drf 7.8.2012)
 		}
 	}
 
@@ -292,7 +292,7 @@ public class Session implements Runnable, ISession {
 		synchronized (lock) {
 			state = State.close;
 			stateCnt++;
-			lock.notifyAll();
+//			lock.notifyAll(); removed since seems nonsense here (drf 7.8.2012)
 		}
 	}
 

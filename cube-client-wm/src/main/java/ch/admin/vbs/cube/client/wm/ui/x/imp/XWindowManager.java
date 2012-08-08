@@ -19,6 +19,10 @@ package ch.admin.vbs.cube.client.wm.ui.x.imp;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.util.Collection;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +53,7 @@ public final class XWindowManager implements IXWindowManager {
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(XWindowManager.class);
 	private static final int CHECKING_INTERVAL_FOR_NEW_EVENTS = 10;
+	protected static final long MAX_LOCK_TIMEOUT = 5000;
 	private Arch osArch;
 	private String displayName = null;
 	private int screenIndex = 0;
@@ -57,8 +62,33 @@ public final class XWindowManager implements IXWindowManager {
 	private X11 x11;
 	private Display display;
 	private IWindowManagerCallback cb;
+	private Lock looock = new ReentrantLock();
+	private long lockTimestamp = 0;
+	private String lockCommand;
+	//
+	private Executor exec = Executors.newCachedThreadPool();
 
 	public void start() {
+		/*
+		 * lock watchdog. Since it seems that some X commands just get stuck, I
+		 * setup this watchdog mechanism to debug it.
+		 */
+		Thread t = new Thread() {
+			@Override
+			public void run() {
+				while (true) {
+					try {
+						Thread.sleep(MAX_LOCK_TIMEOUT);
+					} catch (Exception e) {
+					}
+					if (lockTimestamp != 0 && lockTimestamp > System.currentTimeMillis() + MAX_LOCK_TIMEOUT) {
+						LOG.error("Lock timeout exceeded [{}]", lockCommand);
+					}
+				}
+			}
+		};
+		t.setDaemon(true);
+		t.start();
 		/*
 		 * detect OS architecture since it plays a role in some X calls (window
 		 * pointer size)
@@ -126,159 +156,203 @@ public final class XWindowManager implements IXWindowManager {
 
 	@Override
 	public void reparentClientWindow(Window border, Window client, Rectangle clientBounds) {
-		// Events to consider for client window :
-		// - ResizeRedirectMask: to avoid VM to resize itself
-		// - EnterWindowMask: to force focus on current VM
-		// - SubstructureNotifyMask: to get ConfigureNotify events
-		// - StructureNotifyMask: to get ConfigureNotify events
-		x11.XSelectInput(display, client, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask | X11.StructureNotifyMask));
-		// re-parent the x window and unmap it (will be mapped only when
-		// explicitly displayed)
-		x11.XUnmapWindow(display, client);
-		x11.XFlush(display);
-		// Re-order the virtual machine window as child to the border window
-		int result = x11.XReparentWindow(display, client, border, 0, 0);
-		x11.XMapWindow(display, client);
-		// set save set or the window will be closed after calling
-		x11.XChangeSaveSet(display, client, X11.SetModeInsert);
-		// resize
-		x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
-		sendResizeEvent(display, client, clientBounds);
-		// flush
-		x11.XFlush(display);
-		LOG.debug(String.format("reparentWindow() [%d] - unmapped client[%s / %s] as child of border[%s]", result, getWindowName(client), client, border));
+		lock();
+		try {
+			// Events to consider for client window :
+			// - ResizeRedirectMask: to avoid VM to resize itself
+			// - EnterWindowMask: to force focus on current VM
+			// - SubstructureNotifyMask: to get ConfigureNotify events
+			// - StructureNotifyMask: to get ConfigureNotify events
+			x11.XSelectInput(display, client, new NativeLong(X11.ResizeRedirectMask | X11.EnterWindowMask | X11.SubstructureNotifyMask
+					| X11.StructureNotifyMask));
+			// re-parent the x window and unmap it (will be mapped only when
+			// explicitly displayed)
+			x11.XUnmapWindow(display, client);
+			x11.XFlush(display);
+			// Re-order the virtual machine window as child to the border window
+			int result = x11.XReparentWindow(display, client, border, 0, 0);
+			x11.XMapWindow(display, client);
+			// set save set or the window will be closed after calling
+			x11.XChangeSaveSet(display, client, X11.SetModeInsert);
+			// resize
+			x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
+			sendResizeEvent(display, client, clientBounds);
+			// flush
+			x11.XFlush(display);
+			LOG.debug(String.format("reparentWindow() [%d] - unmapped client[%s / %s] as child of border[%s]", result, getWindowNameNoLock(client), client, border));
+		} finally {
+			unlock();
+		}
 	}
 
 	@Override
-	public synchronized Window findWindowByTitle(String name) {
-		/**
-		 * Look in the root window if there is a window with this name
-		 */
-		Window foundWindow = null;
-		// get the root window
-		Window rootWindow = x11.XRootWindow(display, screenIndex);
-		long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
-		for (long windowId : childrenWindowIdArray) {
-			Window window = new Window(windowId);
-			// get window attributes
-			XWindowAttributes attributes = new XWindowAttributes();
-			x11.XGetWindowAttributes(display, window, attributes);
-			// get window title
-			// @TODO: 11.6.2012: XTextProperty locked forever! any workaround??
-			XTextProperty windowTitle = new XTextProperty();
-			x11.XFetchName(display, window, windowTitle);
-			// filter windows with attributes which our windows do not have
-			if (!attributes.override_redirect && windowTitle.value != null) {
-				// LOG.debug("Scan windows [{}] [{}]",windowTitle.value,name);
-				if (name.equals(windowTitle.value)) {
-					foundWindow = window;
-					break;
+	public Window findWindowByTitle(String name) {
+		lock();
+		try {
+			/**
+			 * Look in the root window if there is a window with this name
+			 */
+			Window foundWindow = null;
+			// get the root window
+			Window rootWindow = x11.XRootWindow(display, screenIndex);
+			long[] childrenWindowIdArray = getChildrenList(display, rootWindow);
+			for (long windowId : childrenWindowIdArray) {
+				Window window = new Window(windowId);
+				// get window attributes
+				XWindowAttributes attributes = new XWindowAttributes();
+				x11.XGetWindowAttributes(display, window, attributes);
+				// get window title
+				// @TODO: 11.6.2012: XTextProperty locked forever! any
+				// workaround??
+				XTextProperty windowTitle = new XTextProperty();
+				x11.XFetchName(display, window, windowTitle);
+				// filter windows with attributes which our windows do not have
+				if (!attributes.override_redirect && windowTitle.value != null) {
+					// LOG.debug("Scan windows [{}] [{}]",windowTitle.value,name);
+					if (name.equals(windowTitle.value)) {
+						foundWindow = window;
+						break;
+					}
 				}
 			}
+			// flush
+			x11.XFlush(display);
+			// log
+			if (foundWindow == null) {
+				LOG.error("No XWindow found that match name [{}]", name);
+			}
+			return foundWindow;
+		} finally {
+			unlock();
 		}
-		// flush
-		x11.XFlush(display);
-		// log
-		if (foundWindow == null) {
-			LOG.error("No XWindow found that match name [{}]", name);
-		}
-		return foundWindow;
 	}
 
 	@Override
-	public synchronized void showOnlyTheseWindows(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
-		LOG.debug("showOnlyTheseWindow()");
-		// maps and sets all show window
-		for (Window window : showWindowList) {
-			LOG.debug(" -> show [{}/{}]", window, getWindowName(window));
-			// map+raise window
-			x11.XMapRaised(display, window);
-		}
-		// set all visible window hidden
-		for (Window window : hideWindowList) {
-			// get window attributes
-			XWindowAttributes attributes = new XWindowAttributes();
-			x11.XGetWindowAttributes(display, window, attributes);
-			if (attributes.map_state != X11.IsUnmapped) {
-				LOG.debug(" -> hide [{}/{}]", window, getWindowName(window));
-				x11.XUnmapWindow(display, window);
+	public void showOnlyTheseWindows(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
+		lock();
+		try {
+			LOG.debug("showOnlyTheseWindow()");
+			// maps and sets all show window
+			for (Window window : showWindowList) {
+				LOG.debug(" -> show [{}/{}]", window, getWindowNameNoLock(window));
+				// map+raise window
+				x11.XMapRaised(display, window);
 			}
+			// set all visible window hidden
+			for (Window window : hideWindowList) {
+				// get window attributes
+				XWindowAttributes attributes = new XWindowAttributes();
+				x11.XGetWindowAttributes(display, window, attributes);
+				if (attributes.map_state != X11.IsUnmapped) {
+					LOG.debug(" -> hide [{}/{}]", window, getWindowNameNoLock(window));
+					x11.XUnmapWindow(display, window);
+				}
+			}
+			// flush
+			x11.XFlush(display);
+		} finally {
+			unlock();
 		}
-		// flush
-		x11.XFlush(display);
 	}
 
 	@Override
 	public Window createBorderWindow(Window frame, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
-		/*
-		 * connection to the x server and set resources permanent, otherwise
-		 * window would be destroyed by calling XCloseDisplay
-		 */
-		x11.XSetCloseDownMode(display, X11.RetainPermanent);
-		/*
-		 * Create window which will hold the virtual machine window and paints a
-		 * border. This border window is a child of the parent window.
-		 */
-		Window borderWindow = x11.XCreateSimpleWindow(//
-				display, //
-				frame, //
-				bounds.x, //
-				bounds.y, //
-				bounds.width, //
-				bounds.height, //
-				borderSize, //
-				borderColor.getRGB(), //
-				backgroundColor.getRGB());
-		LOG.debug("Bordered window created [{}]", borderWindow);
-		// flush
-		x11.XFlush(display);
-		return borderWindow;
+		lock();
+		try {
+			/*
+			 * connection to the x server and set resources permanent, otherwise
+			 * window would be destroyed by calling XCloseDisplay
+			 */
+			x11.XSetCloseDownMode(display, X11.RetainPermanent);
+			/*
+			 * Create window which will hold the virtual machine window and
+			 * paints a border. This border window is a child of the parent
+			 * window.
+			 */
+			Window borderWindow = x11.XCreateSimpleWindow(//
+					display, //
+					frame, //
+					bounds.x, //
+					bounds.y, //
+					bounds.width, //
+					bounds.height, //
+					borderSize, //
+					borderColor.getRGB(), //
+					backgroundColor.getRGB());
+			LOG.debug("Bordered window created [{}]", borderWindow);
+			// flush
+			x11.XFlush(display);
+			return borderWindow;
+		} finally {
+			unlock();
+		}
 	}
 
 	@Override
 	public void removeWindow(Window window) {
-		LOG.debug("Remove Window [{}]", window);
-		x11.XDestroyWindow(display, window);
-		// commit changes and close display
-		x11.XFlush(display);
+		lock();
+		try {
+			LOG.debug("Remove Window [{}]", window);
+			x11.XDestroyWindow(display, window);
+			// commit changes and close display
+			x11.XFlush(display);
+		} finally {
+			unlock();
+		}
 	}
 
 	@Override
 	public void hideAndReparentToRoot(Window window) {
-		// Map the virtual machine window as child to the border window
-		x11.XUnmapWindow(display, window);
-		Window rootWindow = x11.XRootWindow(display, screenIndex);
-		x11.XReparentWindow(display, window, rootWindow, 0, 0);
-		// flush
-		x11.XFlush(display);
-		// log
-		LOG.debug("unmap and reparentWindow() - child[{} / {}]  to root\n", getWindowName(window), window);
+		lock();
+		try {
+			// Map the virtual machine window as child to the border window
+			x11.XUnmapWindow(display, window);
+			Window rootWindow = x11.XRootWindow(display, screenIndex);
+			x11.XReparentWindow(display, window, rootWindow, 0, 0);
+			// flush
+			x11.XFlush(display);
+			// log
+			LOG.debug("unmap and reparentWindow() - child[{} / {}]  to root\n", getWindowNameNoLock(window), window);
+		} finally {
+			unlock();
+		}
 	}
 
 	@Override
 	public void reparentWindowAndResize(Window frame, Window border, Rectangle bounds, Window client, Rectangle clientBounds) {
-		// (used when moving a VM from a monitor to another one)
-		LOG.debug("Reparent window [{}] to parent [{}]", border, frame);
-		// move border window to new CubeFrame
-		x11.XUnmapWindow(display, border);
-		x11.XUnmapWindow(display, client);
-		x11.XFlush(display);
-		x11.XReparentWindow(display, border, frame, bounds.x, bounds.y);
-		// resize border window to the new CubeFrame size (X does not include
-		// border in width)
-		x11.XMoveResizeWindow(display, border, bounds.x, bounds.y, bounds.width, bounds.height);
-		x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
-		sendResizeEvent(display, client, clientBounds);
-		x11.XMapWindow(display, client);
-		x11.XMapWindow(display, border);
-		// flush
-		x11.XFlush(display);
+		lock();
+		try {
+			// (used when moving a VM from a monitor to another one)
+			LOG.debug("Reparent window [{}] to parent [{}]", border, frame);
+			// move border window to new CubeFrame
+			x11.XUnmapWindow(display, border);
+			x11.XUnmapWindow(display, client);
+			x11.XFlush(display);
+			x11.XReparentWindow(display, border, frame, bounds.x, bounds.y);
+			// resize border window to the new CubeFrame size (X does not
+			// include
+			// border in width)
+			x11.XMoveResizeWindow(display, border, bounds.x, bounds.y, bounds.width, bounds.height);
+			x11.XMoveResizeWindow(display, client, clientBounds.x, clientBounds.y, clientBounds.width, clientBounds.height);
+			sendResizeEvent(display, client, clientBounds);
+			x11.XMapWindow(display, client);
+			x11.XMapWindow(display, border);
+			// flush
+			x11.XFlush(display);
+		} finally {
+			unlock();
+		}
 	}
 
 	@Override
-	public synchronized void destroy() {
-		if (!destroyed) {
-			destroyed = true;
+	public void destroy() {
+		lock();
+		try {
+			if (!destroyed) {
+				destroyed = true;
+			}
+		} finally {
+			unlock();
 		}
 	}
 
@@ -294,58 +368,104 @@ public final class XWindowManager implements IXWindowManager {
 		if (!destroyed) {
 			switch (event.type) {
 			case X11.ResizeRequest: {
-				X11.XResizeRequestEvent e = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
-				LOG.debug(String.format("ResizeRequest for managed window [%s] (%d:%d)", getWindowName(e.window), e.width, e.height));
+				lock();
+				try {
+					X11.XResizeRequestEvent e = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
+					LOG.debug(String.format("ResizeRequest for managed window [%s] (%d:%d)", getWindowNameNoLock(e.window), e.width, e.height));
+					// // testing - force resize to the right size // -> does
+					// not
+					// work
+					// LOG.debug(" -> force resize");
+					// Rectangle prefBnds = (e.window == null) ? null :
+					// cb.getPreferedClientBounds(e.window);
+					// x11.XMoveResizeWindow(display, e.window, 0, 0,
+					// prefBnds.width, prefBnds.height);
+					// sendResizeEvent(display, e.window, prefBnds);
+				} finally {
+					unlock();
+				}
 			}
 				break;
 			case X11.EnterNotify: {
-				// we catch EnterNotify to ensure that the visible VM will get
-				// the keyboard focus.
-				X11.XCrossingEvent enterWindowEvent = (X11.XCrossingEvent) event.getTypedValue(X11.XCrossingEvent.class);
-				x11.XSetInputFocus(display, enterWindowEvent.window, X11.RevertToParent, new NativeLong(0));
+				lock();
+				try {
+					// we catch EnterNotify to ensure that the visible VM will
+					// get
+					// the keyboard focus.
+					X11.XCrossingEvent enterWindowEvent = (X11.XCrossingEvent) event.getTypedValue(X11.XCrossingEvent.class);
+					x11.XSetInputFocus(display, enterWindowEvent.window, X11.RevertToParent, new NativeLong(0));
+				} finally {
+					unlock();
+				}
 			}
 				break;
 			case X11.PropertyNotify: {
 				// we catch PropertyNotify to identify VM's window as soon as
 				// its title is set and re-parent it in a border window
-				X11.XPropertyEvent xe = (X11.XPropertyEvent) event.getTypedValue(X11.XPropertyEvent.class);
-				String atomName = x11.XGetAtomName(display, xe.atom);
-				if ("WM_NAME".equals(atomName)) {
-					LOG.debug("Window name changed [{}]", getWindowName(xe.window));
-					notifyWindowTitleChange(xe.window);
+				Window notify = null;
+				lock();
+				try {
+					X11.XPropertyEvent xe = (X11.XPropertyEvent) event.getTypedValue(X11.XPropertyEvent.class);
+					String atomName = x11.XGetAtomName(display, xe.atom);
+					if ("WM_NAME".equals(atomName)) {
+						LOG.debug("Window name changed [{}]", getWindowNameNoLock(xe.window));
+						notify = xe.window;
+					}
+				} finally {
+					unlock();
+				}
+				if (notify != null) {
+					notifyWindowTitleChange(notify);
 				}
 			}
 				break;
 			case X11.CreateNotify: {
 				// we catch CreateNotify to register an event listener to get
 				// PropertyNotify for this window (see above)
-				X11.XCreateWindowEvent xe = (X11.XCreateWindowEvent) event.getTypedValue(X11.XCreateWindowEvent.class);
-				x11.XSelectInput(display, xe.window, new NativeLong(X11.PropertyChangeMask));
+				lock();
+				try {
+					X11.XCreateWindowEvent xe = (X11.XCreateWindowEvent) event.getTypedValue(X11.XCreateWindowEvent.class);
+					x11.XSelectInput(display, xe.window, new NativeLong(X11.PropertyChangeMask));
+				} finally {
+					unlock();
+				}
 			}
 				break;
 			case X11.DestroyNotify: {
-				// we catch DestroyNotify : to update the ManagedWindow model in
-				// WindowManager.
-				X11.XDestroyWindowEvent xe = (X11.XDestroyWindowEvent) event.getTypedValue(X11.XDestroyWindowEvent.class);
-				notifyWindowDestroyed(xe.window);
+				lock();
+				try {
+					// we catch DestroyNotify : to update the ManagedWindow
+					// model in
+					// WindowManager.
+					X11.XDestroyWindowEvent xe = (X11.XDestroyWindowEvent) event.getTypedValue(X11.XDestroyWindowEvent.class);
+					notifyWindowDestroyed(xe.window);
+				} finally {
+					unlock();
+				}
 			}
 				break;
 			case X11.ConfigureNotify: {
-				// we catch ConfigureNotify to enforce the desired frame size on
-				// VM's windows.
-				X11.XConfigureEvent e = (X11.XConfigureEvent) event.getTypedValue(X11.XConfigureEvent.class);
-				Rectangle prefBnds = (e.window == null) ? null : cb.getPreferedClientBounds(e.window);
-				if (prefBnds != null) {
-					LOG.debug(String.format("ConfigureNotify for managed window [%s] (%d:%d)(%dx%d)", getWindowName(e.window), e.x, e.y, e.width, e.height));
-					final boolean origineOk = (e.x == prefBnds.x && e.y == prefBnds.x);
-					final boolean sizeOk = (prefBnds.width == e.width && prefBnds.height == e.height);
-					if (!origineOk || !sizeOk) {
-						// force resize
-						LOG.debug(String.format("ConfigureNotify (%s) (%dx%d) -> force resize (0:0)(%dx%d)", getWindowName(e.window), e.width, e.height,
-								prefBnds.width, prefBnds.height));
-						x11.XMoveResizeWindow(display, e.window, 0, 0, prefBnds.width, prefBnds.height);
-						sendResizeEvent(display, e.window, prefBnds);
+				lock();
+				try {
+					// we catch ConfigureNotify to enforce the desired frame
+					// size on
+					// VM's windows.
+					X11.XConfigureEvent e = (X11.XConfigureEvent) event.getTypedValue(X11.XConfigureEvent.class);
+					Rectangle prefBnds = (e.window == null) ? null : cb.getPreferedClientBounds(e.window);
+					if (prefBnds != null) {
+						LOG.debug(String.format("ConfigureNotify for managed window [%s] (%d:%d)(%dx%d)", getWindowNameNoLock(e.window), e.x, e.y, e.width, e.height));
+						final boolean origineOk = (e.x == prefBnds.x && e.y == prefBnds.x);
+						final boolean sizeOk = (prefBnds.width == e.width && prefBnds.height == e.height);
+						if (!origineOk || !sizeOk) {
+							// force resize
+							LOG.debug(String.format("ConfigureNotify (%s) (%dx%d) -> force resize (0:0)(%dx%d)", getWindowNameNoLock(e.window), e.width, e.height,
+									prefBnds.width, prefBnds.height));
+							x11.XMoveResizeWindow(display, e.window, 0, 0, prefBnds.width, prefBnds.height);
+							sendResizeEvent(display, e.window, prefBnds);
+						}
 					}
+				} finally {
+					unlock();
 				}
 			}
 				break;
@@ -357,21 +477,40 @@ public final class XWindowManager implements IXWindowManager {
 		x11.XFlush(display);
 	}
 
-	private void notifyWindowTitleChange(Window window) {
-		cb.windowTitleUpdated(window, getWindowName(window));
+	private void notifyWindowTitleChange(final Window window) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				cb.windowTitleUpdated(window, getWindowName(window));
+			}
+		});
 	}
 
-	private void notifyWindowDestroyed(Window window) {
-		cb.windowDestroyed(window);
+	private void notifyWindowDestroyed(final Window window) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				cb.windowDestroyed(window);
+			}
+		});
 	}
 
 	@Override
 	public String getWindowName(Window w) {
-		if (w == null)
-			return null;
-		XTextProperty windowTitle = new XTextProperty();
-		x11.XFetchName(display, w, windowTitle);
-		return windowTitle.value;
+		lock();
+		try {
+			return getWindowNameNoLock(w);
+		} finally {
+			unlock();
+		}
+	}
+	
+	private String getWindowNameNoLock(Window w) {
+			if (w == null)
+				return null;
+			XTextProperty windowTitle = new XTextProperty();
+			x11.XFetchName(display, w, windowTitle);
+			return windowTitle.value;
 	}
 
 	@Override
@@ -381,11 +520,16 @@ public final class XWindowManager implements IXWindowManager {
 
 	@Override
 	public void adjustClientSize(Window client, Rectangle bound) {
-		x11.XMoveResizeWindow(display, client, bound.x, bound.y, bound.width, bound.height - 2);
-		// flush
-		x11.XFlush(display);
-		// log
-		LOG.debug("adjustClientSize [{}]", getWindowName(client));
+		lock();
+		try {
+			x11.XMoveResizeWindow(display, client, bound.x, bound.y, bound.width, bound.height - 2);
+			// flush
+			x11.XFlush(display);
+			// log
+			LOG.debug("adjustClientSize [{}]", getWindowNameNoLock(client));
+		} finally {
+			unlock();
+		}
 	}
 
 	/**
@@ -430,25 +574,40 @@ public final class XWindowManager implements IXWindowManager {
 	}
 
 	public void resize(Window client, int w, int h) {
-		LOG.debug("RESIZE [{}]", getWindowName(client));
-		x11.XResizeWindow(display, client, w, h);
-		x11.XFlush(display);
+		lock();
+		try {
+			LOG.debug("RESIZE [{}]", getWindowNameNoLock(client));
+			x11.XResizeWindow(display, client, w, h);
+			x11.XFlush(display);
+		} finally {
+			unlock();
+		}
 	}
 
 	public void moveResize(Window client, int x, int y, int w, int h) {
-		LOG.debug("MOVE+RESIZE [{}]", getWindowName(client));
-		x11.XMoveResizeWindow(display, client, x, y, w, h);
-		x11.XFlush(display);
+		lock();
+		try {
+			LOG.debug("MOVE+RESIZE [{}]", getWindowNameNoLock(client));
+			x11.XMoveResizeWindow(display, client, x, y, w, h);
+			x11.XFlush(display);
+		} finally {
+			unlock();
+		}
 	}
 
 	public void move(Window client, int x, int y) {
-		LOG.debug("MOVE [{}]", getWindowName(client));
-		x11.XMoveWindow(display, client, x, y);
-		x11.XFlush(display);
+		lock();
+		try {
+			LOG.debug("MOVE [{}]", getWindowNameNoLock(client));
+			x11.XMoveWindow(display, client, x, y);
+			x11.XFlush(display);
+		} finally {
+			unlock();
+		}
 	}
 
 	private void sendResizeEvent(Display display, Window client, Rectangle bounds) {
-		LOG.debug("---> sendResizeEvent() to [{}] name[{}]", client, getWindowName(client));
+		LOG.debug("---> sendResizeEvent() to [{}] name[{}]", client, getWindowNameNoLock(client));
 		//
 		// XSizeHints hints = x11.XAllocSizeHints();
 		// hints.base_width = bounds.height;
@@ -470,5 +629,25 @@ public final class XWindowManager implements IXWindowManager {
 		x11.XSendEvent(display, client, 1, event_mask, event);
 		// flush
 		x11.XFlush(display);
+	}
+
+	private void lock() {
+		looock.lock();
+		final StackTraceElement[] ste = Thread.currentThread().getStackTrace();
+		lockCommand = ste[ste.length - 1].getMethodName();
+		lockTimestamp = System.currentTimeMillis();
+	}
+
+	private void unlock() {
+		final long delta = System.currentTimeMillis() - lockTimestamp;
+		if (delta > MAX_LOCK_TIMEOUT) {
+			/**
+			 * Method call MUST be fast in order to guarantee a good user
+			 * experience (avoid freezing UI)
+			 */
+			LOG.error("Method ["+lockCommand+"] call duration timeout [" + delta + " ms] ["+lockTimestamp+"].");
+		}
+		lockTimestamp = 0;
+		looock.unlock();
 	}
 }

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ch.admin.vbs.cube.client.wm.ui.wm;
 
 import java.awt.Color;
@@ -26,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -84,7 +87,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	private static final Logger LOG = LoggerFactory.getLogger(WindowManager.class);
 	private static final String VIRTUALMACHINE_WINDOWFMT = "^%s - .*Oracle VM VirtualBox.*$";
 	private Pattern windowPatternVirtualMachine = Pattern.compile(String.format(VIRTUALMACHINE_WINDOWFMT, "(.*)"));
-	private Object lock = new Object();
+	private Lock locked = new ReentrantLock();
 	private CubeWizard dialog;
 	private VisibleWindows visibleWindows = new VisibleWindows();
 	private IXWindowManager xwm;
@@ -146,34 +149,37 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			show.add(window);
 		}
 		// apply changes
-		synchronized (xwm) {
+		locked.lock();
+		try {
 			xwm.showOnlyTheseWindows(hide, show);
+		} finally {
+			locked.unlock();
 		}
 	}
 
 	/** show navigation frames and bordered windows (containing VMs window). */
 	private void showNavigationBarAndVms(boolean raiseNavbar) {
-		synchronized (lock) {
+		locked.lock();
+		try {
+			// do not proceed request since a dialog is blocking the UI
 			if (dialog != null) {
 				LOG.trace("Skip showNavigationBarAndVms because a dialog is opened.");
 				return;
 			}
-			// index visible window's IDs
+			// build two lists: managed windows to show and managed windows to
+			// hide
 			Set<String> visibleVmsIds = visibleWindows.getVisibleVmIds();
-			// show VM window
 			ArrayList<Window> show = new ArrayList<Window>();
 			ArrayList<Window> hide = new ArrayList<Window>();
-			synchronized (lock) {
-				for (ManagedWindow managed : managedModel.list()) {
-					if (visibleVmsIds.contains(managed.vmId)) {
-						show.add(managed.border);
-					} else {
-						hide.add(managed.border);
-					}
+			for (ManagedWindow managed : managedModel.list()) {
+				if (visibleVmsIds.contains(managed.vmId)) {
+					show.add(managed.border);
+				} else {
+					hide.add(managed.border);
 				}
 			}
+			// add navigation bar to window to show list
 			if (raiseNavbar) {
-				// add NavigationBar to show list
 				for (CubeScreen n : cubeUI.getScreens()) {
 					if (n.isActive()) {
 						LOG.trace("show NavigationBar");
@@ -183,7 +189,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					}
 				}
 			}
-			// show windows
+			// actually show windows
 			// -- debug window --
 			if (debugWindow != null) {
 				Window x = getXWindow(debugWindow);
@@ -191,9 +197,14 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					show.add(x);
 			}
 			// -- debug window --
-			synchronized (xwm) {
+			locked.lock();
+			try {
 				xwm.showOnlyTheseWindows(hide, show);
+			} finally {
+				locked.unlock();
 			}
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -361,8 +372,11 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 						managed.client = client;
 					}
 					// re-parent X window
-					synchronized (xwm) {
+					locked.lock();
+					try {
 						xwm.reparentClientWindow(managed.border, client, managed.getClientBounds());
+					} finally {
+						locked.unlock();
 					}
 				}
 			} else {
@@ -408,9 +422,12 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		CubeScreen dstScreen = cubeUI.getScreen(h.getMonitorId());
 		managed.frame = dstScreen.getBackgroundFrame();
 		managed.borderBounds = managed.computeBounds(managed.frame);
-		synchronized (xwm) {
+		locked.lock();
+		try {
 			xwm.reparentWindowAndResize(getXWindow(managed.frame), managed.border, managed.getBorderBoundsForX(), managed.client, managed.getClientBounds());
 			// TODO resize client window to !!
+		} finally {
+			locked.unlock();
 		}
 		// set in foreground
 		dstScreen.getNavigationBar().selectTab(h);
@@ -425,11 +442,15 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			throw new NullPointerException("Argument frame must be none-null");
 		}
 		Window w;
-		synchronized (xwm) {
-			w = xwm.findWindowByTitle(jframe.getTitle());
+		locked.lock();
+		try {
+			String title = jframe.getTitle();
+			w = xwm.findWindowByTitle(title);
 			if (w == null) {
 				LOG.error("Not XWindow found for window [{}]", jframe.getTitle());
 			}
+		} finally {
+			locked.unlock();
 		}
 		return w;
 	}
@@ -474,15 +495,20 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					LOG.debug("managed created [{}]", managed.vmId);
 				} else {
 					String oldMonitor = managed.getHandle().getMonitorId();
-					if (!oldMonitor.equals(handle.getMonitorId())) {
-						// monitorId does not match. we have to move the window
-						managed.setHandle(handle);						
-						moveVmWindow(managed.getHandle(), oldMonitor);
-						LOG.debug("managed updated [{}] and window moved to new monitor (experimental)", managed.vmId);						
-					} else {
-						managed.setHandle(handle);
-						LOG.debug("managed updated [{}] but stay on same monitor", managed.vmId);
-					}
+					managed.setHandle(handle);
+					// LOG.debug(String.format(">> Test >> managed [%s] oldMonitor[%s]",
+					// managed, oldMonitor));
+					// if (!oldMonitor.equals(handle.getMonitorId())) {
+					// // monitorId does not match. we have to move the window
+					// managed.setHandle(handle);
+					// moveVmWindow(managed.getHandle(), oldMonitor);
+					// LOG.debug("managed updated [{}] and window moved to new monitor (experimental)",
+					// managed.vmId);
+					// } else {
+					// managed.setHandle(handle);
+					// LOG.debug("managed updated [{}] but stay on same monitor",
+					// managed.vmId);
+					// }
 				}
 			}
 			// lookup for ManagedWindow to remove
@@ -516,7 +542,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void showMessageDialog(String message, int options) {
 		LOG.debug("showMessageDialog()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// dialog is non-blocking
@@ -531,13 +558,16 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				dialog = msgdialog;
 				swingOpen(msgdialog);
 			}
+		} finally {
+			locked.unlock();
 		}
 	}
 
 	@Override
 	public void showBootPasswordDialog() {
 		LOG.debug("showDiskPasswordChangeDialog()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// dialog is non-blocking
@@ -552,6 +582,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			});
 			dialog = msgdialog;
 			swingOpen(msgdialog);
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -568,7 +600,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void showPinDialog(final String additionalMessage, final String requestId) {
 		LOG.debug("showPinDialog()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			LOG.trace("enter [showPinDialog] [{}]", additionalMessage);
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
@@ -591,6 +624,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				}
 			});
 			LOG.trace("exit  [showPinDialog] [{}]", additionalMessage);
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -602,7 +637,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void showConfirmationDialog(final String messageKey, final String requestId) {
 		LOG.debug("showConfirmationDialog()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			closeCurrentDialog();
 			hideNavigationBarAndVms();
 			// create dialog
@@ -619,6 +655,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					cubeActionListener.enteredConfirmation(dial.getDialogResult(), requestId);
 				}
 			});
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -633,11 +671,14 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		 * has been closed.
 		 */
 		LOG.trace("ShowVMs()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			// close all dialogs
 			closeCurrentDialog();
 			// ensure that navigation bar are visible
 			showNavigationBarAndVms(true);
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -668,7 +709,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 	@Override
 	public void refresh() {
 		LOG.trace("refresh()");
-		synchronized (lock) {
+		locked.lock();
+		try {
 			if (dialog == null) {
 				LOG.trace("refresh() -> show VMs + navbar");
 				showNavigationBarAndVms(true);
@@ -677,6 +719,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 				// hide VMs' windows
 				hideNavigationBarAndVms(xwm.findWindowByTitle(CubeWizard.WIZARD_WINDOW_TITLE));
 			}
+		} finally {
+			locked.unlock();
 		}
 	}
 
@@ -738,7 +782,6 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 			return managed.getClientBounds();
 		}
 	}
-	
 
 	@Override
 	public void adjustGuestSize(String vmId) {
