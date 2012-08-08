@@ -339,9 +339,9 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		public void remove(ManagedWindow managed) {
 			synchronized (managedWindows) {
 				managedWindows.remove(managed);
-				// dispose border window
-				managed.dispose();
 			}
+			// dispose border window (MUST be outside the synchronized block because it trigger deadlocks)
+			managed.dispose();
 		}
 	}
 

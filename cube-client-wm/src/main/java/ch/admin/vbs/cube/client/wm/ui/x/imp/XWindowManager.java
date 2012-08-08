@@ -150,7 +150,7 @@ public final class XWindowManager implements IXWindowManager {
 					LOG.error("XEvent Thread Failed");
 				}
 			}
-		});
+		}, "XEvent Processor for Cube");
 		eventThread.start();
 	}
 
