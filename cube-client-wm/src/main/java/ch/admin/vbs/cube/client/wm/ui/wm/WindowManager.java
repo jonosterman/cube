@@ -494,7 +494,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					managedModel.add(managed);
 					LOG.debug("managed created [{}]", managed.vmId);
 				} else {
-					String oldMonitor = managed.getHandle().getMonitorId();
+					LOG.debug(String.format(">> Test >> managed [%s] oldMonitor[%s]",managed,managed.getHandle()));
+					//String oldMonitor = managed.getHandle().getMonitorId();
 					managed.setHandle(handle);
 					// LOG.debug(String.format(">> Test >> managed [%s] oldMonitor[%s]",
 					// managed, oldMonitor));
