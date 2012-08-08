@@ -146,17 +146,6 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		}
 	}
 
-	@Override
-	public void userLogedOut(IIdentityToken id) {
-		ISession ses = null;
-		synchronized (sessions) {
-			ses = sessions.get(id.getUuid());
-			if (ses != null) {
-				closeSession(ses);
-			}
-		}
-	}
-
 	// Dependencies injection
 	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetworkManager networkManager) {
 		this.login = login;
