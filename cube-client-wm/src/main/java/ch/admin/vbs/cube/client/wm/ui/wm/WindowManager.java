@@ -495,14 +495,17 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 					LOG.debug("managed created [{}]", managed.vmId);
 				} else {
 					LOG.debug(String.format(">> Test >> managed [%s] oldMonitor[%s]",managed,managed.getHandle()));
-					//String oldMonitor = managed.getHandle().getMonitorId();
+					String oldMonitor = managed.getHandle() == null ? null : managed.getHandle().getMonitorId();
 					managed.setHandle(handle);
 					// LOG.debug(String.format(">> Test >> managed [%s] oldMonitor[%s]",
 					// managed, oldMonitor));
 					// if (!oldMonitor.equals(handle.getMonitorId())) {
 					// // monitorId does not match. we have to move the window
 					// managed.setHandle(handle);
-					// moveVmWindow(managed.getHandle(), oldMonitor);
+					//--
+					// ensure that managed window appears o nthe right screen
+					moveVmWindow(managed.getHandle(), oldMonitor);
+					// --
 					// LOG.debug("managed updated [{}] and window moved to new monitor (experimental)",
 					// managed.vmId);
 					// } else {
