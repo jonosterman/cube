@@ -89,7 +89,6 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 
 	@Override
 	public void vmChanged(VmChangeEvent event) {
-		LOG.trace("VM [{}] changed", event.getVmHandle());
 		refreshTab(event.getVmHandle());
 	}
 
@@ -207,7 +206,6 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	}
 
 	public void refreshTab(final VmHandle h) {
-		LOG.trace("Refresh Tab [{}]", h);
 		if (h == null)
 			throw new NullPointerException("Given VmHandle is null");
 		SwingUtilities.invokeLater(new Runnable() {
@@ -216,7 +214,6 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 				int i = findTabComponentIndex(h);
 				if (i >= 0) {
 					// update icon
-					LOG.error(" net state {}",vmMon.getVmNetworkState(h));
 					tabs.setIconAt(i, TabIconProvider.getStatusIcon(vmMon.getVmState(h),vmMon.getVpnState(h),vmMon.getVmNetworkState(h)));
 					// update tooltip
 					tabs.setToolTipTextAt(i, formatTooltip(h));

@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package ch.admin.vbs.cube.core.vm.vbox;
 
 import java.io.File;
@@ -459,6 +460,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		}
 	}
 
+	/** Check that VBox web service is available and connected */
 	private void checkConnected() throws VmException {
 		if (vbox == null)
 			throw new VmException("Not connected to VirtualBox WebService yet.");
@@ -577,7 +579,7 @@ public class VBoxProduct implements VBoxCacheListener {
 					progress.getOperationDescription(), //
 					progress.getOperationPercent(), //
 					progress.getOperationWeight());
-			LOG.debug("launchVMProcess -> "+msg);
+			LOG.debug("launchVMProcess -> " + msg);
 			fireVmStateUpdate(model, vm, progress);
 			Thread.sleep(1000);
 		}
@@ -672,6 +674,18 @@ public class VBoxProduct implements VBoxCacheListener {
 	}
 
 	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine) {
+		addNetworkIface(id, nic, bridge, mac, machine, false);
+	}
+
+	/**
+	 * @param assumeVpnIsUp
+	 *            during VM startup the NIC should be connected only once the
+	 *            VPN is UP (VpnListener will do it). But when the user change
+	 *            the connected NIC from the pop-up menu, the VPN may be already
+	 *            up : we have to connect the cable (or could we query if the
+	 *            VPN is already up somewhere??)
+	 */
+	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine, boolean assumeVpnIsUp) {
 		LOG.debug("configure nic [{}]", id + " / " + nic + " / mac:" + mac);
 		mac = mac == null ? null : mac.replaceAll(":", "").toLowerCase();
 		if ("vpn".equals(nic)) {
@@ -681,7 +695,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			na.setAttachmentType(NetworkAttachmentType.Bridged);
 			na.setBridgedInterface(bridge);
 			na.setMACAddress(mac);
-			na.setCableConnected(false); // will be set by VpnListener
+			na.setCableConnected(assumeVpnIsUp); // will be set by VpnListener
 			na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.Deny);
 			na.setEnabled(true);
 		} else if ("disabled".equals(nic)) {
@@ -1086,9 +1100,40 @@ public class VBoxProduct implements VBoxCacheListener {
 	public void connectNic(Vm vm, NicOption option) throws VmException {
 		checkConnected();
 		if (lock.tryLock()) {
+			// Disconnect all NICs fist, this way reconfiguring them will
+			// trigger guest netowrking layer (renew DHCP, etc.)
+			try {
+				LOG.debug("Disconnect all NICS before reconfiguring them.");
+				ISession session = mgr.getSessionObject();
+				IMachine machine = getIMachineReference(vm.getId());
+				machine.lockMachine(session, LockType.Shared);
+				IMachine mutable = session.getMachine();
+				for (long nic = 0l; nic <= 3l; nic++) {
+					INetworkAdapter na = mutable.getNetworkAdapter(nic);
+					na.setCableConnected(false);
+					na.setAttachmentType(NetworkAttachmentType.Null);
+					na.setEnabled(false);
+				}
+				// save settings
+				mutable.saveSettings();
+				// unlock machine
+				session.unlockMachine();
+				Thread.sleep(1000);
+				// DEBUG OUTPUT
+				machine = getIMachineReference(vm.getId());
+				for (long nic = 0l; nic <= 3l; nic++) {
+					INetworkAdapter na = machine.getNetworkAdapter(nic);
+					LOG.debug(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
+							na.getEnabled()));
+				}
+			} catch (Exception e) {
+				LOG.error("Failed to unconnect NICs", e);
+			}
+			//
 			try {
 				if (option.getNic().equals(ORIGINAL_NETWORK_CONFIG)) {
-					// restore original nic config
+					LOG.error("Restore original NICs configuration");
+					// restore original NIC configuration
 					vm.setNetworkState(VmNetworkState.CUBE);
 					VBoxConfig cfg = new VBoxConfig(vm.getVmContainer(), vm.getRuntimeContainer());
 					try {
@@ -1100,42 +1145,49 @@ public class VBoxProduct implements VBoxCacheListener {
 					IMachine machine = getIMachineReference(vm.getId());
 					machine.lockMachine(session, LockType.Shared);
 					IMachine mutable = session.getMachine();
-					addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), cfg.getOption(VBoxOption.Nic1Mac), mutable);
-					addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), mutable);
-					addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), mutable);
-					addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), mutable);
+					addNetworkIface(0, cfg.getOption(VBoxOption.Nic1), cfg.getOption(VBoxOption.Nic1Bridge), cfg.getOption(VBoxOption.Nic1Mac), mutable, true);
+					addNetworkIface(1, cfg.getOption(VBoxOption.Nic2), cfg.getOption(VBoxOption.Nic2Bridge), cfg.getOption(VBoxOption.Nic2Mac), mutable, true);
+					addNetworkIface(2, cfg.getOption(VBoxOption.Nic3), cfg.getOption(VBoxOption.Nic3Bridge), cfg.getOption(VBoxOption.Nic3Mac), mutable, true);
+					addNetworkIface(3, cfg.getOption(VBoxOption.Nic4), cfg.getOption(VBoxOption.Nic4Bridge), cfg.getOption(VBoxOption.Nic4Mac), mutable, true);
 					// save settings
 					mutable.saveSettings();
 					// unlock machine
 					session.unlockMachine();
 				} else {
-					// connect first nic to the given interface and disconnect
-					// all other nics
+					// connect first NIC to the given interface and disconnect
+					// all other NICs
 					vm.setNetworkState(VmNetworkState.LOCAL);
 					ISession session = mgr.getSessionObject();
 					IMachine machine = getIMachineReference(vm.getId());
 					machine.lockMachine(session, LockType.Shared);
 					IMachine mutable = session.getMachine();
 					// disable other devices
-					LOG.debug("Unconfigure NIC1 NIC2 and NIC3");
+					LOG.debug("(1/3) Unconfigure NIC1 NIC2 and NIC3");
 					for (long nic = 1l; nic <= 3l; nic++) {
 						INetworkAdapter na = mutable.getNetworkAdapter(nic);
 						na.setCableConnected(false);
 						na.setAttachmentType(NetworkAttachmentType.Null);
 						na.setEnabled(false);
 					}
-					LOG.debug("Configure NIC0");
 					INetworkAdapter na = mutable.getNetworkAdapter(0l);
+					LOG.debug("(2/3) Configure NIC0 to connect [{}]", option.getNic());
 					na.setEnabled(true);
 					na.setAttachmentType(NetworkAttachmentType.Bridged);
 					na.setBridgedInterface(option.getNic());
 					na.setPromiscModePolicy(NetworkAdapterPromiscModePolicy.AllowAll);
-					LOG.debug("Connect NIC0");
+					LOG.debug("(3/3) Connect NIC0");
 					na.setCableConnected(true);
 					// save settings
 					mutable.saveSettings();
 					// unlock machine
 					session.unlockMachine();
+				}
+				// DEBUG OUTPUT
+				IMachine machine = getIMachineReference(vm.getId());
+				for (long nic = 0l; nic <= 3l; nic++) {
+					INetworkAdapter na = machine.getNetworkAdapter(nic);
+					LOG.debug(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
+							na.getEnabled()));
 				}
 			} catch (Exception e) {
 				throw new VmException("Failed to connect/disconnect NIC to [" + option.getNic() + "]", e);

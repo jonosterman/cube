@@ -97,6 +97,7 @@ sub vpnopen() {
     ##    log file in order to detect success or failure and abort after a given timeout.
     ## -> --persist-key: key files are going to be shreded as soons as openvpn has been started. Therefore openvpn need to 
     ##    cache them.
+    ## -> --persist-tun: or tap will be removed from the bridge when reconnecting the servers 
     ## -> --resolv-retry infinite: ?
     ## -> --nobind: ?
     ## -> --writepid: keep a track of this process ID
@@ -107,7 +108,7 @@ sub vpnopen() {
     if ($noLzo == 0) {
 	 $lzoOption = "--comp-lzo";
     }
-	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server $lzoOption --verb 3 --log /tmp/openvpn-${tap}.log --writepid ${pidFile} &";
+	my $ocmd = "setsid openvpn --client --remote $hostname $port --dev-type tap --dev $tap --persist-tun --persist-key --proto udp --resolv-retry infinite --nobind --ca $ca --cert $cert --key $key --fast-io --ns-cert-type server $lzoOption --verb 3 --log /tmp/openvpn-${tap}.log --writepid ${pidFile} &";
 	print "[DEBUG] Start new openvpn process [$ocmd]\n";
 	runCmd($ocmd);
 	## wait tap to be defined (openvpn create the tap device)

@@ -49,8 +49,11 @@ import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
+import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
+import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
+import ch.admin.vbs.cube.core.vm.VmController;
 
 /**
  * This class is the entry point to start the cube secure client.
@@ -119,6 +122,7 @@ public final class Cube {
 		ioc.addBean(new WindowManager());
 		ioc.addBean(new XWindowManager());
 		ioc.addBean(new CubeCore());
+		ioc.addBean(new VmController());
 		ioc.addBean(new SessionManager());
 		ioc.addBean(new LoginMachine());
 		ioc.addBean(new ScAuthModule());
@@ -136,8 +140,9 @@ public final class Cube {
 		// object's specific initialization
 		ioc.getBean(IXrandr.class).start();
 		ioc.getBean(ICubeUI.class).start();
-//		ioc.getBean(XWindowManager.class).start();
 		ioc.getBean(XWindowManager.class).start();
+		ioc.getBean(IVmController.class).start();
+		ioc.getBean(INetworkManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();
 		ioc.getBean(IAuthModule.class).start();

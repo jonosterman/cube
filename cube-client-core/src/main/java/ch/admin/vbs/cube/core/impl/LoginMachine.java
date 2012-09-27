@@ -346,7 +346,7 @@ public class LoginMachine implements ILogin, ITokenListener, IAuthModuleListener
 		}
 	}
 
-	/** Token is present and we ask user to enter its creditential (PIN). */
+	/** Token is present and we ask user to enter its credential (PIN). */
 	public class StateLogedIn extends AbstractState {
 		@Override
 		public void transition(StateTransition trs) {

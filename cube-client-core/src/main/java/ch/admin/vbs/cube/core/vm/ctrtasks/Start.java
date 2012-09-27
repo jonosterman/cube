@@ -32,7 +32,7 @@ import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.VmController;
+import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.VmNetworkState;
@@ -49,9 +49,9 @@ public class Start extends AbstractCtrlTask {
 	private static final long UNKNOWN_STATE_TIMEOUT = 4000; // ms
 
 	/** Constructor */
-	public Start(VmController vmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
+	public Start(IVmController IVmController, IKeyring keyring, Vm vm, IContainerFactory containerFactory, VpnManager vpnManager, VBoxProduct product,
 			Container transfer, VmModel vmModel, IOption option) {
-		super(vmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
+		super(IVmController, keyring, vm, containerFactory, vpnManager, product, transfer, vmModel, option);
 	}
 
 	@Override

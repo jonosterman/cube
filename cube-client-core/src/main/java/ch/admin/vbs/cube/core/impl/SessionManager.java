@@ -33,7 +33,7 @@ import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.network.INetworkManager;
 import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
 import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
-import ch.admin.vbs.cube.core.vm.VmController;
+import ch.admin.vbs.cube.core.vm.IVmController;
 
 public class SessionManager implements ISessionManager, ILoginListener {
 	/** Logger */
@@ -42,18 +42,15 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	private HashMap<String, ISession> sessions = new HashMap<String, ISession>();
 	private ISessionUI sessionUI;
 	private IContainerFactory containerFactory;
-	private VmController vmController;
+	private IVmController vmController;
 	private ArrayList<ISessionManagerListener> listeners = new ArrayList<ISessionManager.ISessionManagerListener>(2);
 	private INetworkManager networkManager;
 
 	public SessionManager() {
-		vmController = new VmController();
 	}
 
 	@Override
 	public void start() {
-		networkManager.start();
-		vmController.start();
 	}
 
 	@Override
@@ -146,25 +143,14 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		}
 	}
 
-	@Override
-	public void userLogedOut(IIdentityToken id) {
-		ISession ses = null;
-		synchronized (sessions) {
-			ses = sessions.get(id.getUuid());
-			if (ses != null) {
-				closeSession(ses);
-			}
-		}
-	}
-
 	// Dependencies injection
-	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetworkManager networkManager) {
+	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetworkManager networkManager, IVmController vmController) {
 		this.login = login;
 		this.sessionUI = sessionUI;
 		this.containerFactory = containerFactory;
+		this.vmController = vmController;
 		this.login.addListener(this);
 		this.networkManager = networkManager;
-		vmController.setNetworkManager(networkManager);
 		networkManager.addListener(new Listener() {
 			@Override
 			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {

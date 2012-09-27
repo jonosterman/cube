@@ -27,5 +27,4 @@ public interface ILoginListener {
 
 	void userLocked(IIdentityToken id);
 
-	void userLogedOut(IIdentityToken id);
 }

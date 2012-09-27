@@ -104,7 +104,7 @@ public class VpnManager {
 	}
 
 	/**
-	 * During stagging, th vpnmanager will just sotre its config in runtime
+	 * During stagging, the vpnmanager will just store its config in runtime
 	 * container.
 	 * 
 	 * @param vm
