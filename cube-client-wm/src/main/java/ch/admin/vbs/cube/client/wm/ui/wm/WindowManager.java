@@ -135,6 +135,8 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 		for (ManagedWindow managed : managedModel.list()) {
 			if (managed.border != null)
 				hide.add(managed.border);
+			if (managed.client != null)
+				hide.add(managed.client);
 		}
 		// add also NavigationBar frames to 'hide' list
 		for (CubeScreen n : cubeUI.getScreens()) {

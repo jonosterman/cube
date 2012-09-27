@@ -24,9 +24,9 @@ import javax.xml.ws.WebServiceException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.virtualbox_4_1.IMachine;
-import org.virtualbox_4_1.MachineState;
-import org.virtualbox_4_1.VBoxException;
+import org.virtualbox_4_2.IMachine;
+import org.virtualbox_4_2.MachineState;
+import org.virtualbox_4_2.VBoxException;
 
 /**
  * This class cache and monitor VirtualBox machines. It raises events when a
