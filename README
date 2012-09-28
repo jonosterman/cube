@@ -45,12 +45,16 @@ machines.
 ##   - openvpn, bridge-utils: used to connect VMs to target netowrks
 ##   - dbus-java-bin: used to connect NetworkManager
 ##   - maven: used to compile cube
-##   - virtualbox-4.1: ...
+##   - virtualbox-4.2: ...
 ##   - openjdk7-jdk: ...
 
- sudo apt-get install openvpn bridge-utils virtualbox-4.1 dbus-java-bin maven openjdk-7-jdk cryptsetup-luks uml-utilities numlockx whois libwww-perl libx11-dev
+## Add VirtualBox repository
+ wget -q http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | sudo apt-key add -
+ echo "deb http://download.virtualbox.org/virtualbox/debian precise contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
+ sudo apt-get update
 
-
+## Install additional packages
+ sudo apt-get install openvpn bridge-utils virtualbox-4.2 dbus-java-bin maven openjdk-7-jdk cryptsetup-luks uml-utilities numlockx whois libwww-perl libx11-dev
 
 ## Create some directories to holds scripts and 
 ## certificates (thus may be changed through cube's 
@@ -99,10 +103,11 @@ machines.
 
 ## Download and install VirtualBox SDK library
 
-Download VirtualBox SDK from :http://www.virtualbox.org/wiki/Downloads
+Download VirtualBox SDK from : http://www.virtualbox.org/wiki/Downloads
 ## unzip it
 cd ~/Downloads
-unzip VirtualBoxSDK-<correct_version>.zip
+
+unzip VirtualBoxSDK-*.zip
 ## install it in maven repository
 cd sdk/bindings/webservice/java/jax-ws/
 mvn install:install-file \
@@ -111,7 +116,7 @@ mvn install:install-file \
   -Djavadoc=./vboxjws-doc.jar \
   -DgroupId=virtualbox \
   -DartifactId=virtualbox \
-  -Dversion=4.1 \
+  -Dversion=4.2 \
   -Dpackaging=jar \
   -DgeneratePom=true
 

@@ -228,30 +228,24 @@ public final class XWindowManager implements IXWindowManager {
 	}
 
 	@Override
-	public void showOnlyTheseWindows(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
-		lock();
-		try {
-			LOG.debug("showOnlyTheseWindow()");
-			// maps and sets all show window
-			for (Window window : showWindowList) {
-				LOG.debug(" -> show [{}/{}]", window, getWindowNameNoLock(window));
-				// map+raise window
-				x11.XMapRaised(display, window);
-			}
-			// set all visible window hidden
-			for (Window window : hideWindowList) {
-				// get window attributes
-				XWindowAttributes attributes = new XWindowAttributes();
-				x11.XGetWindowAttributes(display, window, attributes);
-				if (attributes.map_state != X11.IsUnmapped) {
-					LOG.debug(" -> hide [{}/{}]", window, getWindowNameNoLock(window));
-					x11.XUnmapWindow(display, window);
-				}
-			}
-			// flush
-			x11.XFlush(display);
-		} finally {
-			unlock();
+	public synchronized void showOnlyTheseWindows(Collection<Window> hideWindowList, Collection<Window> showWindowList) {
+		LOG.debug("showOnlyTheseWindow()");
+		// show some windows
+		for (Window window : showWindowList) {
+			LOG.debug(" -> show [{}/{}]", window, getWindowName(window));
+			// map window
+			x11.XMapWindow(display, window);
+			x11.XMapRaised(display, window);
+		}
+		// hide some windows
+		for (Window window : hideWindowList) {
+			// get window attributes
+			// XWindowAttributes attributes = new XWindowAttributes();
+			// x11.XGetWindowAttributes(display, window, attributes);
+			// if (attributes.map_state != X11.IsUnmapped) {
+			LOG.debug(" -> hide [{}/{}]", window, getWindowName(window));
+			x11.XUnmapWindow(display, window);
+			// }
 		}
 	}
 
