@@ -111,7 +111,7 @@ mvn install:install-file \
   -Djavadoc=./vboxjws-doc.jar \
   -DgroupId=virtualbox \
   -DartifactId=virtualbox \
-  -Dversion=4.1 \
+  -Dversion=<correct_version like 4.1> \
   -Dpackaging=jar \
   -DgeneratePom=true
 
@@ -122,7 +122,7 @@ mvn install:install-file \
   -Dfile=./jna.jar \
   -DgroupId=com.sun.jna \
   -DartifactId=jna \
-  -Dversion=3.3 \
+  -Dversion=<correct_version like 3.3> \
   -Dpackaging=jar \
   -DgeneratePom=true
 
