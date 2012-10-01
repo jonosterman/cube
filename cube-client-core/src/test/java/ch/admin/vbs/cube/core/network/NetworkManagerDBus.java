@@ -1,9 +1,11 @@
 package ch.admin.vbs.cube.core.network;
 
-import java.util.Vector;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.freedesktop.NMApplet;
-import org.freedesktop.NMApplet.NmState;
+import org.freedesktop.NetworkManager.Device;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
@@ -28,7 +30,66 @@ public class NetworkManagerDBus {
 	}
 
 	public enum DeviceState {
-		NM_DEVICE_STATE_STATE_UNKNOWN, NM_DEVICE_STATE_UNMNAGED, NM_DEVICE_STATE_UNAVAILABLE, NM_DEVICE_STATE_DISCONNECTED, NM_DEVICE_STATE_PREPARE, NM_DEVICE_STATE_CONFIG, NM_DEVICE_STATE_NEED_AUTH, NM_DEVICE_STATE_IP_CONFIG, NM_DEVICE_STATE_ACTIVATED, NM_DEVICE_STATE_FAILED
+		NM_DEVICE_STATE_STATE_UNKNOWN(0), //
+		NM_DEVICE_STATE_UNMNAGED(10), //
+		NM_DEVICE_STATE_UNAVAILABLE(20), //
+		NM_DEVICE_STATE_DISCONNECTED(30), //
+		NM_DEVICE_STATE_PREPARE(40), //
+		NM_DEVICE_STATE_CONFIG(50), //
+		NM_DEVICE_STATE_NEED_AUTH(60), //
+		NM_DEVICE_STATE_IP_CONFIG(70), //
+		NM_DEVICE_STATE_IP_CHECK(80), //
+		NM_DEVICE_STATE_SECONDARIES(90), //
+		NM_DEVICE_STATE_ACTIVATED(100), //
+		NM_DEVICE_STATE_DEACTIVATING(110), //
+		NM_DEVICE_STATE_FAILED(120); //
+		private static final Map<Integer, DeviceState> lookup = new HashMap<Integer, DeviceState>();
+		static {
+			for (DeviceState s : EnumSet.allOf(DeviceState.class))
+				lookup.put(s.getCode(), s);
+		}
+		private int code;
+
+		private DeviceState(int code) {
+			this.code = code;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public static DeviceState get(int code) {
+			return lookup.get(code);
+		}
+	}
+	
+	public enum NmState {
+		NM_STATE_UNKNOWN(0), //
+		NM_STATE_ASLEEP(10), //
+		NM_STATE_DISCONNECTED(20), //
+		NM_STATE_DISCONNECTING(30), //
+		NM_STATE_CONNECTING(40), //
+		NM_STATE_CONNECTED_LOCAL(50), //
+		NM_STATE_CONNECTED_SITE(60), //
+		NM_STATE_CONNECTED_GLOBAL(70); //
+		private static final Map<Integer, NmState> lookup = new HashMap<Integer, NmState>();
+		static {
+			for (NmState s : EnumSet.allOf(NmState.class))
+				lookup.put(s.getCode(), s);
+		}
+		private int code;
+
+		private NmState(int code) {
+			this.code = code;
+		}
+
+		public int getCode() {
+			return code;
+		}
+
+		public static NmState get(int code) {
+			return lookup.get(code);
+		}
 	}
 
 	public static void main(String[] args) {
@@ -39,7 +100,8 @@ public class NetworkManagerDBus {
 	private static final String NM_DBUS_OBJECT = "/org/freedesktop/NetworkManager";
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
-	private static final Logger LOG = LoggerFactory.getLogger(NetworkManagerDBus.class);
+	private static final Logger LOG = LoggerFactory
+			.getLogger(NetworkManagerDBus.class);
 	private DBusExplorer dbusExplorer;
 	private DBusConnection systemCon;
 	private DBusConnection sessionCon;
@@ -64,6 +126,19 @@ public class NetworkManagerDBus {
 					NM_DBUS_NMIFACE, //
 					"Version");
 			LOG.debug("NetworkManager Version : " + networkManagerVersion);
+			//
+			List<Path> x = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
+					NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class)
+					.GetDevices();
+			System.out.println(x.size());
+			for (Path p : x) {
+				System.out.println(">> " + p);
+				Object y = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
+						p.getPath());
+				Device d = (Device) y;
+
+				System.out.println(d);
+			}
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS.", e);
 		}
@@ -77,7 +152,8 @@ public class NetworkManagerDBus {
 	 * @param h
 	 * @throws DBusException
 	 */
-	public <T extends DBusSignal> void addSignalHanlder(int scope, Class<T> type, DBusSigHandler<T> h) throws DBusException {
+	public <T extends DBusSignal> void addSignalHanlder(int scope,
+			Class<T> type, DBusSigHandler<T> h) throws DBusException {
 		switch (scope) {
 		case DBusConnection.SESSION:
 			sessionCon.addSigHandler(type, h);
@@ -92,14 +168,29 @@ public class NetworkManagerDBus {
 	@SuppressWarnings("unchecked")
 	public <E> E getEnumConstant(int stateId, Class<E> x) {
 		if (x.equals(NmState.class)) {
+			// NmState use specific event numbers 
 			NmState s = NmState.get(stateId);
 			s = s != null ? s : NmState.NM_STATE_UNKNOWN;
 			return (E) s;
-		}
-		if (stateId < 0 || stateId >= x.getEnumConstants().length) {
+		} else if (x.equals(DeviceState.class)) {
+			// DeviceState use specific event numbers 
+			DeviceState s = DeviceState.get(stateId);
+			s = s != null ? s : DeviceState.NM_DEVICE_STATE_FAILED;
+			return (E) s;
+		} else { 
+			LOG.error("Unsupported constant ["+stateId+" / "+x+"]");
 			return null;
-		} else {
-			return x.getEnumConstants()[stateId];
+		}
+	}
+
+	public String getTypeAsString(int type) {
+		switch (type) {
+		case DBusConnection.SYSTEM:
+			return "SYSTEM";
+		case DBusConnection.SESSION:
+			return "SESSION";
+		default:
+			return "unkown(" + type + ")";
 		}
 	}
 }

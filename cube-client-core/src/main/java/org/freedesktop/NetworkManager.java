@@ -56,6 +56,13 @@ public interface NetworkManager extends DBusInterface {
 		}
 	}
 
+	public class DeviceAdded extends DBusSignal {
+
+		public DeviceAdded(String path) throws DBusException {
+			super(path);
+		}
+	}
+
 	public interface VPN {
 		public interface Connection extends DBusInterface {
 			public class VpnStateChanged extends DBusSignal {
@@ -88,12 +95,18 @@ public interface NetworkManager extends DBusInterface {
 			public final UInt32 ostate;
 			public final UInt32 nstate;
 			public final UInt32 reason;
+			private String path;
 
 			public StateChanged(String path, UInt32 nstate, UInt32 ostate, UInt32 reason) throws DBusException {
 				super(path);
+				this.path = path;
 				this.ostate = ostate;
 				this.nstate = nstate;
 				this.reason = reason;
+			}
+			
+			public String getPath() {
+				return path;
 			}
 		}
 	}
