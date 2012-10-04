@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.freedesktop.NetworkManager;
 import org.freedesktop.NetworkManager.Device;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
@@ -93,7 +94,7 @@ public class NetworkManagerDBus {
 	}
 
 	public static void main(String[] args) {
-		Manager m = new Manager();
+		NetManager m = new NetManager();
 		m.start();
 	}
 
@@ -192,5 +193,22 @@ public class NetworkManagerDBus {
 		default:
 			return "unkown(" + type + ")";
 		}
+	}
+
+	public void triggerNetworkManagerRestart() {
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				LOG.debug("Restart network manager");
+				try {
+					NetworkManager nm = systemCon.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class);
+					nm.Enable(false);
+					Thread.sleep(500);
+					nm.Enable(true);
+				} catch (Exception e) {
+					LOG.error("Failed to re-enable NetworkManager", e);
+				}
+			}
+		}).start();		
 	}
 }
