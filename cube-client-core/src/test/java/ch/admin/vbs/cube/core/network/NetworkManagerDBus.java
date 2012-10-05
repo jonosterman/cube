@@ -11,6 +11,7 @@ import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;
 import org.freedesktop.dbus.Path;
+import org.freedesktop.dbus.UInt32;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,7 +107,6 @@ public class NetworkManagerDBus {
 	private DBusExplorer dbusExplorer;
 	private DBusConnection systemCon;
 	private DBusConnection sessionCon;
-	private boolean connected;
 	private Object networkManagerVersion;
 
 	public NetworkManagerDBus() {
@@ -119,7 +119,6 @@ public class NetworkManagerDBus {
 			// Connect DBUS
 			systemCon = DBusConnection.getConnection(DBusConnection.SYSTEM);
 			sessionCon = DBusConnection.getConnection(DBusConnection.SESSION);
-			connected = true;
 			// Dump version in logs
 			networkManagerVersion = dbusExplorer.getProperty(systemCon, //
 					NM_DBUS_BUSNAME, //
@@ -131,14 +130,12 @@ public class NetworkManagerDBus {
 			List<Path> x = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
 					NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class)
 					.GetDevices();
-			System.out.println(x.size());
+			// list devices
 			for (Path p : x) {
-				System.out.println(">> " + p);
 				Object y = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
 						p.getPath());
 				Device d = (Device) y;
-
-				System.out.println(d);
+				LOG.debug("Found device [{}]",d);
 			}
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS.", e);
@@ -167,19 +164,19 @@ public class NetworkManagerDBus {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <E> E getEnumConstant(int stateId, Class<E> x) {
-		if (x.equals(NmState.class)) {
+	public <E> E getEnumConstant(int state, Class<E> class1) {
+		if (class1.equals(NmState.class)) {
 			// NmState use specific event numbers 
-			NmState s = NmState.get(stateId);
+			NmState s = NmState.get(state);
 			s = s != null ? s : NmState.NM_STATE_UNKNOWN;
 			return (E) s;
-		} else if (x.equals(DeviceState.class)) {
+		} else if (class1.equals(DeviceState.class)) {
 			// DeviceState use specific event numbers 
-			DeviceState s = DeviceState.get(stateId);
+			DeviceState s = DeviceState.get(state);
 			s = s != null ? s : DeviceState.NM_DEVICE_STATE_FAILED;
 			return (E) s;
 		} else { 
-			LOG.error("Unsupported constant ["+stateId+" / "+x+"]");
+			LOG.error("Unsupported constant ["+state+" / "+class1+"]");
 			return null;
 		}
 	}
@@ -210,5 +207,16 @@ public class NetworkManagerDBus {
 				}
 			}
 		}).start();		
+	}
+
+	public boolean isNetworkManagerActive() {
+		try {
+			NetworkManager nm = systemCon.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class);
+			NmState state = getEnumConstant(nm.state().intValue(), NmState.class);
+			return NmState.NM_STATE_CONNECTED_GLOBAL == state;
+		} catch (Exception e) {
+			LOG.error("Failed to get NetworkManager state", e);
+		}
+		return false;
 	}
 }

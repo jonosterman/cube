@@ -27,11 +27,11 @@ import org.freedesktop.dbus.exceptions.DBusException;
 public interface NetworkManager extends DBusInterface {
 	List<Path> GetDevices();
 
-	UInt32 state();
+	public UInt32 state();
 
-	void sleep();
+	public void sleep();
 
-	void wake();
+	public void wake();
 
 	// <method name="DeactivateConnection">
 	// <arg name="active_connection" type="o" direction="in"/>
