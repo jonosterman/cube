@@ -60,8 +60,11 @@ sub vpnclose() {
     if ( -e $pidFile && system("ps -p `cat $pidFile` > /dev/null") == 0) {
     	## OpenVPN is running. Kill it
     	my $pid = `cat ${pidFile}`;
+	chomp($pid);
         print "[DEBUG] Kill openvpn process [$pid]\n";
     	runCmd("kill -9 $pid");
+        ## also kill perl script that open this vpn if still present
+        system("pkill -f 'vpn-open.pl'");
     	## 2nd check (if something get nasty with the pid file)
     	#runCmd("pkill -9 -f '/tmp/openvpn-${tap}.pid'");
     }

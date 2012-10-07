@@ -32,7 +32,7 @@
 	
 	<!-- where to store pipe files -->
 	<entry key="pipe.baseDir">/tmp</entry>
-<entry key="cryptsetup.dev">/root/</entry>
+    <entry key="cryptsetup.dev">/root/</entry>
 
 	<!-- VmManager type/factory mapping -->
 	<entry key="vmManager.managerFactory.VirtualBox">ch.admin.vbs.cube.core.vm.vbox.VboxProductManager</entry>
@@ -49,5 +49,14 @@
 	<!--  root ca -->
 	<entry key="rootca.keystore.file">/opt/cube/client/certificates/rootca.jks</entry>
 	<entry key="rootca.keystore.password">password</entry>
+	
+	<!-- cube VPN -->
+    <entry key="INetworkManager.vpnIpCheck">172.20.0.5</entry>
+    <entry key="INetworkManager.vpnTap">tap-cube</entry>
+    <entry key="INetworkManager.vpnServer">localhost</entry>
+    <entry key="INetworkManager.vpnPort">12345</entry>
+    <entry key="INetworkManager.vpnCa">/etc/openvpn/keys/ca.crt</entry>
+    <entry key="INetworkManager.vpnCrt">/etc/openvpn/keys/__HOSTNAME__.crt</entry>
+    <entry key="INetworkManager.vpnKey">/etc/openvpn/keys/__HOSTNAME__.key</entry>
 	
 </properties>

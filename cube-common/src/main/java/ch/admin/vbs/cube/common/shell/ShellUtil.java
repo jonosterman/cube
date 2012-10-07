@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.common.shell;
 
 import java.io.BufferedReader;
@@ -21,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -83,12 +83,10 @@ public class ShellUtil {
 			// start process
 			proc = pb.start();
 			if (stdIn != null && stdIn.size() > 0) {
-				BufferedWriter b = new BufferedWriter(new OutputStreamWriter(
-						proc.getOutputStream()));
+				BufferedWriter b = new BufferedWriter(new OutputStreamWriter(proc.getOutputStream()));
 				for (String inp : stdIn) {
 					b.write(inp);
 				}
-
 				b.close();
 			}
 			// create BufferedReaders to read standard and error output
@@ -124,8 +122,7 @@ public class ShellUtil {
 					LOG.debug("Failed to destroy process [{}]", commandLine);
 				}
 				// output stdout & stderr to be able to debug error
-				LOG.error("\nstdout> " + stdOut.toString().trim().replaceAll("\n(.)", "\nstdout> $1"));
-				LOG.error("\nstderr> " + stdErr.toString().trim().replaceAll("\n(.)", "\nstderr> $1"));
+				dumpOutputInLogs(LOG);
 			}
 			// terminate watchdog
 			if (watchdog != null) {
@@ -136,11 +133,9 @@ public class ShellUtil {
 		closeStream(bufferedStdOutput);
 		closeStream(bufferedStdError);
 		// trace
-		if (LOG.isTraceEnabled() && stdOut.length() > 0) {
-			LOG.trace("\nstdout> " + stdOut.toString().trim().replaceAll("\n(.)", "\nstdout> $1"));
-		}
-		if (LOG.isTraceEnabled() && stdErr.length() > 0) {
-			LOG.trace("\nstderr> " + stdErr.toString().trim().replaceAll("\n(.)", "\nstderr> $1"));
+		if (LOG.isTraceEnabled() && (stdOut.length() > 0 || stdErr.length() > 0)) {
+			LOG.debug("DUMP COMMAND OUTPUT BECAUSE TRACE IS ENABLED :");
+			dumpOutputInLogs(LOG);
 		}
 	}
 
@@ -253,6 +248,28 @@ public class ShellUtil {
 		return stdErr;
 	}
 
+	public void dumpOutputInLogs(Logger log) {
+		log.debug("## STDOUT #########################");
+		BufferedReader rdr = new BufferedReader(new StringReader(stdOut.toString()));
+		try {
+			String line = rdr.readLine();
+			while (line != null) {
+				log.debug(line);
+				line = rdr.readLine();
+			}
+			log.debug("## STDERR #########################");
+			rdr = new BufferedReader(new StringReader(stdErr.toString()));
+			line = rdr.readLine();
+			while (line != null) {
+				log.debug(line);
+				line = rdr.readLine();
+			}
+			log.debug("###################################");
+		} catch (Exception e) {
+			LOG.error("Failed to dump output", e);
+		}
+	}
+
 	/**
 	 * Returns the exit value of the external execution.
 	 * 
@@ -291,7 +308,7 @@ public class ShellUtil {
 
 	public void setStdIn(String... stdIn) {
 		this.stdIn = new ArrayList<String>();
-		for(String s : stdIn) {
+		for (String s : stdIn) {
 			this.stdIn.add(s);
 		}
 	}

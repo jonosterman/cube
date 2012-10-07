@@ -1,5 +1,9 @@
 package ch.admin.vbs.cube.core.network;
 
+import java.net.InterfaceAddress;
+import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Enumeration;
 import java.util.LinkedList;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -11,12 +15,17 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.network.CubeVPNManager.CubeVPNManagerCallback;
 import ch.admin.vbs.cube.core.network.NetworkManagerDBus.DeviceState;
 
 /** see method 'processEvent()' for details about this class. */
-public class NetManager implements INetManager, Runnable,
-		CubeVPNManagerCallback {
+public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback {
+	/**
+	 * IP to check in order to known if we are connected to Cube network or if
+	 * we need to start the VPN.
+	 */
+	public static final String VPN_IP_CHECK_PROPERTIE = "INetworkManager.vpnIpCheck";
 	private static final Logger LOG = LoggerFactory.getLogger(NetManager.class);
 	private NetworkManagerDBus dbus;
 	private NetState netState = NetState.DEACTIVATED;
@@ -42,13 +51,10 @@ public class NetManager implements INetManager, Runnable,
 		t.start();
 		// register events
 		try {
-			dbus.addSignalHanlder(DBusConnection.SYSTEM,
-					org.freedesktop.NetworkManager.Device.StateChanged.class,
-					new DeviceStateChangedHandler(DBusConnection.SYSTEM));
+			dbus.addSignalHanlder(DBusConnection.SYSTEM, org.freedesktop.NetworkManager.Device.StateChanged.class, new DeviceStateChangedHandler(
+					DBusConnection.SYSTEM));
 		} catch (DBusException e) {
-			LOG.error(
-					"Failed to add signal handlers. Networking will not work correctly.",
-					e);
+			LOG.error("Failed to add signal handlers. Networking will not work correctly.", e);
 		}
 		// restart system network manager to sync state
 		dbus.triggerNetworkManagerRestart();
@@ -109,7 +115,6 @@ public class NetManager implements INetManager, Runnable,
 	 */
 	protected void processEvent(DeviceState deviceState) {
 		nmLock.lock();
-		System.out.println(">> " + deviceState);
 		try {
 			switch (deviceState) {
 			case NM_DEVICE_STATE_ACTIVATED:
@@ -143,14 +148,50 @@ public class NetManager implements INetManager, Runnable,
 		}
 	}
 
+	/**
+	 * convert IP to int. (10.11.1.2 --> 0x0a0b0102)
+	 */
+	private int ipToInt(String ip) {
+		String[] split = ip.split("\\.");
+		return ((Integer.parseInt(split[0]) & 0xFF) << 24) | //
+				((Integer.parseInt(split[1]) & 0xFF) << 16) | //
+				((Integer.parseInt(split[2]) & 0xFF) << 8) //
+				| (Integer.parseInt(split[3]) & 0xFF);
+	}
+
 	private boolean isCubeNetworkAccessible() {
-		// check all device excepted 'lo', 'tun*' or 'tap*'
-		LOG.error("NOT IMPLEMENTED <--------------------------------------");
+		// get IP to check from configuration file
+		int ipToCheck = ipToInt(CubeClientCoreProperties.getProperty(VPN_IP_CHECK_PROPERTIE));
+		try {
+			// go through all phyiscal interfaces
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface intf = en.nextElement();
+				if (intf.getName().startsWith("tap") || intf.getName().startsWith("tun") || intf.getName().equals("lo") ) {					
+					// skip tap, tun, lo
+					LOG.debug("Skip interface ["+intf.getName()+"]");
+					continue;
+				}
+				// go through all logical interfaces
+				for (InterfaceAddress nic : intf.getInterfaceAddresses()) {
+					byte[] arr = nic.getAddress().getAddress();
+					// only handle IPv4 since cube is still IPv4
+					if (arr.length == 4 && nic.getNetworkPrefixLength() > 0) {
+						LOG.debug("check IP address ["+intf.getName()+","+nic.getAddress()+"]");
+						int nicIp = (arr[0] << 24) & 0xff000000 | (arr[1] << 16) & 0x00ff0000 | (arr[2] << 8) & 0x0000ff00 | arr[3] & 0x000000ff;
+						int mask = (0xffffffff) << (32 - nic.getNetworkPrefixLength());
+						if ((nicIp & mask) == (ipToCheck & mask)) {
+							return true;
+						}
+					}
+				}
+			}
+		} catch (SocketException e) {
+			LOG.error("Failed to list network interfaces", e);
+		}
 		return false;
 	}
 
-	public class DeviceStateChangedHandler implements
-			DBusSigHandler<Device.StateChanged> {
+	public class DeviceStateChangedHandler implements DBusSigHandler<Device.StateChanged> {
 		public final int type;
 
 		public DeviceStateChangedHandler(int type) {
@@ -160,8 +201,7 @@ public class NetManager implements INetManager, Runnable,
 		@Override
 		public void handle(Device.StateChanged state) {
 			synchronized (queue) {
-				queue.addLast(dbus.getEnumConstant(state.nstate.intValue(),
-						DeviceState.class));
+				queue.addLast(dbus.getEnumConstant(state.nstate.intValue(), DeviceState.class));
 			}
 		}
 	}
@@ -172,7 +212,7 @@ public class NetManager implements INetManager, Runnable,
 	}
 
 	@Override
-	public void vpnFailed() {
+	public void vpnOpenFailed() {
 		nmLock.lock();
 		try {
 			if (netState == NetState.CONNECTING_VPN) {
@@ -180,8 +220,7 @@ public class NetManager implements INetManager, Runnable,
 				cubeVpnManager.openVPN();
 			} else {
 				// bad state
-				LOG.debug("VPN is connetced but NetManager state is ["
-						+ netState + "]. Close VPN.");
+				LOG.debug("VPN is connetced but NetManager state is [" + netState + "]. Close VPN.");
 				cubeVpnManager.closeVPN();
 			}
 		} catch (Exception e) {
@@ -198,12 +237,21 @@ public class NetManager implements INetManager, Runnable,
 				netState = NetState.CONNECTED_BY_VPN;
 			} else {
 				// bad state
-				LOG.debug("VPN is connetced but NetManager state is ["
-						+ netState + "]. Close VPN.");
+				LOG.debug("VPN is connetced but NetManager state is [" + netState + "]. Close VPN.");
 				cubeVpnManager.closeVPN();
 			}
 		} catch (Exception e) {
 			LOG.error("Failed to update NetManager state", e);
 		}
+	}
+
+	@Override
+	public void vpnClosed() {
+		// ignore
+	}
+
+	@Override
+	public void vpnCloseFailed() {
+		// ignore
 	}
 }
