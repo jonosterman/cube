@@ -30,9 +30,9 @@ import ch.admin.vbs.cube.core.ILoginListener;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionUI;
-import ch.admin.vbs.cube.core.network.INetworkManager;
-import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.network.INetManager;
+import ch.admin.vbs.cube.core.network.INetManager.Listener;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube.core.vm.IVmController;
 
 public class SessionManager implements ISessionManager, ILoginListener {
@@ -44,7 +44,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	private IContainerFactory containerFactory;
 	private IVmController vmController;
 	private ArrayList<ISessionManagerListener> listeners = new ArrayList<ISessionManager.ISessionManagerListener>(2);
-	private INetworkManager networkManager;
+	private INetManager networkManager;
 
 	public SessionManager() {
 	}
@@ -144,7 +144,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 	}
 
 	// Dependencies injection
-	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetworkManager networkManager, IVmController vmController) {
+	public void setup(ILogin login, ISessionUI sessionUI, IContainerFactory containerFactory, INetManager networkManager, IVmController vmController) {
 		this.login = login;
 		this.sessionUI = sessionUI;
 		this.containerFactory = containerFactory;
@@ -153,7 +153,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		this.networkManager = networkManager;
 		networkManager.addListener(new Listener() {
 			@Override
-			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {
+			public void stateChanged(NetState old, NetState state) {
 				SessionManager.this.sessionUI.notifyConnectionState(state);
 				// also notify all sessions about connection change since each session try to connect to cube web-service
 				synchronized (sessions) {

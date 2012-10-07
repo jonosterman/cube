@@ -71,7 +71,7 @@ import ch.admin.vbs.cube.client.wm.utils.IconManager;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.common.CubeClassification;
 import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntry;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.VmState;
@@ -95,7 +95,7 @@ public class NavigationTabs extends JideTabbedPane {
 	private ICubeClient client;
 	private ICubeUI cubeUI;
 	private LogoPanel logo;
-	private INetworkManager networkMgr;
+	private INetManager networkMgr;
 	private HashMap<String, String> selectedNics = new HashMap<String, String>();
 	private Executor exec = Executors.newCachedThreadPool();
 	private IUserInterface userUI;
@@ -420,7 +420,7 @@ public class NavigationTabs extends JideTabbedPane {
 		cubePopupMenu.show(comp, comp.getX(), comp.getY() + comp.getHeight());
 	}
 
-	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr, IUserInterface userUI) {
+	public void setup(IVmControl vmCtrl, IVmMonitor vmMon, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetManager networkMgr, IUserInterface userUI) {
 		this.vmCtrl = vmCtrl;
 		this.vmMon = vmMon;
 		this.client = client;

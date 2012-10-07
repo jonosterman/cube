@@ -40,7 +40,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.client.wm.client.VmHandleHumanComparator;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 
 import com.jidesoft.swing.JideTabbedPane;
 
@@ -268,7 +268,7 @@ public class NavigationBar extends JFrame implements IVmChangeListener, INavigat
 	 * @param cubeUI 
 	 * @param networkMgr 
 	 * @param userUI */
-	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetworkManager networkMgr, IUserInterface userUI) {
+	public void setup(IVmMonitor vmMon, IVmControl vmCtrl, ICoreFacade core, ICubeClient client, ICubeUI cubeUI, INetManager networkMgr, IUserInterface userUI) {
 		this.vmMon = vmMon;
 		client.addListener(this);
 		this.client = client;

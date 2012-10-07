@@ -37,8 +37,8 @@ import ch.admin.vbs.cube.core.ISessionManager;
 import ch.admin.vbs.cube.core.ISessionManager.ISessionManagerListener;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.IUICallback;
-import ch.admin.vbs.cube.core.network.INetworkManager;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.network.INetManager;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube.core.usb.UsbDevice;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmModelChangeListener;
@@ -85,7 +85,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	private IUICallback currentCallback;
 	private Lock uiLock = new ReentrantLock(true);
 	private long lockTimestamp;
-	private NetworkConnectionState lastConnectionState;
+	private NetState lastConnectionState;
 
 	/**
 	 * Set current active session. Derergister-register event listener
@@ -528,7 +528,7 @@ public class CubeCore implements ICoreFacade, ISessionUI, ILoginUI, ISessionMana
 	}
 
 	@Override
-	public void notifyConnectionState(INetworkManager.NetworkConnectionState state) {
+	public void notifyConnectionState(INetManager.NetState state) {
 		lock();
 		try {
 			lastConnectionState = state;

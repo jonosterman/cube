@@ -20,9 +20,9 @@ import java.util.List;
 
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 
-public class MockNetworkManager implements INetworkManager {
+public class MockNetworkManager implements INetManager {
 	@Override
 	public void start() {
 	}
@@ -50,11 +50,6 @@ public class MockNetworkManager implements INetworkManager {
 	
 	public static void main(String[] args) {
 		new MockNetworkManager().getNetworkInterfaces();
-	}
-
-	@Override
-	public NetworkConnectionState getState() {
-		return NetworkConnectionState.CONNECTED_TO_CUBE;
 	}
 
 	@Override

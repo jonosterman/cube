@@ -18,7 +18,7 @@ package ch.admin.vbs.cube.core;
 
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube.core.vm.VmModel;
 
 /**
@@ -70,7 +70,7 @@ public interface ISession {
 		boolean isOnline();
 	}
 
-	void notifyConnectionState(NetworkConnectionState state);
+	void notifyConnectionState(NetState state);
 
-	NetworkConnectionState getConnectionState();
+	NetState getConnectionState();
 }

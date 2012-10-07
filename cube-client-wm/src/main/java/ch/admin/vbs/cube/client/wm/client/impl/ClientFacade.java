@@ -29,7 +29,7 @@ import ch.admin.vbs.cube.client.wm.client.VmHandle;
 import ch.admin.vbs.cube.common.RelativeFile;
 import ch.admin.vbs.cube.core.IClientFacade;
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 import ch.admin.vbs.cube.core.vm.Vm;
 
 /**
@@ -103,15 +103,15 @@ public class ClientFacade implements IClientFacade {
 	}
 
 	@Override
-	public void notifyConnectionStateUpdate(INetworkManager.NetworkConnectionState state) {
+	public void notifyConnectionStateUpdate(INetManager.NetState state) {
 		switch (state) {
-		case CONNECTED_TO_CUBE:
+		case CONNECTED_DIRECT:
 			userIface.setSessionStateIcon(ConnectionIcon.CONNECTED);
 			break;
-		case CONNECTED_TO_CUBE_BY_VPN:
+		case CONNECTED_BY_VPN:
 			userIface.setSessionStateIcon(ConnectionIcon.CONNECTED_VPN);
 			break;
-		case NOT_CONNECTED:
+		case DEACTIVATED:
 			userIface.setSessionStateIcon(ConnectionIcon.NOT_CONNECTED);
 			break;
 		case CONNECTING_VPN:

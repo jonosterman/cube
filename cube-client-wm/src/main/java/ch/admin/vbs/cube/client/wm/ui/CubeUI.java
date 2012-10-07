@@ -43,7 +43,7 @@ import ch.admin.vbs.cube.client.wm.xrandx.impl.AcpiListener.IAcpiEventListener;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout;
 import ch.admin.vbs.cube.client.wm.xrandx.impl.XrandrTwoDisplayLayout.Layout;
 import ch.admin.vbs.cube.core.ICoreFacade;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 
 public class CubeUI implements ICubeUI/* , IXRListener */{
 	private static final Logger LOG = LoggerFactory.getLogger(CubeUI.class);
@@ -56,14 +56,14 @@ public class CubeUI implements ICubeUI/* , IXRListener */{
 	private IVmMonitor vmMonitor;
 	private IVmControl vmControl;
 	private ICubeUI cubeUI;
-	private INetworkManager networkMgr;
+	private INetManager networkMgr;
 	private XrandrTwoDisplayLayout layoutMgr;
 	private AcpiListener acpi;
 	private Layout currentLayout = Layout.AB;
 	private IUserInterface userIface;
 	private boolean started;
 
-	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI, IUserInterface userIface, INetworkManager networkMgr) {
+	public void setup(ICoreFacade core, ICubeClient client, IXrandr xrandr, IVmMonitor vmMonitor, IVmControl vmControl, ICubeUI cubeUI, IUserInterface userIface, INetManager networkMgr) {
 		this.core = core;
 		this.client = client;
 		this.vmMonitor = vmMonitor;

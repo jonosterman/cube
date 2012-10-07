@@ -29,9 +29,9 @@ import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.common.keyring.SafeFile;
 import ch.admin.vbs.cube.common.shell.ScriptUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtil;
-import ch.admin.vbs.cube.core.network.INetworkManager;
-import ch.admin.vbs.cube.core.network.INetworkManager.Listener;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.network.INetManager;
+import ch.admin.vbs.cube.core.network.INetManager.Listener;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube.core.network.vpn.VpnConfig.VpnOption;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmException;
@@ -42,20 +42,20 @@ public class VpnManager {
 	private static final Logger LOG = LoggerFactory.getLogger(VpnManager.class);
 	private ExecutorService exs = Executors.newCachedThreadPool();
 	private HashMap<String, CacheEntry> vpnCache = new HashMap<String, CacheEntry>();
-	private INetworkManager networkManager;
+	private INetManager networkManager;
 
 	public void start() {
 		networkManager.addListener(new Listener() {
 			@Override
-			public void stateChanged(NetworkConnectionState old, NetworkConnectionState state) {
+			public void stateChanged(NetState old, NetState state) {
 				// copy of cache
 				Collection<CacheEntry> vpns = new ArrayList<VpnManager.CacheEntry>();
 				synchronized (vpnCache) {
 					vpns.addAll(vpnCache.values());
 				}
 				switch (state) {
-				case CONNECTED_TO_CUBE_BY_VPN:
-				case CONNECTED_TO_CUBE:
+				case CONNECTED_BY_VPN:
+				case CONNECTED_DIRECT:
 					/* repoen all VM's VPNs. (in separated theads) */
 					LOG.debug("NetworkManager switch to CONNECTED. Restart VPNs [{}].", vpns.size());
 					for (final CacheEntry e : vpns) {
@@ -81,7 +81,7 @@ public class VpnManager {
 					break;
 				case CONNECTING_VPN:
 					break;
-				case NOT_CONNECTED:
+				case DEACTIVATED:
 					LOG.debug("Disconnect [{}] VM's VPN (because NetworkManager is disconnected))", vpns.size());
 					for (final CacheEntry e : vpns) {
 						exs.execute(new Runnable() {
@@ -236,7 +236,7 @@ public class VpnManager {
 		}
 	}
 
-	public void setNetworkManager(INetworkManager networkManager) {
+	public void setNetworkManager(INetManager networkManager) {
 		this.networkManager = networkManager;
 	}
 

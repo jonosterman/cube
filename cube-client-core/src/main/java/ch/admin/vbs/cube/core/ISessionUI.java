@@ -17,7 +17,7 @@
 package ch.admin.vbs.cube.core;
 
 import ch.admin.vbs.cube.core.ISession.ISessionStateDTO;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 
 /**
  * Define a simplistic session UI where only one dialog could be displayed at
@@ -32,7 +32,7 @@ public interface ISessionUI {
 
 	void notifySessionState(ISession session, ISessionStateDTO sessionStateDTO);
 
-	void notifyConnectionState(INetworkManager.NetworkConnectionState state);
+	void notifyConnectionState(INetManager.NetState state);
 	
 
 	

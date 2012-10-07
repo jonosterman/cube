@@ -34,7 +34,7 @@ import ch.admin.vbs.cube.core.ILogin;
 import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.usb.UsbDeviceEntryList;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
@@ -398,7 +398,7 @@ public class VmController implements IVmProductListener, IVmController {
 	}
 
 	// Dependencies injection
-	public void setup(INetworkManager networkManager) {
+	public void setup(INetManager networkManager) {
 		vpnManager.setNetworkManager(networkManager);
 	}
 }

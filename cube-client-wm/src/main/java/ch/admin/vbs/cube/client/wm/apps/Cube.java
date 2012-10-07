@@ -49,8 +49,8 @@ import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube.core.impl.SessionManager;
 import ch.admin.vbs.cube.core.impl.scauthmodule.ScAuthModule;
-import ch.admin.vbs.cube.core.network.INetworkManager;
-import ch.admin.vbs.cube.core.network.impl.CNMStateMachine;
+import ch.admin.vbs.cube.core.network.INetManager;
+import ch.admin.vbs.cube.core.network.impl.NetManager;
 import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
 import ch.admin.vbs.cube.core.vm.VmController;
@@ -128,7 +128,7 @@ public final class Cube {
 		ioc.addBean(new ScAuthModule());
 		ioc.addBean(new DmcryptContainerFactory());
 		ioc.addBean(new ScTokenDevice());
-		ioc.addBean(new CNMStateMachine());
+		ioc.addBean(new NetManager());
 		
 		// IoC
 		ioc.setupDependenciesOnAllBeans();
@@ -142,7 +142,7 @@ public final class Cube {
 		ioc.getBean(ICubeUI.class).start();
 		ioc.getBean(XWindowManager.class).start();
 		ioc.getBean(IVmController.class).start();
-		ioc.getBean(INetworkManager.class).start();
+		ioc.getBean(INetManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();
 		ioc.getBean(IAuthModule.class).start();

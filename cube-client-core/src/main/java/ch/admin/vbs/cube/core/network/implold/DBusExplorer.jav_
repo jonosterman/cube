@@ -1,0 +1,142 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package ch.admin.vbs.cube.core.network.implold;
+
+import java.io.ByteArrayInputStream;
+import java.util.Iterator;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+
+import org.freedesktop.DBus.Introspectable;
+import org.freedesktop.DBus.Properties;
+import org.freedesktop.dbus.DBusConnection;
+import org.freedesktop.dbus.DBusInterface;
+import org.freedesktop.dbus.exceptions.DBusException;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+
+public class DBusExplorer {
+
+	public DBusExplorer() {
+
+	}
+
+	public <A> A getProperty(DBusConnection connection, String busname, String objectPath, String ifaceName, String property) throws DBusException  {
+		Properties properties = (Properties) connection.getRemoteObject(busname, objectPath, Properties.class);
+		return properties.Get(ifaceName, property);
+	}
+
+	public Properties getProperties(DBusConnection connection, String busname, String objectPath) throws DBusException {
+		return (Properties) connection.getRemoteObject(busname, objectPath, Properties.class);
+	}
+
+	public static void exploreNode(int level, DBusConnection connection, String busname, String objectPath) throws Exception {
+		String prefix = "{" + level + "}   ";
+		for (int i = 0; i < level; i++) {
+			prefix += "  ";
+		}
+		//
+		System.out.println(prefix + "Explore Node [" + objectPath + "] on [" + busname + "]");
+		Introspectable cx = (Introspectable) connection.getRemoteObject(busname, objectPath, Introspectable.class);
+		System.out.println(cx.Introspect());
+		// parse introspection output
+		DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		dbf.setValidating(false);
+		dbf.setFeature("http://xml.org/sax/features/namespaces", false);
+		dbf.setFeature("http://xml.org/sax/features/validation", false);
+		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-dtd-grammar", false);
+		dbf.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+		DocumentBuilder db = dbf.newDocumentBuilder();
+		Document doc = db.parse(new ByteArrayInputStream(cx.Introspect().getBytes("utf-8")));
+		XPathFactory factory = XPathFactory.newInstance();
+		XPath xpath = factory.newXPath();
+		XPathExpression ifacesSearch = xpath.compile("/node/interface");
+		XPathExpression signalSubSearch = xpath.compile("signal");
+		XPathExpression properitySubSearch = xpath.compile("property");
+		XPathExpression methodSubSearch = xpath.compile("method");
+		XPathExpression nodeSearch = xpath.compile("/node/node");
+		for (Node iface : new NLIterable((NodeList) ifacesSearch.evaluate(doc, XPathConstants.NODESET))) {
+			System.out.printf(prefix + "Interface [%s]\n", iface.getAttributes().getNamedItem("name"));
+			for (Node method : new NLIterable((NodeList) methodSubSearch.evaluate(iface, XPathConstants.NODESET))) {
+				System.out.printf(prefix + "   Method   [%s]\n", method.getAttributes().getNamedItem("name"));
+			}
+			for (Node signal : new NLIterable((NodeList) signalSubSearch.evaluate(iface, XPathConstants.NODESET))) {
+				System.out.printf(prefix + "   Signal   [%s]\n", signal.getAttributes().getNamedItem("name"));
+			}
+			Properties properties = (Properties) connection.getRemoteObject(busname, objectPath, Properties.class);
+			for (Node property : new NLIterable((NodeList) properitySubSearch.evaluate(iface, XPathConstants.NODESET))) {
+				String prop = property.getAttributes().getNamedItem("name").getNodeValue();
+				try {
+					System.out.printf(prefix + "   Property [%s]=[%s]\n", prop, properties.Get("", prop));
+				} catch (Exception x) {
+					System.out.printf(prefix + "   Property [%s]=[%s]\n", prop, "<<<ERROR>>>");
+				}
+			}
+		}
+		// print sub-nodes
+		for (Node node : new NLIterable((NodeList) nodeSearch.evaluate(doc, XPathConstants.NODESET))) {
+			System.out.printf(prefix + "Node      [%s]\n", node.getAttributes().getNamedItem("name"));
+		}
+		// explore sub-nodes recursively...
+		for (Node node : new NLIterable((NodeList) nodeSearch.evaluate(doc, XPathConstants.NODESET))) {
+			exploreNode(level + 1, connection, busname, objectPath + "/" + node.getAttributes().getNamedItem("name").getNodeValue());
+		}
+	}
+
+	public static class NLIterable implements Iterable<Node> {
+		private final NodeList nl;
+
+		public NLIterable(NodeList nl) {
+			this.nl = nl;
+		}
+
+		@Override
+		public Iterator<Node> iterator() {
+			return new NLIterator();
+		}
+
+		public class NLIterator implements Iterator<Node> {
+			private int i;
+
+			@Override
+			public boolean hasNext() {
+				return i < nl.getLength();
+			}
+
+			@Override
+			public Node next() {
+				Node n = nl.item(i);
+				i++;
+				return n;
+			}
+
+			@Override
+			public void remove() {
+			}
+		}
+	}
+
+	public <I extends DBusInterface> I getObject(DBusConnection conn, String busname, String objectpath, Class<I> type) throws DBusException {
+		return conn.getRemoteObject(busname, objectpath, type);
+	}
+}

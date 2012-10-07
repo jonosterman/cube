@@ -32,7 +32,7 @@ import ch.admin.vbs.cube.common.keyring.impl.KeyringProvider;
 import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession;
 import ch.admin.vbs.cube.core.ISessionUI;
-import ch.admin.vbs.cube.core.network.INetworkManager.NetworkConnectionState;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmModel;
@@ -72,7 +72,7 @@ public class Session implements Runnable, ISession {
 	private WSDescriptorUpdater descWs;
 	private final IVmController vmController;
 	private Executor exec = Executors.newCachedThreadPool();
-	private NetworkConnectionState connectionState;
+	private NetState connectionState;
 
 	public Session(IIdentityToken id, ISessionUI clientUI, IVmController vmController) {
 		this.id = id;
@@ -86,16 +86,16 @@ public class Session implements Runnable, ISession {
 	}
 
 	@Override
-	public void notifyConnectionState(NetworkConnectionState state) {
+	public void notifyConnectionState(NetState state) {
 		this.connectionState = state;
 		synchronized (this) {
 			if (descWs != null) {
 				switch (state) {
-				case CONNECTED_TO_CUBE:
-				case CONNECTED_TO_CUBE_BY_VPN:
+				case CONNECTED_DIRECT:
+				case CONNECTED_BY_VPN:
 					descWs.enable(true);
 					break;
-				case NOT_CONNECTED:
+				case DEACTIVATED:
 					descWs.enable(false);
 					break;
 				default:
@@ -367,7 +367,7 @@ public class Session implements Runnable, ISession {
 	}
 
 	@Override
-	public NetworkConnectionState getConnectionState() {
+	public NetState getConnectionState() {
 		return connectionState;
 	}
 

@@ -54,7 +54,7 @@ import java.util.List;
  * +--------------------+          +--------------------+
  * </pre>
  */
-public interface INetworkManager {
+public interface INetManager {
 	/**
 	 * IP to check in order to known if we are connected to Cube network or if
 	 * we need to start the VPN.
@@ -62,8 +62,8 @@ public interface INetworkManager {
 	public static final String VPN_IP_CHECK_PROPERTIE = "INetworkManager.vpnIpCheck";
 
 	/** States */
-	enum NetworkConnectionState {
-		NOT_CONNECTED, CONNECTING, CONNECTING_VPN, CONNECTED_TO_CUBE, CONNECTED_TO_CUBE_BY_VPN
+	enum NetState {
+		DEACTIVATED, CONNECTING, CONNECTING_VPN, CONNECTED_DIRECT, CONNECTED_BY_VPN
 	}
 
 	/** Start State Machine */
@@ -71,9 +71,6 @@ public interface INetworkManager {
 
 	/** Stop State Machine */
 	void stop();
-
-	/** @return current state */
-	public NetworkConnectionState getState();
 
 	/** Add state changed listener */
 	public void addListener(Listener l);
@@ -83,9 +80,9 @@ public interface INetworkManager {
 
 	/** State Machine Listener */
 	public interface Listener {
-		void stateChanged(NetworkConnectionState old, NetworkConnectionState state);
+		void stateChanged(NetState old, NetState state);
 	}
 
 	/** @return a list of available network interfaces (eth* and wlan*) */
-	List<String> getNetworkInterfaces();
+	public List<String> getNetworkInterfaces();
 }

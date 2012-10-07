@@ -1,10 +1,15 @@
-package ch.admin.vbs.cube.core.network;
+package ch.admin.vbs.cube.core.network.impl;
 
+import java.io.IOException;
 import java.net.InterfaceAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -16,8 +21,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.core.CubeClientCoreProperties;
-import ch.admin.vbs.cube.core.network.CubeVPNManager.CubeVPNManagerCallback;
-import ch.admin.vbs.cube.core.network.NetworkManagerDBus.DeviceState;
+import ch.admin.vbs.cube.core.network.INetManager;
+import ch.admin.vbs.cube.core.network.impl.CubeVPNManager.CubeVPNManagerCallback;
+import ch.admin.vbs.cube.core.network.impl.NetworkManagerDBus.DeviceState;
 
 /** see method 'processEvent()' for details about this class. */
 public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback {
@@ -31,7 +37,9 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 	private NetState netState = NetState.DEACTIVATED;
 	private LinkedList<DeviceState> queue = new LinkedList<DeviceState>();
 	private CubeVPNManager cubeVpnManager;
+	private ArrayList<Listener> listeners = new ArrayList<INetManager.Listener>(2);
 	private Lock nmLock = new ReentrantLock();
+	private Executor exec = Executors.newCachedThreadPool();
 
 	public NetManager() {
 		dbus = new NetworkManagerDBus();
@@ -42,6 +50,7 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 		return netState;
 	}
 
+	/** Start NetManager thread. */
 	public void start() {
 		// start DBUS interface
 		dbus.start();
@@ -58,6 +67,53 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 		}
 		// restart system network manager to sync state
 		dbus.triggerNetworkManagerRestart();
+	}
+
+	@Override
+	public void stop() {
+		// nothing
+	}
+
+	@Override
+	public void addListener(Listener l) {
+		listeners.add(l);
+	}
+
+	@Override
+	public void removeListener(Listener l) {
+		listeners.remove(l);
+	}
+
+	private void changeStateAndNotifyListener(final NetState newState) {
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				NetState oldState = netState;
+				netState = newState;
+				// notify listeners only if state effectively changed
+				if (oldState != newState) {
+					for (Listener l : listeners) {
+						l.stateChanged(oldState, newState);
+					}
+				}
+			}
+		});
+	}
+
+	@Override
+	public List<String> getNetworkInterfaces() {
+		ArrayList<String> list = new ArrayList<String>();
+		try {
+			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
+				NetworkInterface intf = en.nextElement();
+				if (!intf.getName().startsWith("tap") && !intf.getName().startsWith("tun") && !intf.getName().equals("lo")) {
+					list.add(intf.getName());
+				}
+			}
+		} catch (IOException e) {
+			LOG.error("Failed to list interfaces", e);
+		}
+		return list;
 	}
 
 	@Override
@@ -127,16 +183,16 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 						// no need of further configuration, server is
 						// accessible.
 						LOG.debug("Connected to CUBE. VPN is not needed.");
-						netState = NetState.CONNECTED_DIRECT;
+						changeStateAndNotifyListener(NetState.CONNECTED_DIRECT);
 					} else {
 						// start VPN
 						LOG.debug("Start VPN.");
-						netState = NetState.CONNECTING_VPN;
+						changeStateAndNotifyListener(NetState.CONNECTING_VPN);
 						cubeVpnManager.openVPN();
 					}
 				} else {
 					LOG.debug("NetworkManager is not active (could not connect anything).");
-					netState = NetState.DEACTIVATED;
+					changeStateAndNotifyListener(NetState.DEACTIVATED);
 				}
 				break;
 			default:
@@ -166,9 +222,9 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 			// go through all phyiscal interfaces
 			for (Enumeration<NetworkInterface> en = NetworkInterface.getNetworkInterfaces(); en.hasMoreElements();) {
 				NetworkInterface intf = en.nextElement();
-				if (intf.getName().startsWith("tap") || intf.getName().startsWith("tun") || intf.getName().equals("lo") ) {					
+				if (intf.getName().startsWith("tap") || intf.getName().startsWith("tun") || intf.getName().equals("lo")) {
 					// skip tap, tun, lo
-					LOG.debug("Skip interface ["+intf.getName()+"]");
+					LOG.debug("Skip interface [" + intf.getName() + "]");
 					continue;
 				}
 				// go through all logical interfaces
@@ -176,7 +232,7 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 					byte[] arr = nic.getAddress().getAddress();
 					// only handle IPv4 since cube is still IPv4
 					if (arr.length == 4 && nic.getNetworkPrefixLength() > 0) {
-						LOG.debug("check IP address ["+intf.getName()+","+nic.getAddress()+"]");
+						LOG.debug("check IP address [" + intf.getName() + "," + nic.getAddress() + "]");
 						int nicIp = (arr[0] << 24) & 0xff000000 | (arr[1] << 16) & 0x00ff0000 | (arr[2] << 8) & 0x0000ff00 | arr[3] & 0x000000ff;
 						int mask = (0xffffffff) << (32 - nic.getNetworkPrefixLength());
 						if ((nicIp & mask) == (ipToCheck & mask)) {

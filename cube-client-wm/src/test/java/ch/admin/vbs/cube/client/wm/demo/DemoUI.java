@@ -49,7 +49,7 @@ import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.impl.CubeCore;
 import ch.admin.vbs.cube.core.impl.LoginMachine;
 import ch.admin.vbs.cube.core.impl.SessionManager;
-import ch.admin.vbs.cube.core.network.INetworkManager;
+import ch.admin.vbs.cube.core.network.INetManager;
 import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmController;
 
@@ -109,7 +109,7 @@ public class DemoUI {
 		ioc.getBean(ICubeUI.class).start();
 		ioc.getBean(XWindowManager.class).start();
 		ioc.getBean(IVmController.class).start();
-		ioc.getBean(INetworkManager.class).start();
+		ioc.getBean(INetManager.class).start();
 		ioc.getBean(ISessionManager.class).start();
 		ioc.getBean(ITokenDevice.class).start();
 		ioc.getBean(IAuthModule.class).start();

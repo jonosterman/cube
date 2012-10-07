@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube.core.network;
+package ch.admin.vbs.cube.core.network.impl;
 
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -16,7 +16,6 @@ import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.core.network.impl.DBusExplorer;
 
 public class NetworkManagerDBus {
 	public enum ActiveConnectionState {

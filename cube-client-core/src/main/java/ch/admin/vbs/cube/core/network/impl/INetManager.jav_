@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube.core.network;
+package ch.admin.vbs.cube.core.network.impl;
 
 public interface INetManager {
 	/** manager state */
