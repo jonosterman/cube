@@ -5,7 +5,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import org.freedesktop.NMApplet.VpnConnectionState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

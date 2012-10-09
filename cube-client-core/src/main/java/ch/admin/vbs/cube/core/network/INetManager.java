@@ -62,7 +62,7 @@ public interface INetManager {
 	public static final String VPN_IP_CHECK_PROPERTIE = "INetworkManager.vpnIpCheck";
 
 	/** States */
-	enum NetState {
+	public enum NetState {
 		DEACTIVATED, CONNECTING, CONNECTING_VPN, CONNECTED_DIRECT, CONNECTED_BY_VPN
 	}
 
@@ -85,4 +85,6 @@ public interface INetManager {
 
 	/** @return a list of available network interfaces (eth* and wlan*) */
 	public List<String> getNetworkInterfaces();
+
+	public NetState getState();
 }

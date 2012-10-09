@@ -46,7 +46,8 @@ public class NetManager implements INetManager, Runnable, CubeVPNManagerCallback
 		cubeVpnManager = new CubeVPNManager(this);
 	}
 
-	public NetState getNetState() {
+	@Override
+	public NetState getState() {
 		return netState;
 	}
 

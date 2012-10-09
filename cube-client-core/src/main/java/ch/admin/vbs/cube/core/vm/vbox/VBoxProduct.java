@@ -1092,6 +1092,8 @@ public class VBoxProduct implements VBoxCacheListener {
 				unlockSession();
 				lock.unlock();
 			}
+			
+			
 		} else {
 			LOG.debug("VirtualBox webservice is busy. cannot connect/disconnect NIC.");
 		}

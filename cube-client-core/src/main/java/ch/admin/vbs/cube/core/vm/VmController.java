@@ -30,8 +30,6 @@ import ch.admin.vbs.cube.common.container.ContainerFactoryProvider;
 import ch.admin.vbs.cube.common.container.IContainerFactory;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
-import ch.admin.vbs.cube.core.ILogin;
-import ch.admin.vbs.cube.core.ISessionUI;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.ISession.VmCommand;
 import ch.admin.vbs.cube.core.network.INetManager;

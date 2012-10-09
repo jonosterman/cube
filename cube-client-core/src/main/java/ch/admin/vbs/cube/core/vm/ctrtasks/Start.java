@@ -30,9 +30,9 @@ import ch.admin.vbs.cube.core.I18nBundleProvider;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager.VpnListener;
+import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.IVmProduct.VmProductState;
 import ch.admin.vbs.cube.core.vm.Vm;
-import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmException;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.VmNetworkState;
@@ -80,9 +80,9 @@ public class Start extends AbstractCtrlTask {
 			containerFactory.mountContainer(vm.getRuntimeContainer(), rtKey);
 			c.zap("mounted runtime container");
 			rtKey.shred(); // shred key asap
-			c.zap("shred runtime key");
+			c.zap("shred runtime key (other thread)");
 			vmKey.shred(); // shred key asap
-			c.zap("shred vm key");
+			c.zap("shred vm key (other thread)");
 			// prepare transfer folders
 			File sessionTransferFolder = new File(transfer.getMountpoint(), vm.getId() + "_transfer");
 			vm.setTempFolder(new File(sessionTransferFolder, "temporary"));

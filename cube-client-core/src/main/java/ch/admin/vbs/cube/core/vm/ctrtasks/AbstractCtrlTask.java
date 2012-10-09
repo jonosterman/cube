@@ -22,8 +22,8 @@ import ch.admin.vbs.cube.common.keyring.EncryptionKey;
 import ch.admin.vbs.cube.common.keyring.IKeyring;
 import ch.admin.vbs.cube.core.ISession.IOption;
 import ch.admin.vbs.cube.core.network.vpn.VpnManager;
-import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.IVmController;
+import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.VmModel;
 import ch.admin.vbs.cube.core.vm.vbox.VBoxProduct;
 

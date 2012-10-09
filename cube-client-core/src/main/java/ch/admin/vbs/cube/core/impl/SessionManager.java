@@ -151,7 +151,7 @@ public class SessionManager implements ISessionManager, ILoginListener {
 		this.vmController = vmController;
 		this.login.addListener(this);
 		this.networkManager = networkManager;
-		networkManager.addListener(new Listener() {
+		this.networkManager.addListener(new Listener() {
 			@Override
 			public void stateChanged(NetState old, NetState state) {
 				SessionManager.this.sessionUI.notifyConnectionState(state);

@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.network.vpn;
 
 import java.util.ArrayList;
@@ -163,35 +162,40 @@ public class VpnManager {
 					synchronized (vpnCache) {
 						vpnCache.put(vm.getId(), new CacheEntry(vm, keyring, l));
 					}
-					// retrieve keys from keyring
-					SafeFile tmpKey = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientKey.getName());
-					SafeFile tmpCert = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientCert.getName());
-					SafeFile tmpCa = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.CaCert.getName());
-					if (!tmpKey.exists() || !tmpCert.exists() || !tmpCa.exists())
-						throw new VmException("Cert/keys have not been decrypted correctly");
-					// open VPN tunnel
-					ScriptUtil script = new ScriptUtil();
-					ShellUtil su = script.execute("sudo", "./vpn-open.pl", //
-							"--tap", cfg.getOption(VpnOption.Tap),//
-							"--hostname", cfg.getOption(VpnOption.Hostname),//
-							"--port", cfg.getOption(VpnOption.Port),//
-							"--ca", tmpCa.getAbsolutePath(),//
-							"--cert", tmpCert.getAbsolutePath(),//
-							"--key", tmpKey.getAbsolutePath() //
-							);
-					// shred keys since they are no more needed
-					tmpKey.shred();
-					tmpCa.shred();
-					tmpCert.shred();
-					//
-					if (su.getExitValue() == 0) {
-						LOG.debug("VPN opened");
-						// VPN opening succeed
-						l.opened();
+					// check if connected
+					if (networkManager.getState() == NetState.CONNECTED_DIRECT || networkManager.getState() == NetState.CONNECTED_BY_VPN) {
+						// retrieve keys from keyring
+						SafeFile tmpKey = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientKey.getName());
+						SafeFile tmpCert = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.ClientCert.getName());
+						SafeFile tmpCa = keyring.retrieveDataAsFile(vm.getId() + "." + VpnOption.CaCert.getName());
+						if (!tmpKey.exists() || !tmpCert.exists() || !tmpCa.exists())
+							throw new VmException("Cert/keys have not been decrypted correctly");
+						// open VPN tunnel
+						ScriptUtil script = new ScriptUtil();
+						ShellUtil su = script.execute("sudo", "./vpn-open.pl", //
+								"--tap", cfg.getOption(VpnOption.Tap),//
+								"--hostname", cfg.getOption(VpnOption.Hostname),//
+								"--port", cfg.getOption(VpnOption.Port),//
+								"--ca", tmpCa.getAbsolutePath(),//
+								"--cert", tmpCert.getAbsolutePath(),//
+								"--key", tmpKey.getAbsolutePath() //
+								);
+						// shred keys since they are no more needed
+						tmpKey.shred();
+						tmpCa.shred();
+						tmpCert.shred();
+						//
+						if (su.getExitValue() == 0) {
+							LOG.debug("VPN opened");
+							// VPN opening succeed
+							l.opened();
+						} else {
+							LOG.warn("VPN failed");
+							// VPN failed
+							l.failed();
+						}
 					} else {
-						LOG.warn("VPN failed");
-						// VPN failed
-						l.failed();
+						l.closed();
 					}
 				} catch (Exception e) {
 					LOG.error("Failed to start VPN connection", e);

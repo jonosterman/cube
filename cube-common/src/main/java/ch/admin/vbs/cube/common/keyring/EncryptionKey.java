@@ -17,6 +17,8 @@
 package ch.admin.vbs.cube.common.keyring;
 
 import java.io.File;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +45,7 @@ public class EncryptionKey {
 	private final String id;
 	private final File file;
 	private KeyState state = KeyState.NOT_INITIALIZED;
-
+	private Executor exec = Executors.newCachedThreadPool();
 	/**
 	 * Create a key object.
 	 * 
@@ -78,18 +80,23 @@ public class EncryptionKey {
 	 * Shred the file containing the key (using command line 'shred' tool).
 	 */
 	public void shred() {
-		try {
-			if (file != null && file.exists() && state == KeyState.DECRYPTED) {
-				file.setWritable(true);
-				ShellUtil su = new ShellUtil();
-				su.run(null, ShellUtil.NO_TIMEOUT, "shred", "-u", file.getAbsolutePath());
-			} else {
-				LOG.debug("Key not shreded [{}]", state);
+		exec.execute(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					if (file != null && file.exists() && state == KeyState.DECRYPTED) {
+						file.setWritable(true);
+						ShellUtil su = new ShellUtil();
+						su.run(null, ShellUtil.NO_TIMEOUT, "shred", "-u", file.getAbsolutePath());
+					} else {
+						LOG.debug("Key not shreded [{}]", state);
+					}
+				} catch (Exception e) {
+					LOG.error("failed to shred data", e);
+				}
+				state = KeyState.SHREDED;
 			}
-		} catch (Exception e) {
-			LOG.error("failed to shred data", e);
-		}
-		state = KeyState.SHREDED;
+		});
 	}
 
 	public KeyState getState() {
