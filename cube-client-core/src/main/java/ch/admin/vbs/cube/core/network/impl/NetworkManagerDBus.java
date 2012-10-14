@@ -1,3 +1,18 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ch.admin.vbs.cube.core.network.impl;
 
 import java.util.EnumSet;
@@ -14,7 +29,6 @@ import org.freedesktop.dbus.Path;
 import org.freedesktop.dbus.exceptions.DBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 public class NetworkManagerDBus {
 	public enum ActiveConnectionState {
@@ -62,7 +76,7 @@ public class NetworkManagerDBus {
 			return lookup.get(code);
 		}
 	}
-	
+
 	public enum NmState {
 		NM_STATE_UNKNOWN(0), //
 		NM_STATE_ASLEEP(10), //
@@ -100,8 +114,7 @@ public class NetworkManagerDBus {
 	private static final String NM_DBUS_OBJECT = "/org/freedesktop/NetworkManager";
 	private static final String NM_DBUS_BUSNAME = "org.freedesktop.NetworkManager";
 	private static final String NM_DBUS_NMIFACE = "org.freedesktop.NetworkManager";
-	private static final Logger LOG = LoggerFactory
-			.getLogger(NetworkManagerDBus.class);
+	private static final Logger LOG = LoggerFactory.getLogger(NetworkManagerDBus.class);
 	private DBusExplorer dbusExplorer;
 	private DBusConnection systemCon;
 	private DBusConnection sessionCon;
@@ -125,15 +138,12 @@ public class NetworkManagerDBus {
 					"Version");
 			LOG.debug("NetworkManager Version : " + networkManagerVersion);
 			//
-			List<Path> x = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
-					NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class)
-					.GetDevices();
+			List<Path> x = systemCon.getRemoteObject(NM_DBUS_BUSNAME, NM_DBUS_OBJECT, org.freedesktop.NetworkManager.class).GetDevices();
 			// list devices
 			for (Path p : x) {
-				Object y = systemCon.getRemoteObject(NM_DBUS_BUSNAME,
-						p.getPath());
-				Device d = (Device) y;
-				LOG.debug("Found device [{}]",d);
+				LOG.info("Found Device [{}]",p);
+				//Device d = (Device) y;
+				//LOG.debug("Found device [{}]", d);
 			}
 		} catch (DBusException e) {
 			LOG.error("Failed to connect DBUS.", e);
@@ -148,8 +158,7 @@ public class NetworkManagerDBus {
 	 * @param h
 	 * @throws DBusException
 	 */
-	public <T extends DBusSignal> void addSignalHanlder(int scope,
-			Class<T> type, DBusSigHandler<T> h) throws DBusException {
+	public <T extends DBusSignal> void addSignalHanlder(int scope, Class<T> type, DBusSigHandler<T> h) throws DBusException {
 		switch (scope) {
 		case DBusConnection.SESSION:
 			sessionCon.addSigHandler(type, h);
@@ -164,17 +173,17 @@ public class NetworkManagerDBus {
 	@SuppressWarnings("unchecked")
 	public <E> E getEnumConstant(int state, Class<E> class1) {
 		if (class1.equals(NmState.class)) {
-			// NmState use specific event numbers 
+			// NmState use specific event numbers
 			NmState s = NmState.get(state);
 			s = s != null ? s : NmState.NM_STATE_UNKNOWN;
 			return (E) s;
 		} else if (class1.equals(DeviceState.class)) {
-			// DeviceState use specific event numbers 
+			// DeviceState use specific event numbers
 			DeviceState s = DeviceState.get(state);
 			s = s != null ? s : DeviceState.NM_DEVICE_STATE_FAILED;
 			return (E) s;
-		} else { 
-			LOG.error("Unsupported constant ["+state+" / "+class1+"]");
+		} else {
+			LOG.error("Unsupported constant [" + state + " / " + class1 + "]");
 			return null;
 		}
 	}
@@ -204,7 +213,7 @@ public class NetworkManagerDBus {
 					LOG.error("Failed to re-enable NetworkManager", e);
 				}
 			}
-		}).start();		
+		}).start();
 	}
 
 	public boolean isNetworkManagerActive() {

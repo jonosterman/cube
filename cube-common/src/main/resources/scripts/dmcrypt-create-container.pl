@@ -125,7 +125,7 @@ sub createContainer {
 	execCmd("cryptsetup luksFormat -q $loopDev -c aes-xts-plain64 -s 512 $keyfile") == 0 or die "Failed to create LUKS volume].  $?";
 	execCmd("cryptsetup luksOpen -q --key-file $keyfile $loopDev $tempDev") == 0 or die "Failed to open LUKS volume. $?";
         # fill device with zero to initialize the random file (may take long but add extra security)
-        execCmd("dd if=/dev/zero of=/dev/mapper/$tempDev bs=1024 count=${sizeKo}");
+  # sloww...  execCmd("dd if=/dev/zero of=/dev/mapper/$tempDev bs=1024 count=${sizeKo}");
 	# format device
 	execCmd("mkfs.ext3 -q /dev/mapper/$tempDev") == 0 or die "Failed to format";
 	# mount and fix permissions

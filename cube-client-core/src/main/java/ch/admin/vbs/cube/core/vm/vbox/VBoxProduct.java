@@ -368,7 +368,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			// register VM (using web service)
 			LOG.debug("Register VM [{}].", vm.getId());
 			//machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
-			machine = vbox.createMachine(null, vm.getId(), null, cfg.getOption(VBoxOption.OsType), "UUID="+vm.getId()+",forceOverwrite=1");
+			machine = vbox.createMachine(null, vm.getId(), null, cfg.getOption(VBoxOption.OsType), "forceOverwrite=1,UUID="+vm.getId());
 			String hwUuid = cfg.getOption(VBoxOption.HwUuid);
 			if (UuidGenerator.validate(hwUuid)) {
 				machine.setHardwareUUID(hwUuid);
@@ -1073,6 +1073,10 @@ public class VBoxProduct implements VBoxCacheListener {
 			try {
 				// get IMachine reference
 				IMachine machine = getIMachineReference(vm.getId());
+				if (machine == null) {
+					LOG.error("No machine found for ID {}. NIC connection was not updated ("+connected+")",vm.getId());
+					return;
+				}
 				ISession session = mgr.getSessionObject();
 				// lock IMachine
 				machine.lockMachine(session, LockType.Shared);

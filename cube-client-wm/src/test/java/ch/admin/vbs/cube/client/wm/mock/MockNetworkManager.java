@@ -59,4 +59,10 @@ public class MockNetworkManager implements INetManager {
 	@Override
 	public void removeListener(Listener l) {
 	}
+	
+	@Override
+	public NetState getState() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

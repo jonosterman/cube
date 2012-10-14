@@ -22,7 +22,6 @@
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
 	<properties>
-		<dbus.version>2.8</dbus.version>
 		<cxf.version>2.5.2</cxf.version>
 		<slf4j.version>1.6.2</slf4j.version>
 		<logback.version>0.9.30</logback.version>
@@ -30,7 +29,9 @@
 		<virtualbox.version>4.2</virtualbox.version>
 		<junit.version>4.8.1</junit.version>
 		<mainClass>ch.admin.vbs.cube.common.DumpProperties</mainClass>
- 		<dbus.jar>/usr/share/java/dbus.jar</dbus.jar>
+ 		<dbus.version>2.8</dbus.version>
+		<dbus.jar>/usr/share/java/dbus.jar</dbus.jar>
+		<dbus-bin.jar>/usr/share/java/dbus-bin.jar</dbus-bin.jar>
 	</properties>
 
 	<build>
@@ -220,14 +221,14 @@
 			<artifactId>dbus</artifactId>
 			<version>${dbus.version}</version>
 			<scope>system</scope>
-		        <systemPath>${dbus.jar}</systemPath>
+			<systemPath>${dbus.jar}</systemPath>
 		</dependency>
 		<dependency><!--  Should be manually installed. See project's README -->
 			<groupId>org.freedesktop.dbus</groupId>
 			<artifactId>dbus-bin</artifactId>
 			<version>${dbus.version}</version>
 			<scope>system</scope>
-		    <systemPath>${dbus.jar}</systemPath>
+			<systemPath>${dbus-bin.jar}</systemPath>
 		</dependency>
 
 	</dependencies>

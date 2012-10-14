@@ -89,7 +89,7 @@ public class EncryptionKey {
 						ShellUtil su = new ShellUtil();
 						su.run(null, ShellUtil.NO_TIMEOUT, "shred", "-u", file.getAbsolutePath());
 					} else {
-						LOG.debug("Key not shreded [{}]", state);
+						LOG.debug("Key not shreded [{},exists? "+file.exists()+"]", state);
 					}
 				} catch (Exception e) {
 					LOG.error("failed to shred data", e);
