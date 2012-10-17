@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.core.vm.vbox;
 
 import java.io.File;
@@ -92,12 +91,9 @@ import cube.cubemanager.services.InstanceConfigurationDTO;
 
 public class VBoxProduct implements VBoxCacheListener {
 	public static final String ORIGINAL_NETWORK_CONFIG = "{original}";
-	// private static final int API_RETRY = 5;
 	private static final String CONTROLLER_NAME = "IDE Controller";
 	public static final String SNAPSHOT_DIRECTORY = "snapshots";
 	private static final String DISK1 = "disk1";
-	// private static final long MAX_SHUTDOWN_TIME = 60000; // 1 minute
-	// private static final long MAX_SAVE_TIME = 60000; // 1 minute
 	private static final long MEGA = 1048576;
 	/** Logger */
 	private static final Logger LOG = LoggerFactory.getLogger(VBoxProduct.class);
@@ -109,6 +105,8 @@ public class VBoxProduct implements VBoxCacheListener {
 	private ArrayList<IVmProductListener> listeners = new ArrayList<IVmProductListener>(2);
 	private boolean connected = false;
 	private String lastMessage;
+	private IEventListener eventListener;
+	private IEventSource eventSource;
 
 	public VBoxProduct() {
 		cache = new VBoxCache(this);
@@ -128,6 +126,9 @@ public class VBoxProduct implements VBoxCacheListener {
 		cache.stop();
 		ShellUtil su = new ShellUtil();
 		try {
+			if (eventListener != null && eventSource != null) {
+				eventSource.unregisterListener(eventListener);
+			}
 			su.run(null, 0, "pkill", "-f", "vboxwebsrv");
 		} catch (Exception e) {
 			LOG.error("Failed to kill vboxwebsrv");
@@ -367,8 +368,9 @@ public class VBoxProduct implements VBoxCacheListener {
 			}
 			// register VM (using web service)
 			LOG.debug("Register VM [{}].", vm.getId());
-			//machine = vbox.createMachine(null, vm.getId(), cfg.getOption(VBoxOption.OsType), vm.getId(), true);
-			machine = vbox.createMachine(null, vm.getId(), null, cfg.getOption(VBoxOption.OsType), "forceOverwrite=1,UUID="+vm.getId());
+			// machine = vbox.createMachine(null, vm.getId(),
+			// cfg.getOption(VBoxOption.OsType), vm.getId(), true);
+			machine = vbox.createMachine(null, vm.getId(), null, cfg.getOption(VBoxOption.OsType), "forceOverwrite=1,UUID=" + vm.getId());
 			String hwUuid = cfg.getOption(VBoxOption.HwUuid);
 			if (UuidGenerator.validate(hwUuid)) {
 				machine.setHardwareUUID(hwUuid);
@@ -486,7 +488,9 @@ public class VBoxProduct implements VBoxCacheListener {
 		checkConnected();
 		// get shared lock (sufficient to control machine execution)
 		machine.lockMachine(session, LockType.Shared);
-		LOG.debug("Session locked [" + session.getState() + "," + session.getType() + "]");
+		if (session.getType() != SessionType.Shared) {
+			LOG.error("Wrong session state (should be WriteLock): " + session.getState() + ", " + session.getType());			
+		}
 		// power off machine
 		fireVmStateUpdate(model, vm, "Powering off", 0);
 		IProgress progress = session.getConsole().powerDown();
@@ -514,7 +518,7 @@ public class VBoxProduct implements VBoxCacheListener {
 		lastMessage = msg;
 		vm.setProgressMessage(msg);
 		vm.setProgress(progress.getOperationPercent().intValue());
-		LOG.debug("[{}] [{}]", lastMessage, vm.getProgress());
+		LOG.debug("progress bar [{}] [{}]", lastMessage, vm.getProgress());
 		if (model != null) {
 			model.fireVmStateUpdatedEvent(vm);
 		}
@@ -526,7 +530,11 @@ public class VBoxProduct implements VBoxCacheListener {
 			lastMessage = message;
 		}
 		vm.setProgress(i);
-		LOG.debug("[{}] [{}]", lastMessage, i);
+		if (i < 0) {
+			LOG.debug("progress bar cleared", lastMessage, i);
+		} else {
+			LOG.debug("progress bar [{}] [{}]", lastMessage, i);
+		}
 		if (model != null) {
 			model.fireVmStateUpdatedEvent(vm);
 		}
@@ -579,7 +587,6 @@ public class VBoxProduct implements VBoxCacheListener {
 					progress.getOperationDescription(), //
 					progress.getOperationPercent(), //
 					progress.getOperationWeight());
-			LOG.debug("launchVMProcess -> " + msg);
 			fireVmStateUpdate(model, vm, progress);
 			Thread.sleep(1000);
 		}
@@ -599,14 +606,14 @@ public class VBoxProduct implements VBoxCacheListener {
 	private void safeUnlock(ISession session) throws InterruptedException, CubeException {
 		int limit = 20;
 		while (session.getState() == SessionState.Locked) {
-			LOG.debug("Wait session to unlock [" + session.getType() + "]");
+			LOG.trace("safeUnlock: Wait session to unlock [" + session.getType() + "]");
 			session.unlockMachine();
 			Thread.sleep(200);
 			if (limit-- < 0) {
-				throw new CubeException("Failed to unlock session (timeout)");
+				throw new CubeException("Failed to unlock session (timeout) ["+session.getType()+"]["+session.getState()+"]");
 			}
 		}
-		LOG.debug("Session to unlock [" + session.getState() + "]");
+		LOG.trace("safeUnlock: Session to unlock [" + session.getState() + "]");
 	}
 
 	/*
@@ -649,7 +656,9 @@ public class VBoxProduct implements VBoxCacheListener {
 		// try to get a write lock to be sure that no other session holds a
 		// lock on this machine. And unlock it again before calling unregister.
 		machine.lockMachine(session, LockType.Write);
-		LOG.debug("actual session state (should be WriteLock): " + session.getState() + ", " + session.getType());
+		if (session.getType() != SessionType.WriteLock) {
+			LOG.error("Wrong session state (should be WriteLock): " + session.getState() + ", " + session.getType());			
+		}
 		// unregister does not require lock
 		safeUnlock(session);
 		List<IMedium> mediums = machine.unregister(CleanupMode.Full);
@@ -686,7 +695,7 @@ public class VBoxProduct implements VBoxCacheListener {
 	 *            VPN is already up somewhere??)
 	 */
 	private void addNetworkIface(long id, String nic, String bridge, String mac, IMachine machine, boolean assumeVpnIsUp) {
-		LOG.debug("configure nic [{}]", id + " / " + nic + " / mac:" + mac);
+		LOG.debug("Configure nic [{}]", id + " / " + nic + " / mac:" + mac);
 		mac = mac == null ? null : mac.replaceAll(":", "").toLowerCase();
 		if ("vpn".equals(nic)) {
 			// use pre-configured mac + bridge
@@ -783,7 +792,7 @@ public class VBoxProduct implements VBoxCacheListener {
 						LOG.error("Failed to unlock session [was: " + type + "]", e);
 					}
 				} else {
-					LOG.debug("As excpected, session was not locked");
+					// As expected, session was not locked
 				}
 			}
 		} catch (Exception e) {
@@ -914,33 +923,33 @@ public class VBoxProduct implements VBoxCacheListener {
 					connected = true;
 					LOG.info("VirtualBox Web Service connected [{}]", vbox.getVersion());
 					// try to get events
-					IEventSource es = vbox.getEventSource();
-					IEventListener listener = es.createListener();
+					eventSource = vbox.getEventSource();
+					eventListener = eventSource.createListener();
 					ArrayList<VBoxEventType> types = new ArrayList<VBoxEventType>();
 					types.add(VBoxEventType.MachineEvent);
-					es.registerListener(listener, types, false /* active */);
+					eventSource.registerListener(eventListener, types, false /* active */);
 					// register passive listener
 					while (connected) {
-						IEvent ev = es.getEvent(listener, 1000);
+						IEvent ev = eventSource.getEvent(eventListener, 1000);
 						// wait up to one second for event to happen
 						if (ev != null) {
 							IMachineEvent machineId = IMachineEvent.queryInterface(ev);
 							switch (ev.getType()) {
 							case OnGuestPropertyChanged:
 								IGuestPropertyChangedEvent x = IGuestPropertyChangedEvent.queryInterface(ev);
-								LOG.debug("Got VM event: [event: {}] [vmId: {}] [" + x.getName() + " = " + x.getValue() + "]", ev.getType(),
+								LOG.trace("Got VM event: [event: {}] [vmId: {}] [" + x.getName() + " = " + x.getValue() + "]", ev.getType(),
 										machineId.getMachineId());
 								break;
 							default:
-								LOG.debug("Got VM event: [event: {}] [vmId: {}]", ev.getType(), machineId.getMachineId());
+								LOG.trace("Got VM event: [event: {}] [vmId: {}]", ev.getType(), machineId.getMachineId());
 								break;
 							}
-							es.eventProcessed(listener, ev);
+							eventSource.eventProcessed(eventListener, ev);
 						}
 					}
-					// es.unregisterListener(listener);
+					eventSource.unregisterListener(eventListener);
 				} catch (Exception e) {
-					LOG.error("VirtualBox Web Service not connected (http://localhost:18083). Is vboxwebsrv running? [" + e.getMessage() + "]", e);
+					LOG.error("VirtualBox Web Service disconnected (http://localhost:18083). [" + e.getMessage() + "]", e);
 				}
 			}
 		}, "WebService Connector").start();
@@ -1074,7 +1083,7 @@ public class VBoxProduct implements VBoxCacheListener {
 				// get IMachine reference
 				IMachine machine = getIMachineReference(vm.getId());
 				if (machine == null) {
-					LOG.error("No machine found for ID {}. NIC connection was not updated ("+connected+")",vm.getId());
+					LOG.error("No machine found for ID {}. NIC connection was not updated (" + connected + ")", vm.getId());
 					return;
 				}
 				ISession session = mgr.getSessionObject();
@@ -1096,8 +1105,6 @@ public class VBoxProduct implements VBoxCacheListener {
 				unlockSession();
 				lock.unlock();
 			}
-			
-			
 		} else {
 			LOG.debug("VirtualBox webservice is busy. cannot connect/disconnect NIC.");
 		}
@@ -1109,7 +1116,7 @@ public class VBoxProduct implements VBoxCacheListener {
 			// Disconnect all NICs fist, this way reconfiguring them will
 			// trigger guest netowrking layer (renew DHCP, etc.)
 			try {
-				LOG.debug("Disconnect all NICS before reconfiguring them.");
+				LOG.debug("Disconnect all NICS before reconfiguring them...");
 				ISession session = mgr.getSessionObject();
 				IMachine machine = getIMachineReference(vm.getId());
 				machine.lockMachine(session, LockType.Shared);
@@ -1125,12 +1132,19 @@ public class VBoxProduct implements VBoxCacheListener {
 				// unlock machine
 				session.unlockMachine();
 				Thread.sleep(1000);
-				// DEBUG OUTPUT
+				// Check connection				
 				machine = getIMachineReference(vm.getId());
-				for (long nic = 0l; nic <= 3l; nic++) {
-					INetworkAdapter na = machine.getNetworkAdapter(nic);
-					LOG.debug(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
-							na.getEnabled()));
+				
+				if (machine.getNetworkAdapter(0L).getCableConnected() || //
+						machine.getNetworkAdapter(1L).getCableConnected() || //
+						machine.getNetworkAdapter(2L).getCableConnected() || //
+						machine.getNetworkAdapter(3L).getCableConnected()) {
+					LOG.error("Failed to disconnect NIC correctly :");
+					for (long nic = 0l; nic <= 3l; nic++) {
+						INetworkAdapter na = machine.getNetworkAdapter(nic);
+						LOG.error(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
+								na.getEnabled()));
+					}
 				}
 			} catch (Exception e) {
 				LOG.error("Failed to unconnect NICs", e);
@@ -1188,12 +1202,18 @@ public class VBoxProduct implements VBoxCacheListener {
 					// unlock machine
 					session.unlockMachine();
 				}
-				// DEBUG OUTPUT
+				// Check that cable is connected
 				IMachine machine = getIMachineReference(vm.getId());
-				for (long nic = 0l; nic <= 3l; nic++) {
-					INetworkAdapter na = machine.getNetworkAdapter(nic);
-					LOG.debug(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
-							na.getEnabled()));
+				if (!machine.getNetworkAdapter(0L).getCableConnected() || //
+						machine.getNetworkAdapter(1L).getCableConnected() || //
+						machine.getNetworkAdapter(2L).getCableConnected() || //
+						machine.getNetworkAdapter(3L).getCableConnected()) {
+					LOG.error("Failed to connect NIC correctly :");
+					for (long nic = 0l; nic <= 3l; nic++) {
+						INetworkAdapter na = machine.getNetworkAdapter(nic);
+						LOG.error(String.format("NIC[%d] [connected:%b] [type:%s] [enabled:%b]", nic, na.getCableConnected(), na.getAttachmentType(),
+								na.getEnabled()));
+					}
 				}
 			} catch (Exception e) {
 				throw new VmException("Failed to connect/disconnect NIC to [" + option.getNic() + "]", e);

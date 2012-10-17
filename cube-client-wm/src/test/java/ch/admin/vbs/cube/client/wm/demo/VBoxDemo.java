@@ -28,24 +28,25 @@ public class VBoxDemo {
 	private MockContainerUtil util = new MockContainerUtil();
 
 	public void startAndConnectVboxsrv() throws Exception {
-//		// connect web service
+		// connect web service
 		connect();
-//		// register a new VM
+		// register a new VM
 		Vm vm = util.createTestVm("A");
-//		vbox.registerVm(vm, null);
-//		// start VM
-//		vbox.startVm(vm, null);
+		vbox.registerVm(vm, null);
+		// start VM
+		vbox.startVm(vm, null);
 		Thread.sleep(1000);
-//		
 		
 		vbox.connectNic(vm, new NicOption("eth0"));
 		
-//		// stop VM
-//		vbox.poweroffVm(vm, null);
-//		// unregister VM
-//		vbox.unregisterVm(vm, null);
-//		// disconnect web service
-//		vbox.stop();
+		// stop VM
+		vbox.poweroffVm(vm, null);
+		// unregister VM
+		vbox.unregisterVm(vm, null);
+		// disconnect web service
+		vbox.stop();
+		Thread.sleep(2000);
+		System.exit(0);
 	}
 
 	public void connect() throws Exception {
