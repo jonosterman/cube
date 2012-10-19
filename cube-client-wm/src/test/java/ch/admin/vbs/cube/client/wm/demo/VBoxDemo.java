@@ -16,6 +16,7 @@
 package ch.admin.vbs.cube.client.wm.demo;
 
 import org.junit.Assert;
+import org.virtualbox_4_2.IMachine;
 
 import ch.admin.vbs.cube.core.MockContainerUtil;
 import ch.admin.vbs.cube.core.vm.NicOption;
@@ -33,12 +34,16 @@ public class VBoxDemo {
 		// register a new VM
 		Vm vm = util.createTestVm("A");
 		vbox.registerVm(vm, null);
+		// check register
+		for (IMachine machine : vbox.getMachines() ) {
+			System.out.println("#################");
+			System.out.printf("Machine [ID:%s][ HWUUID:%s]\n",machine.getId(),machine.getHardwareUUID());
+			System.out.println("#################");
+		}
 		// start VM
 		vbox.startVm(vm, null);
-		Thread.sleep(1000);
-		
-		vbox.connectNic(vm, new NicOption("eth0"));
-		
+		Thread.sleep(1000);		
+		vbox.connectNic(vm, new NicOption("eth0"));		
 		// stop VM
 		vbox.poweroffVm(vm, null);
 		// unregister VM

@@ -460,6 +460,13 @@ public class VBoxProduct implements VBoxCacheListener {
 		} catch (Exception e) {
 			throw new VmException("Failed to create tun interfaces", e);
 		}
+		
+		// check------------
+		for (IMachine machine : getMachines() ) {
+			System.out.println("#################");
+			System.out.printf("Machine [ID:%s][ HWUUID:%s]\n",machine.getId(),machine.getHardwareUUID());
+			System.out.println("#################");
+		}
 	}
 
 	/** Check that VBox web service is available and connected */
@@ -560,6 +567,12 @@ public class VBoxProduct implements VBoxCacheListener {
 	private void poweronMachine(IMachine machine, ISession session, Vm vm, VmModel model) throws VBoxException, InterruptedException, CubeException,
 			VmException {
 		checkConnected();
+		if (machine ==null) {
+			throw new CubeException("machine is null");
+		}
+		if (session ==null) {
+			throw new CubeException("session is null");
+		}
 		// where the snaphot may be
 		File snapshot = new File(vm.getRuntimeContainer().getMountpoint().getAbsoluteFile(), "state.sav");
 		IProgress progress = null;

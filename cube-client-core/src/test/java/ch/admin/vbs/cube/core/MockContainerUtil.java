@@ -23,6 +23,7 @@ import java.net.URL;
 import java.nio.channels.FileChannel;
 
 import ch.admin.vbs.cube.common.CubeClassification;
+import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.container.Container;
 import ch.admin.vbs.cube.core.vm.Vm;
 import ch.admin.vbs.cube.core.vm.list.VmDescriptor;
@@ -45,7 +46,7 @@ public class MockContainerUtil {
 		r.setCfgVersion("0.1");
 		r.setDescription("test VM '"+name+"'");
 		r.setDomain("test");
-		r.setId("test-id-"+name);
+		r.setId(UuidGenerator.generate());
 		r.setName(name);
 		r.setType("test-type");
 		// Initialize a dummy directory structure to hold all VM's files
