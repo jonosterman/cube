@@ -751,6 +751,11 @@ public interface X11 extends Library {
 	int VisualColormapSizeMask = 0x80;
 	int VisualBitsPerRGBMask = 0x100;
 	int VisualAllMask = 0x1FF;
+	
+	// 
+	int QueuedAlready  = 0;
+	int QueuedAfterReading  = 1;
+	int QueuedAfterFlush  = 2;
 
 	public class XVisualInfo extends Structure {
 		public Visual visual;
