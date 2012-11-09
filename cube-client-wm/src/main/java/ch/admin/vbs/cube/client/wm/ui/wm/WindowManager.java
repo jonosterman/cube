@@ -99,7 +99,7 @@ public class WindowManager implements IWindowsControl, IUserInterface, IWindowMa
 
 	public WindowManager() {
 	}
-
+		
 	/**
 	 * Close current dialog (via Swing-Thread).
 	 */

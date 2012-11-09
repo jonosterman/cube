@@ -80,4 +80,29 @@ public class IoC {
 			LOG.warn("no 'setup()' method found for class [{}]",bean.getClass());
 		}
 	}
+
+	/**
+	 * Call start() on ALL beans.
+	 */
+	public void startAllBeans() {
+		BEANS: for(Object bean : beans) {
+			for (Method method:  bean.getClass().getDeclaredMethods()) {
+				if (method.getName().equals("start")) {
+					try {
+						method.invoke(bean);
+					} catch (IllegalArgumentException e) {
+						LOG.error("Invokation error",e);
+					} catch (IllegalAccessException e) {
+						LOG.error("Invokation error",e);
+					} catch (InvocationTargetException e) {
+						LOG.error("Invokation error",e);
+					}
+					// next
+					continue BEANS;
+				}
+			}
+			LOG.warn("no 'start()' method found for class [{}]",bean.getClass());
+		}
+		
+	}
 }

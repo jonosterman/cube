@@ -15,9 +15,12 @@
  */
 package ch.admin.vbs.cube.client.wm.demo.swm;
 
-public class SimpleWindowManager {
+import java.awt.Rectangle;
 
-	public void start(String string) {
-		
-	}
+import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
+
+public class ManagedMonitor {
+	private String id;
+	private Window monitorWindow;
+	private Rectangle bounds;
 }

@@ -1,26 +1,59 @@
+/**
+ * Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License").
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ch.admin.vbs.cube.client.wm.demo;
 
-import ch.admin.vbs.cube.client.wm.demo.swm.SimpleWindowManager;
+import ch.admin.vbs.cube.client.wm.demo.swm.AutoMonitorLayout;
+import ch.admin.vbs.cube.client.wm.demo.swm.DemoMonitorControl;
+import ch.admin.vbs.cube.client.wm.demo.swm.IXrandrMonitor;
+import ch.admin.vbs.cube.client.wm.demo.swm.TabManager;
+import ch.admin.vbs.cube.client.wm.demo.swm.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.demo.swm.XSimpleWindowManager;
+import ch.admin.vbs.cube.client.wm.utils.IoC;
 
 public class DemoWindowManager {
 	public static void main(String[] args) throws Exception {
 		// start Xephyr
-		ProcessBuilder pb1 = new ProcessBuilder("Xephyr", "-ac", "-host-cursor", "-screen", "1280x1024", "-br", "-reset", ":9");
+		// ProcessBuilder pb1 = new ProcessBuilder("Xephyr", "-ac",
+		// "-host-cursor", "-screen", "1280x1024", "-br", "-reset", ":9");
+		ProcessBuilder pb1 = new ProcessBuilder("Xephyr", "-ac", "-host-cursor", "-screen", "640x480", "-br", "-reset", ":9");
 		pb1.start();
 		Thread.sleep(500);
 		// Simple Window Manager
+
+		//-------------------
+		IoC ioc = new IoC();
 		XSimpleWindowManager xswm = new XSimpleWindowManager();
 		xswm.setDisplayName(":9");
-		xswm.start();
-		
-		
+		ioc.addBean(xswm);		
+		ioc.addBean(new DemoMonitorControl());		
+		ioc.addBean(new XrandrMonitor());		
+		ioc.addBean(new AutoMonitorLayout());		
+		ioc.addBean(new TabManager());
+		//
+		ioc.setupDependenciesOnAllBeans();
+		//
+		ioc.startAllBeans();
+		//-------------------
+
 		
 		// start xclock
 		Thread.sleep(500);
-		ProcessBuilder pb2 = new ProcessBuilder("xclock");
-		pb2.environment().put("DISPLAY", ":9");
-		pb2.start();
+//		ProcessBuilder pb2 = new ProcessBuilder("gedit", "--new-window");
+//		pb2.environment().put("DISPLAY", ":9");
+//		pb2.start();
 		// use our window manager
 		System.out.println("done.");
 	}
