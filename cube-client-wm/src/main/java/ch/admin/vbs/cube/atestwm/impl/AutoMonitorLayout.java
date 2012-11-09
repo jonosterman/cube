@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube.client.wm.demo.swm;
+package ch.admin.vbs.cube.atestwm.impl;
 
 import java.util.ArrayList;
 import java.util.concurrent.Executor;
@@ -7,6 +7,8 @@ import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.atestwm.IMonitorLayout;
+import ch.admin.vbs.cube.atestwm.IMonitorLayout.IMonitorLayoutListener;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;

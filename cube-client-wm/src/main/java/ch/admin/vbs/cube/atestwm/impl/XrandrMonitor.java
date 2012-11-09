@@ -13,13 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.admin.vbs.cube.client.wm.demo.swm;
+package ch.admin.vbs.cube.atestwm.impl;
 
 import java.util.ArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.atestwm.IMonitorLayout;
+import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
 
@@ -52,8 +54,6 @@ public class XrandrMonitor implements Runnable, IXrandrMonitor {
 	public void run() {
 		while (true) {
 			try {
-				// monitormgr -> layout -> bg-sync ??? how does it chain? not
-				// parallel.
 				Thread.sleep(1000);
 				StringBuffer sb = new StringBuffer();
 				xrandr.reloadConfiguration();

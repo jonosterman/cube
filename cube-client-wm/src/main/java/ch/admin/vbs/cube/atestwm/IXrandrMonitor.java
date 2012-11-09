@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube.client.wm.demo.swm;
+package ch.admin.vbs.cube.atestwm;
 
 
 public interface IXrandrMonitor {

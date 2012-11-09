@@ -15,12 +15,12 @@
  */
 package ch.admin.vbs.cube.client.wm.demo;
 
-import ch.admin.vbs.cube.client.wm.demo.swm.AutoMonitorLayout;
+import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
+import ch.admin.vbs.cube.atestwm.impl.AutoMonitorLayout;
+import ch.admin.vbs.cube.atestwm.impl.TabManager;
+import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
+import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.demo.swm.DemoMonitorControl;
-import ch.admin.vbs.cube.client.wm.demo.swm.IXrandrMonitor;
-import ch.admin.vbs.cube.client.wm.demo.swm.TabManager;
-import ch.admin.vbs.cube.client.wm.demo.swm.XrandrMonitor;
-import ch.admin.vbs.cube.client.wm.demo.swm.XSimpleWindowManager;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 
 public class DemoWindowManager {

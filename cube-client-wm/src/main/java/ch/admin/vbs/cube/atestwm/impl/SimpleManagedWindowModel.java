@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.admin.vbs.cube.client.wm.demo.swm;
+package ch.admin.vbs.cube.atestwm.impl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import ch.admin.vbs.cube.client.wm.demo.swm.ManagedWindow.WindowType;
+import ch.admin.vbs.cube.atestwm.impl.ManagedWindow.WindowType;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public class SimpleManagedWindowModel {
@@ -98,6 +98,15 @@ public class SimpleManagedWindowModel {
 			if (m.getBorder() != null) {
 				borderWindows.remove(m.getBorder());
 			}
+		} finally {
+			lock.unlock();
+		}		
+	}
+
+	public ManagedWindow getManagedByClient(Window client) {
+		lock.lock();
+		try {
+			return clientWindows.get(client);
 		} finally {
 			lock.unlock();
 		}		

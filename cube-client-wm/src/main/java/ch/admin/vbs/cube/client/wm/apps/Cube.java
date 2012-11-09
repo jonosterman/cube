@@ -21,12 +21,17 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.atestwm.impl.AutoMonitorLayout;
+import ch.admin.vbs.cube.atestwm.impl.TabManager;
+import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
+import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.client.impl.ClientFacade;
 import ch.admin.vbs.cube.client.wm.client.impl.CubeActionListener;
 import ch.admin.vbs.cube.client.wm.client.impl.CubeClient;
 import ch.admin.vbs.cube.client.wm.client.impl.VmActionListener;
 import ch.admin.vbs.cube.client.wm.client.impl.VmControl;
 import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
+import ch.admin.vbs.cube.client.wm.demo.swm.DemoMonitorControl;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;
@@ -97,8 +102,22 @@ public final class Cube {
 	}
 
 	
-	
 	private void run() throws Exception {
+		IoC ioc = new IoC();
+		XSimpleWindowManager xswm = new XSimpleWindowManager();
+		ioc.addBean(xswm);		
+		ioc.addBean(new XrandrCLI());
+		ioc.addBean(new XrandrMonitor());		
+		ioc.addBean(new AutoMonitorLayout());		
+		ioc.addBean(new TabManager());
+		//
+		ioc.setupDependenciesOnAllBeans();
+		//
+		ioc.startAllBeans();
+		
+	}
+	
+	private void run_ori() throws Exception {
 		// init UI Default
 		new VmAudioControl().setMainVolume(120);
 		CubeUIDefaults.initDefaults();
