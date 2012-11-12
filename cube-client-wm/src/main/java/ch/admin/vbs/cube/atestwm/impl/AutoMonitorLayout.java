@@ -47,7 +47,7 @@ public class AutoMonitorLayout implements IMonitorLayout {
 		// re-layout monitors
 		int x = 0;
 		for (XRScreen s : xrandr.getScreens()) {
-			if (s.getState() == State.CONNECTED_AND_ACTIVE) {
+			if (s.getState() == State.CONNECTED_AND_ACTIVE || s.getState() == State.CONNECTED) {
 				xrandr.setScreen(s, true, x, 0);
 				x += s.getCurrentWidth();
 			}

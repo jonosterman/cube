@@ -46,6 +46,7 @@ public class MockXrandr implements IXrandr {
 
 	public MockXrandr() throws Exception {
 		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 320, 200)));
+		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 400, 260)));
 		reloadConfiguration();
 		//
 		new Thread(new Runnable() {

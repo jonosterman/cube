@@ -143,7 +143,6 @@ public class XrandrCLI implements IXrandr {
 					}
 				}
 			}
-			LOG.debug("[{}] screens found.", screens.size());
 			// check for new/removed/modified screens
 			synchronized (screenCache) {
 				@SuppressWarnings("unchecked")
@@ -152,7 +151,7 @@ public class XrandrCLI implements IXrandr {
 					XRScreen c = screenCacheCopy.remove(s.getId());
 					if (c == null) {
 						// New screen. Create and keep a reference in cache.
-						LOG.debug("New screen found [{}] .", s.getId());
+						LOG.debug("New screen found [id:{}] [state:{}].", s.getId(), s.getState());
 						screenCache.put(s.getId(), s);
 					} else {
 						// Known screen. Update cache reference

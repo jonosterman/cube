@@ -50,19 +50,30 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		}
 		return null;
 	}
+	@Override
+	public Rectangle getTabWindowBounds(String winName) {
+		for (Screen screen : screens.values()) {
+			if (screen.tabsPanel != null && screen.tabsPanel.getTitle().equals(winName)) {
+				return screen.tabBnds;
+			}
+		}
+		return null;
+	}
+
+	
 
 	private void synchronizeScreenList() {
 		HashSet<Screen> nScreen = new HashSet<Screen>();
 		for (XRScreen s : xrandr.getScreens()) {
-			if (s.getState() == State.CONNECTED_AND_ACTIVE) {
+			if (s.getState() == State.CONNECTED_AND_ACTIVE || s.getState() == State.CONNECTED) {
 				Screen screen = screens.get(s.getId());
 				if (screen == null) {
-					LOG.debug("Register a new Screen [{}]" + s.getPosX(), s.getId());
+					LOG.debug("Register a new Screen [{}]", s.getId());
 					// new screen
 					screen = new Screen(s);
 					screens.put(screen.id, screen);
 				} else {
-					LOG.debug("Update existing Screen [{}]" + s.getPosX(), s.getId());
+					LOG.debug("Update existing Screen [{}]", s.getId());
 					// update screen
 					screen.update(s);
 				}
@@ -106,18 +117,17 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 					TabManager.TAB_BAR_HEIGHT);
 			tabWindow = wm.createAndMapWindow(tabBnds);
 			// create tab panel (JFrame)
-			Rectangle tabPanelBnd = new Rectangle(0, 0, tabBnds.width, tabBnds.height);
-			tabsPanel = tabManager.createTabPanel(fmtTabId(id), tabPanelBnd);
+			tabsPanel = tabManager.createTabPanel(fmtTabId(id), tabBnds);
 		}
 
 		private void dispose() {
 			// move managed window on another screen
-			LOG.error("TODO");
+			LOG.error("TODO: move managed window on another screen");
 			// dispose BG
 			wm.disposeWindow(bgWindow);
 			// dispose tab frame
 			tabManager.disposeTabPanel(fmtTabId(id));
-			wm.disposeWindow(tabWindow);
+			wm.disposeWindow(tabWindow);	
 		}
 
 		private void update(XRScreen s) {
@@ -130,8 +140,7 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 					TabManager.TAB_BAR_HEIGHT);
 			wm.moveAndResizeWindow(tabWindow, tabBnds);
 			// create tab panel (JFrame)
-			Rectangle tabPanelBnd = new Rectangle(0, 0, tabBnds.width, tabBnds.height);
-			tabManager.updateTabPanel(fmtTabId(id), tabPanelBnd);
+			tabManager.updateTabPanel(fmtTabId(id), tabBnds);
 			// update BG window
 			bgBnds = new Rectangle(//
 					bounds.x, //
@@ -140,7 +149,7 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 					bounds.height - TabManager.TAB_BAR_HEIGHT);
 			wm.moveAndResizeWindow(bgWindow, bgBnds);
 			// update managed windows size and position
-			LOG.error("TODO");
+			LOG.error("TODO : update managed windows size and position");
 		}
 	}
 

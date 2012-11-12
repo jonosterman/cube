@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.atestwm.IMonitorLayout;
-import ch.admin.vbs.cube.atestwm.IMonitorLayout.IMonitorLayoutListener;
 import ch.admin.vbs.cube.atestwm.IScreenManager;
 import ch.admin.vbs.cube.atestwm.ITabManager;
 import ch.admin.vbs.cube.atestwm.IWindowManager;
@@ -32,15 +31,23 @@ import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XTextProperty;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XWindowChanges;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 
 import com.sun.jna.NativeLong;
+import com.sun.jna.ptr.IntByReference;
+import com.sun.jna.ptr.PointerByReference;
 
 public class XSimpleWindowManager implements IWindowManager {
+	private enum Arch {
+		OS_32_BIT, OS_64_BIT
+	}
+
 	private static final Logger LOG = LoggerFactory.getLogger(XSimpleWindowManager.class);
+	private Arch osArch;
 	protected static final long MAX_LOCK_TIMEOUT = 5000;
 	private X11 x11;
 	private String displayName;
@@ -88,6 +95,17 @@ public class XSimpleWindowManager implements IWindowManager {
 	public void start() {
 		x11 = X11.INSTANCE;
 		x11.XInitThreads();
+		/*
+		 * detect OS architecture since it plays a role in some X calls (window
+		 * pointer size)
+		 */
+		String osBits = System.getProperty("os.arch");
+		LOG.debug("Detected architecture [{}]", osBits);
+		if ("amd64".equals(osBits)) {
+			osArch = Arch.OS_64_BIT;
+		} else {
+			osArch = Arch.OS_32_BIT;
+		}
 		// open display
 		LOG.debug("Start WindowManager..");
 		display = x11.XOpenDisplay(displayName);
@@ -133,12 +151,18 @@ public class XSimpleWindowManager implements IWindowManager {
 			case X11.MapRequest:
 				handleMapRequest(event);
 				break;
-			// case X11.ConfigureRequest:
-			// handleConfigureRequest(event);
-			// break;
+//			case X11.ConfigureRequest:
+//				handleConfigureRequest(event);
+//				break;
 			// case X11.DestroyNotify:
 			// handleDestroyNotify(event);
 			// break;
+			// case X11.ConfigureNotify:
+			// handleConfigureNotify(event);
+			// break;
+//			case X11.ResizeRequest:
+//				handleResizeRequest(event);
+//				break;
 			default:
 				LOG.debug("Got an XEvent [{}]", X11.XEventName.getEventName(event.type));
 				break;
@@ -146,20 +170,43 @@ public class XSimpleWindowManager implements IWindowManager {
 		}
 	}
 
-	private void handleDestroyNotify(XEvent event) {
+	// private void handleDestroyNotify(XEvent event) {
+	// lock();
+	// try {
+	// X11.XConfigureRequestEvent e = (X11.XConfigureRequestEvent)
+	// event.getTypedValue(X11.XConfigureRequestEvent.class);
+	// LOG.debug(String.format("XConfigureRequestEvent for window [%s]",
+	// getWindowNameNoLock(e.window)));
+	// // // check if managed
+	// // ManagedWindow managed =
+	// // managedWindowModel.getManagedByClient(e.window);
+	// // if (managed != null) {
+	// // x11.XUnmapWindow(display, managed.getBorder());
+	// // x11.XDestroyWindow(display, managed.getBorder());
+	// // x11.XFlush(display);
+	// // managedWindowModel.remove(managed);
+	// // }
+	// } finally {
+	// unlock();
+	// }
+	// }
+	private void handleResizeRequest(XEvent event) {
 		lock();
 		try {
-			X11.XConfigureRequestEvent e = (X11.XConfigureRequestEvent) event.getTypedValue(X11.XConfigureRequestEvent.class);
-			LOG.debug(String.format("XConfigureRequestEvent for window [%s]", getWindowNameNoLock(e.window)));
-			// // check if managed
-			// ManagedWindow managed =
-			// managedWindowModel.getManagedByClient(e.window);
-			// if (managed != null) {
-			// x11.XUnmapWindow(display, managed.getBorder());
-			// x11.XDestroyWindow(display, managed.getBorder());
-			// x11.XFlush(display);
-			// managedWindowModel.remove(managed);
-			// }
+			X11.XResizeRequestEvent e = (X11.XResizeRequestEvent) event.getTypedValue(X11.XResizeRequestEvent.class);
+			String winName = getWindowNameNoLock(e.window);
+			LOG.debug(String.format("XResizeRequestEvent for [%s] (%dx%d)", winName, e.width, e.height));
+			Window tabWindow = screenManager.getTabWindow(winName);
+			if (tabWindow != null) {
+				Rectangle tabBnd = screenManager.getTabWindowBounds(winName);
+				LOG.debug(String.format("IT IS A TAB PANEL [%s] (%dx%d)", winName, e.width, e.height));
+//				if (tabBnd.x != 0 || tabBnd.x != 0 || tabBnd.y != e.y || tabBnd.width != e.width) {
+//					// x11.XMoveResizeWindow(display, e.window, 0, 0,
+//					// tabBnd.width, tabBnd.height);
+//					// LOG.debug("Wrong resize/move : force it");
+//				}
+				x11.XResizeWindow(display, e.window, e.width, e.height);
+			}
 		} finally {
 			unlock();
 		}
@@ -169,7 +216,37 @@ public class XSimpleWindowManager implements IWindowManager {
 		lock();
 		try {
 			X11.XConfigureRequestEvent e = (X11.XConfigureRequestEvent) event.getTypedValue(X11.XConfigureRequestEvent.class);
-			LOG.debug(String.format("XConfigureRequestEvent for [%s] (%d:%d)(%dx%d)", getWindowNameNoLock(e.window), e.x, e.y, e.width, e.height));
+			String winName = getWindowNameNoLock(e.window);
+			LOG.debug(String.format("XConfigureRequestEvent for [%s] (%d:%d)(%dx%d)", winName, e.x, e.y, e.width, e.height));
+			Window tabWindow = screenManager.getTabWindow(winName);
+			if (tabWindow != null) {
+				Rectangle tabBnd = screenManager.getTabWindowBounds(winName);
+				// A tab frame try to configure its size/position
+				LOG.debug(String.format("IT IS A TAB PANEL [%s] (%d:%d)(%dx%d)", winName, e.x, e.x, e.width, e.height));
+				if ((e.value_mask.longValue() & X11.PSize) != 0 && (e.value_mask.longValue() & X11.PPosition) != 0) {
+					if (tabBnd.x != 0 || tabBnd.x != 0 || tabBnd.y != e.y || tabBnd.width != e.width) {
+						LOG.debug("Wrong application resize/move : fix it");
+						x11.XConfigureWindow(display, e.window, e.value_mask, prepareChgX(0, 0, e.width, e.height, e.border_width, e.detail, e.above));
+					}
+				}
+//				if ((e.value_mask.longValue() & X11.USSize) != 0 && (e.value_mask.longValue() & X11.USPosition) != 0) {
+//					if (tabBnd.x != 0 || tabBnd.x != 0 || tabBnd.y != e.y || tabBnd.width != e.width) {
+//						LOG.debug("Wrong user resize/move : fix it");
+//						x11.XConfigureWindow(display, e.window, e.value_mask, prepareChgX(0, 0, e.width, e.height, e.border_width, e.detail, e.above));
+//					}
+//				}
+				// if ((e.value_mask.longValue() & X11.USSize) != 0 &&
+				// (e.value_mask.longValue() & X11.USPosition) != 0) {
+				// if (tabBnd.x != 0 || tabBnd.x != 0 || tabBnd.y != e.y ||
+				// tabBnd.width != e.width) {
+				// x11.XMoveResizeWindow(display, e.window, 0, 0, tabBnd.width,
+				// tabBnd.height);
+				// LOG.debug("Wrong user resize/move : force it");
+				// }
+				// }
+			} else {
+				LOG.debug("Othe window configure request [{}]", winName);
+			}
 			//
 			// // check if managed
 			// ManagedWindow managed =
@@ -224,7 +301,6 @@ public class XSimpleWindowManager implements IWindowManager {
 		try {
 			X11.XMapEvent e = (X11.XMapEvent) event.getTypedValue(X11.XMapEvent.class);
 			String winName = getWindowNameNoLock(e.window);
-						
 			if (tabManager.isTabPanel(winName)) {
 				// it is a tab panel -> authorize mapping. re-parent to tab
 				// window
@@ -234,62 +310,18 @@ public class XSimpleWindowManager implements IWindowManager {
 					LOG.error("TabFrame want Map but the Window is not ready yet");
 					return;
 				}
+				LOG.warn("Process MapRequest for window [{}]", winName);
 				x11.XReparentWindow(display, e.window, tapWin, 0, 0);
 				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
-				x11.XSelectInput(display, e.window, new NativeLong(X11.PropertyChangeMask | X11.StructureNotifyMask));
-				// effectively map client
-				x11.XMapRaised(display, e.window);
+				x11.XSelectInput(display, e.window, new NativeLong(X11.PropertyChangeMask | X11.SubstructureNotifyMask | X11.ResizeRedirectMask
+						| X11.StructureNotifyMask));
 				x11.XFlush(display);
+				// effectively map client
+				x11.XMapWindow(display, e.window);
+				x11.XFlush(display);
+			} else {
+				LOG.warn("Ignore MapRequest for window [{}]", winName);
 			}
-			// if (managedWindowModel.isManaged(e.window)) {
-			// // window already managed
-			// LOG.debug(String.format("XMapEvent for managed window [%s]. TODO",
-			// getWindowNameNoLock(e.window)));
-			// // ??
-			// } else {
-			// // create managed window
-			// String wname = getWindowNameNoLock(e.window);
-			// Rectangle bnd = null;
-			// Window border = null;
-			// ManagedWindow manage = null;
-			// //
-			// WindowType guess = ManagedWindow.guessType(wname);
-			// LOG.debug("XMapEvent for unmanaged [{}] window. Create ManagedWindow for it.",guess);
-			//
-			//
-			// if (wname != null &&
-			// wname.startsWith(TabManager.TABSFRAME_PREFIX)) {
-			// bnd = tabManager.getTabBounds(wname);
-			// // TAB panel. we manage the window with a given size and position
-			// LOG.debug(String.format("XMapEvent: manage a new TAB panel [%s] (%d:%d)(%dx%d)",
-			// wname,bnd.x,bnd.y,bnd.width,bnd.height));
-			// border = createBorderWindow(x11.XRootWindow(display,
-			// screenIndex), 1,
-			// Color.GREEN, Color.cyan, bnd);
-			// manage = new ManagedWindow(e.window, border, WindowType.TABS);
-			// } else {
-			// bnd = new Rectangle(100, 100, 100, 100);
-			// // Some window. we manage the window with a fixed size
-			// LOG.debug(String.format("XMapEvent: manage an unknown window [%s] (%d:%d)(%dx%d)",
-			// wname,bnd.x,bnd.y,bnd.width,bnd.height));
-			// border = createBorderWindow(x11.XRootWindow(display,
-			// screenIndex), 2,
-			// Color.RED, Color.ORANGE, bnd);
-			// manage = new ManagedWindow(e.window, border, WindowType.OTHER);
-			// }
-			// managedWindowModel.register(manage);
-			// // raise border
-			// x11.XMapRaised(display, border);
-			// // re-parent client into border
-			// x11.XReparentWindow(display, e.window, border, 0, 0);
-			// x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
-			// x11.XSelectInput(display, e.window, new
-			// NativeLong(X11.PropertyChangeMask | X11.StructureNotifyMask));
-			// // effectively map client
-			// x11.XMapRaised(display, e.window);
-			// x11.XFlush(display);
-			// }
-			// //
 		} finally {
 			unlock();
 		}
@@ -381,5 +413,47 @@ public class XSimpleWindowManager implements IWindowManager {
 		this.xrandr = xrandr;
 		this.tabManager = tabManager;
 		this.screenManager = screenManager;
+	}
+
+	// ####################
+	/**
+	 * Returns all window IDs to the given parent window.
+	 * 
+	 * @param display
+	 *            the display for better performance
+	 * @param parentWindow
+	 *            the parent window for all children
+	 * @return a list of long which are window IDs
+	 */
+	private long[] getChildrenList(Display display, Window parentWindow) {
+		long[] childrenWindowIdArray = new long[] {};
+		// prepare reference values
+		WindowByReference rootWindowRef = new WindowByReference();
+		WindowByReference parentWindowRef = new WindowByReference();
+		PointerByReference childrenPtr = new PointerByReference();
+		IntByReference childrenCount = new IntByReference();
+		// find all children to the rootWindow
+		if (x11.XQueryTree(display, parentWindow, rootWindowRef, parentWindowRef, childrenPtr, childrenCount) == 0) {
+			LOG.error("BadWindow - A value for a Window argument does not name a defined Window!");
+			return childrenWindowIdArray;
+		}
+		// get all window id's from the pointer and the count
+		if (childrenCount.getValue() > 0) {
+			switch (osArch) {
+			case OS_32_BIT:
+				int[] intChildrenWindowIdArray = childrenPtr.getValue().getIntArray(0, childrenCount.getValue());
+				childrenWindowIdArray = new long[intChildrenWindowIdArray.length];
+				int index = 0;
+				for (int windowId : intChildrenWindowIdArray) {
+					childrenWindowIdArray[index] = windowId;
+					++index;
+				}
+				break;
+			case OS_64_BIT:
+				childrenWindowIdArray = childrenPtr.getValue().getLongArray(0, childrenCount.getValue());
+				break;
+			}
+		}
+		return childrenWindowIdArray;
 	}
 }

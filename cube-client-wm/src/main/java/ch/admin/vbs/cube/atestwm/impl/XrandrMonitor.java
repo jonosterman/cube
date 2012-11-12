@@ -15,8 +15,6 @@
  */
 package ch.admin.vbs.cube.atestwm.impl;
 
-import java.util.ArrayList;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,11 +57,9 @@ public class XrandrMonitor implements Runnable, IXrandrMonitor {
 				xrandr.reloadConfiguration();
 				for (XRScreen s : xrandr.getScreens()) {
 					sb.append(s.getId()).append(';');
-//					sb.append(s.getPosX()).append(';');
-//					sb.append(s.getPosY()).append(';');
-//					sb.append(s.getCurrentWidth()).append(';');
-//					sb.append(s.getCurrentHeight()).append(';');
 					sb.append(s.getState()).append(';');
+					sb.append(s.getCurrentWidth()).append('x');
+					sb.append(s.getCurrentHeight()).append(';');
 				}
 				int newHash = sb.toString().hashCode();
 				if (newHash != configHash) {
