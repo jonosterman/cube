@@ -21,14 +21,14 @@ package ch.admin.vbs.cube.core;
  */
 public interface IAuthModule {
 	/**
-	 * Always invoke 'start()' once at the begining in order to activate the
+	 * Always invoke 'start()' once at the beginning in order to activate the
 	 * module.
 	 */
 	void start();
 
 	/**
-	 * Open the token. If the token was already opened completly or partially,
-	 * It will re-initilize it.
+	 * Open the token. If the token was already opened completely or partially,
+	 * It will re-initialize it.
 	 */
 	void openToken();
 

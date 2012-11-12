@@ -47,13 +47,14 @@ public class AutoMonitorLayout implements IMonitorLayout {
 		// re-layout monitors
 		int x = 0;
 		for (XRScreen s : xrandr.getScreens()) {
-			if (s.getState() != State.DISCONNECTED) {
+			if (s.getState() == State.CONNECTED_AND_ACTIVE) {
 				xrandr.setScreen(s, true, x, 0);
 				x += s.getCurrentWidth();
 			}
 		}
 		LOG.debug("Re-layout monitor(s) complete. Notify listeners [{}].",listeners.size());
-		// notify listeners
+		// refresh xrandr intern state and notify listeners
+		xrandr.reloadConfiguration();
 		fireLayoutChanged();
 	}
 

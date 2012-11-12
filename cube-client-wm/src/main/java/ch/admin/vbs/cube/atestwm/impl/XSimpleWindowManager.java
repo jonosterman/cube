@@ -17,8 +17,6 @@ package ch.admin.vbs.cube.atestwm.impl;
 
 import java.awt.Color;
 import java.awt.Rectangle;
-import java.util.HashSet;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -26,10 +24,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.atestwm.IMonitorLayout;
-import ch.admin.vbs.cube.atestwm.ITabManager;
-import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
 import ch.admin.vbs.cube.atestwm.IMonitorLayout.IMonitorLayoutListener;
-import ch.admin.vbs.cube.atestwm.impl.ManagedWindow.WindowType;
+import ch.admin.vbs.cube.atestwm.IScreenManager;
+import ch.admin.vbs.cube.atestwm.ITabManager;
+import ch.admin.vbs.cube.atestwm.IWindowManager;
+import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
@@ -37,15 +36,12 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XTextProperty;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XWindowChanges;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
-import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
-import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 
 import com.sun.jna.NativeLong;
 
-public class XSimpleWindowManager {
+public class XSimpleWindowManager implements IWindowManager {
 	private static final Logger LOG = LoggerFactory.getLogger(XSimpleWindowManager.class);
 	protected static final long MAX_LOCK_TIMEOUT = 5000;
-	private static final int TAB_BAR_HEIGHT = 25;
 	private X11 x11;
 	private String displayName;
 	private int screenIndex;
@@ -57,10 +53,12 @@ public class XSimpleWindowManager {
 	private String lockCommand;
 	protected boolean destroyed;
 	//
-	private SimpleManagedWindowModel managedWindowModel = new SimpleManagedWindowModel();
+	// private SimpleManagedWindowModel managedWindowModel = new
+	// SimpleManagedWindowModel();
 	private IXrandrMonitor monMgr;
 	private IXrandr xrandr;
 	private ITabManager tabManager;
+	private IScreenManager screenManager;
 
 	public XSimpleWindowManager() {
 		// Find out default display name
@@ -91,6 +89,7 @@ public class XSimpleWindowManager {
 		x11 = X11.INSTANCE;
 		x11.XInitThreads();
 		// open display
+		LOG.debug("Start WindowManager..");
 		display = x11.XOpenDisplay(displayName);
 		// Trap root window's events (see blackbox:Screen.cc)
 		x11.XSelectInput(display, x11.XRootWindow(display, screenIndex), new NativeLong(//
@@ -134,12 +133,12 @@ public class XSimpleWindowManager {
 			case X11.MapRequest:
 				handleMapRequest(event);
 				break;
-			case X11.ConfigureRequest:
-				handleConfigureRequest(event);
-				break;
-			case X11.DestroyNotify:
-				handleDestroyNotify(event);
-				break;
+			// case X11.ConfigureRequest:
+			// handleConfigureRequest(event);
+			// break;
+			// case X11.DestroyNotify:
+			// handleDestroyNotify(event);
+			// break;
 			default:
 				LOG.debug("Got an XEvent [{}]", X11.XEventName.getEventName(event.type));
 				break;
@@ -152,14 +151,15 @@ public class XSimpleWindowManager {
 		try {
 			X11.XConfigureRequestEvent e = (X11.XConfigureRequestEvent) event.getTypedValue(X11.XConfigureRequestEvent.class);
 			LOG.debug(String.format("XConfigureRequestEvent for window [%s]", getWindowNameNoLock(e.window)));
-			// check if managed
-			ManagedWindow managed = managedWindowModel.getManagedByClient(e.window);
-			if (managed != null) {
-				x11.XUnmapWindow(display, managed.getBorder());
-				x11.XDestroyWindow(display, managed.getBorder());
-				x11.XFlush(display);
-				managedWindowModel.remove(managed);				
-			}
+			// // check if managed
+			// ManagedWindow managed =
+			// managedWindowModel.getManagedByClient(e.window);
+			// if (managed != null) {
+			// x11.XUnmapWindow(display, managed.getBorder());
+			// x11.XDestroyWindow(display, managed.getBorder());
+			// x11.XFlush(display);
+			// managedWindowModel.remove(managed);
+			// }
 		} finally {
 			unlock();
 		}
@@ -169,98 +169,151 @@ public class XSimpleWindowManager {
 		lock();
 		try {
 			X11.XConfigureRequestEvent e = (X11.XConfigureRequestEvent) event.getTypedValue(X11.XConfigureRequestEvent.class);
-			LOG.debug(String.format("XConfigureRequestEvent for window [%s]", getWindowNameNoLock(e.window)));
-			// check if managed
-			ManagedWindow managed = managedWindowModel.getManagedByClient(e.window);
-			if (managed == null) {
-				// TODO: there is race condition there risk there. see
-				// blackbox.cc:154
-				// configure window as it want it
-				XWindowChanges chg = new XWindowChanges();
-				chg.height = e.height;
-				chg.width = e.width;
-				chg.border_width = e.border_width;
-				chg.sibling = e.above;
-				chg.x = e.x;
-				chg.y = e.y;
-				chg.stack_mode = e.detail;
-				LOG.debug(String.format(" -> (%d:%d)(%dx%d)", chg.x, chg.y, chg.width, chg.height));
-				x11.XConfigureWindow(display, e.window, e.value_mask, chg);
-			} else {
-				switch (managed.getType()) {
-				default:
-					//
-					XWindowChanges chg = new XWindowChanges();
-					chg.height = e.height;
-					chg.width = e.width;
-					chg.border_width = e.border_width;
-					chg.sibling = e.above;
-					chg.x = 0;
-					chg.y = 0;
-					chg.stack_mode = e.detail;
-					LOG.debug(String.format(" -> (%d:%d)(%dx%d)", chg.x, chg.y, chg.width, chg.height));
-					x11.XConfigureWindow(display, e.window, e.value_mask, chg);
-					//
-					chg = new XWindowChanges();
-					chg.height = e.height;
-					chg.width = e.width;
-					chg.border_width = e.border_width;
-					chg.sibling = e.above;
-					chg.x = e.x;
-					chg.y = e.y;
-					chg.stack_mode = e.detail;
-					LOG.debug(String.format(" -> (%d:%d)(%dx%d)", chg.x, chg.y, chg.width, chg.height));
-					x11.XConfigureWindow(display, e.parent, e.value_mask, chg);
-					break;
-				}
-			}
+			LOG.debug(String.format("XConfigureRequestEvent for [%s] (%d:%d)(%dx%d)", getWindowNameNoLock(e.window), e.x, e.y, e.width, e.height));
+			//
+			// // check if managed
+			// ManagedWindow managed =
+			// managedWindowModel.getManagedByClient(e.window);
+			// if (managed == null) {
+			// // TODO: there is race condition there risk there. see
+			// // blackbox.cc:154
+			// // configure window as it want it
+			// LOG.debug(String.format("XConfigureRequestEvent for unmanaged window [%s] (%d:%d)(%dx%d)",
+			// getWindowNameNoLock(e.window), e.x, e.y, e.width, e.height));
+			// x11.XConfigureWindow(display, e.window, e.value_mask,
+			// prepareChgX(e.x, e.y, e.width, e.height, e.border_width,
+			// e.detail, e.above));
+			// } else {
+			// switch (managed.getType()) {
+			// case TABS:
+			// LOG.debug("XConfigureRequestEvent for TAB -> TODO");
+			// layout.??
+			// break;
+			// default:
+			// LOG.debug("XConfigureRequestEvent for managed window (parent) [%s]",getWindowNameNoLock(e.parent));
+			// x11.XConfigureWindow(display, e.parent, e.value_mask,
+			// prepareChgX(e.x, e.y, e.width, e.height, e.border_width,
+			// e.detail, e.above));
+			// LOG.debug("XConfigureRequestEvent for managed window (client) [%s]",getWindowNameNoLock(e.parent));
+			// x11.XConfigureWindow(display, e.window, e.value_mask,
+			// prepareChgX(0,0, e.width, e.height, e.border_width, e.detail,
+			// e.above));
+			// break;
+			// }
+			// }
 		} finally {
 			unlock();
 		}
+	}
+
+	private XWindowChanges prepareChgX(int x, int y, int w, int h, int border, int details, Window sibling) {
+		XWindowChanges chg = new XWindowChanges();
+		chg.height = h;
+		chg.width = w;
+		chg.border_width = border;
+		chg.sibling = sibling;
+		chg.x = x;
+		chg.y = y;
+		chg.stack_mode = details;
+		LOG.debug(String.format("XWindowChanges (%d:%d)(%dx%d)", chg.x, chg.y, chg.width, chg.height));
+		return chg;
 	}
 
 	private void handleMapRequest(XEvent event) {
 		lock();
 		try {
 			X11.XMapEvent e = (X11.XMapEvent) event.getTypedValue(X11.XMapEvent.class);
-			if (managedWindowModel.isManaged(e.window)) {
-				LOG.debug(String.format("XMapEvent for managed window [%s]", getWindowNameNoLock(e.window)));
-				// ??
-			} else {
-				String wname = getWindowNameNoLock(e.window);
-				// manage window
-				Rectangle bnd = null;
-				Window border = null;
-				ManagedWindow manage = null;
-				if (wname != null && wname.startsWith(TabManager.TABSFRAME_PREFIX)) {
-					LOG.debug(String.format("XMapEvent for unmanaged tab panel [%s]", wname));
-					// manage window -> tab panel
-					bnd = tabManager.getTabBounds(wname);
-					border = createBorderWindow(x11.XRootWindow(display, screenIndex), 1, Color.GREEN, Color.cyan, bnd);
-					manage = new ManagedWindow(e.window, border, WindowType.TABS);
-				} else {
-					LOG.debug(String.format("XMapEvent for unmanaged window [%s]", wname));
-					// manage window -> VM and other apps
-					bnd = new Rectangle(100, 100, 100, 100);
-					border = createBorderWindow(x11.XRootWindow(display, screenIndex), 2, Color.RED, Color.ORANGE, bnd);
-					manage = new ManagedWindow(e.window, border, WindowType.VM);
+			String winName = getWindowNameNoLock(e.window);
+						
+			if (tabManager.isTabPanel(winName)) {
+				// it is a tab panel -> authorize mapping. re-parent to tab
+				// window
+				Window tapWin = screenManager.getTabWindow(winName);
+				if (tapWin == null) {
+					// should not happend
+					LOG.error("TabFrame want Map but the Window is not ready yet");
+					return;
 				}
-				x11.XMapRaised(display, border);
-				managedWindowModel.register(manage);
-				x11.XFlush(display);
-				// reparent client into border
-				x11.XReparentWindow(display, e.window, border, 0, 0);
+				x11.XReparentWindow(display, e.window, tapWin, 0, 0);
 				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
-				//
 				x11.XSelectInput(display, e.window, new NativeLong(X11.PropertyChangeMask | X11.StructureNotifyMask));
-				// effectively map
+				// effectively map client
 				x11.XMapRaised(display, e.window);
 				x11.XFlush(display);
 			}
+			// if (managedWindowModel.isManaged(e.window)) {
+			// // window already managed
+			// LOG.debug(String.format("XMapEvent for managed window [%s]. TODO",
+			// getWindowNameNoLock(e.window)));
+			// // ??
+			// } else {
+			// // create managed window
+			// String wname = getWindowNameNoLock(e.window);
+			// Rectangle bnd = null;
+			// Window border = null;
+			// ManagedWindow manage = null;
+			// //
+			// WindowType guess = ManagedWindow.guessType(wname);
+			// LOG.debug("XMapEvent for unmanaged [{}] window. Create ManagedWindow for it.",guess);
 			//
+			//
+			// if (wname != null &&
+			// wname.startsWith(TabManager.TABSFRAME_PREFIX)) {
+			// bnd = tabManager.getTabBounds(wname);
+			// // TAB panel. we manage the window with a given size and position
+			// LOG.debug(String.format("XMapEvent: manage a new TAB panel [%s] (%d:%d)(%dx%d)",
+			// wname,bnd.x,bnd.y,bnd.width,bnd.height));
+			// border = createBorderWindow(x11.XRootWindow(display,
+			// screenIndex), 1,
+			// Color.GREEN, Color.cyan, bnd);
+			// manage = new ManagedWindow(e.window, border, WindowType.TABS);
+			// } else {
+			// bnd = new Rectangle(100, 100, 100, 100);
+			// // Some window. we manage the window with a fixed size
+			// LOG.debug(String.format("XMapEvent: manage an unknown window [%s] (%d:%d)(%dx%d)",
+			// wname,bnd.x,bnd.y,bnd.width,bnd.height));
+			// border = createBorderWindow(x11.XRootWindow(display,
+			// screenIndex), 2,
+			// Color.RED, Color.ORANGE, bnd);
+			// manage = new ManagedWindow(e.window, border, WindowType.OTHER);
+			// }
+			// managedWindowModel.register(manage);
+			// // raise border
+			// x11.XMapRaised(display, border);
+			// // re-parent client into border
+			// x11.XReparentWindow(display, e.window, border, 0, 0);
+			// x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
+			// x11.XSelectInput(display, e.window, new
+			// NativeLong(X11.PropertyChangeMask | X11.StructureNotifyMask));
+			// // effectively map client
+			// x11.XMapRaised(display, e.window);
+			// x11.XFlush(display);
+			// }
+			// //
 		} finally {
 			unlock();
 		}
+	}
+
+	public Window createAndMapWindow(Rectangle bounds) {
+		Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), 1, Color.RED, Color.ORANGE, bounds);
+		x11.XMapRaised(display, w);
+		x11.XFlush(display);
+		return w;
+	}
+
+	@Override
+	public void moveAndResizeWindow(Window window, Rectangle bnd) {
+		LOG.debug("move window [{}]", BoundFormatterUtil.format(bnd));
+		x11.XMoveResizeWindow(display, window, bnd.x, bnd.y, bnd.width, bnd.height);
+		x11.XFlush(display);
+	}
+
+	@Override
+	public void disposeWindow(Window window) {
+		x11.XUnmapWindow(display, window);
+		x11.XDestroyWindow(display, window);
+		x11.XFlush(display);
 	}
 
 	private Window createBorderWindow(Window frame, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
@@ -286,7 +339,7 @@ public class XSimpleWindowManager {
 					borderSize, //
 					borderColor.getRGB(), //
 					backgroundColor.getRGB());
-			LOG.debug("Bordered window created [{}]", borderWindow);
+			LOG.debug(String.format("Bordered window created [id:%s] %s", borderWindow, BoundFormatterUtil.format(bounds)));
 			// flush
 			x11.XFlush(display);
 			return borderWindow;
@@ -323,65 +376,10 @@ public class XSimpleWindowManager {
 		lock.unlock();
 	}
 
-	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager) {
+	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager, IScreenManager screenManager) {
 		this.monMgr = monMgr;
 		this.xrandr = xrandr;
 		this.tabManager = tabManager;
-		layout.addListener(new MonitorLayoutChangeHandler());
-	}
-
-	/** Handle monitor change and ensure a BG window is ready for each monitor. */
-	private class MonitorLayoutChangeHandler implements IMonitorLayoutListener {
-		private static final int BG_BORDER_SIZE = 1;
-		private final Color BG_BORDER_COLOR = Color.RED;
-
-		@Override
-		public void layoutChanged() {
-			// get list of screen
-			HashSet<ManagedWindow> activeWindows = new HashSet<ManagedWindow>();
-			for (XRScreen s : xrandr.getScreens()) {
-				if (s.getState() == State.CONNECTED_AND_ACTIVE) {
-					// make sure that a bg frame is define for each screen
-					ManagedWindow bg = managedWindowModel.getManaged(WindowType.BG, s.getId());
-					if (bg == null) {
-						LOG.debug("Create BG for screen {}", s.getId());
-						// create new BG window (which will hold VMs windows)
-						Rectangle bgBounds = new Rectangle(//
-								s.getPosX() + BG_BORDER_SIZE,//
-								s.getPosY() + TAB_BAR_HEIGHT + BG_BORDER_SIZE,//
-								s.getCurrentWidth() - BG_BORDER_SIZE * 2 - 50,//
-								s.getCurrentHeight() - TAB_BAR_HEIGHT - BG_BORDER_SIZE * 2 - 50);
-						Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), 1, BG_BORDER_COLOR, Color.black, bgBounds);
-						bg = new ManagedWindow(null, w, WindowType.BG);
-						bg.setScreenId(s.getId());
-						managedWindowModel.register(bg);
-						x11.XMapWindow(display, w);
-						activeWindows.add(bg);
-					} else {
-						LOG.debug("Update BG for screen {}", s.getId());
-						// ensure BG window is at the good position
-						Rectangle bgBounds = new Rectangle(//
-								s.getPosX() + BG_BORDER_SIZE,//
-								s.getPosY() + TAB_BAR_HEIGHT + BG_BORDER_SIZE,//
-								s.getCurrentWidth() - BG_BORDER_SIZE * 2 - 50,//
-								s.getCurrentHeight() - TAB_BAR_HEIGHT - BG_BORDER_SIZE * 2 - 50);
-						x11.XMoveResizeWindow(display, bg.getBorder(), bgBounds.x, bgBounds.y, bgBounds.width, bgBounds.height);
-						x11.XMapWindow(display, bg.getBorder());
-						activeWindows.add(bg);
-					}
-				}
-			}
-			// remove unused bg windows
-			List<ManagedWindow> old = managedWindowModel.getManaged(WindowType.BG);
-			old.removeAll(activeWindows);
-			for (ManagedWindow m : old) {
-				LOG.debug("Remove {}", m.getBorder());
-				// TODO: re-parent window in deleted bg window if any.
-				managedWindowModel.remove(m);
-				x11.XUnmapWindow(display, m.getBorder());
-				x11.XDestroyWindow(display, m.getBorder());
-			}
-			x11.XFlush(display);
-		}
+		this.screenManager = screenManager;
 	}
 }

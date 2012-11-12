@@ -59,10 +59,10 @@ public class XrandrMonitor implements Runnable, IXrandrMonitor {
 				xrandr.reloadConfiguration();
 				for (XRScreen s : xrandr.getScreens()) {
 					sb.append(s.getId()).append(';');
-					sb.append(s.getPosX()).append(';');
-					sb.append(s.getPosY()).append(';');
-					sb.append(s.getCurrentWidth()).append(';');
-					sb.append(s.getCurrentHeight()).append(';');
+//					sb.append(s.getPosX()).append(';');
+//					sb.append(s.getPosY()).append(';');
+//					sb.append(s.getCurrentWidth()).append(';');
+//					sb.append(s.getCurrentHeight()).append(';');
 					sb.append(s.getState()).append(';');
 				}
 				int newHash = sb.toString().hashCode();

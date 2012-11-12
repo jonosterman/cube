@@ -31,7 +31,6 @@ import ch.admin.vbs.cube.client.wm.client.impl.CubeClient;
 import ch.admin.vbs.cube.client.wm.client.impl.VmActionListener;
 import ch.admin.vbs.cube.client.wm.client.impl.VmControl;
 import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
-import ch.admin.vbs.cube.client.wm.demo.swm.DemoMonitorControl;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;

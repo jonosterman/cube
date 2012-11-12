@@ -22,14 +22,12 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
  */
 public class ManagedWindow {
 	public enum WindowType {
-		VM, TABS, DIALOG, BG
+		VM, TABS, DIALOG, BG, OTHER
 	}
 
 	private Window client;
 	private Window border;
 	private WindowType type;
-	// on which monitor this managed window is displayed
-	private ManagedMonitor monitor;
 	// screen id is used for BG managed window
 	private String screenId;
 
@@ -39,14 +37,36 @@ public class ManagedWindow {
 		this.type = type;
 	}
 	
-	public Window getClient() { return client; }
-	public Window getBorder() { return border; }
-	public WindowType getType() { return type; }
+//	public static final WindowType guessType(String windowName) {
+//		if (windowName == null) {
+//			return WindowType.OTHER;			
+//		} else if(windowName.startsWith(TabManager.TABSFRAME_PREFIX)) {
+//			return WindowType.TABS;
+//		} else {
+//			return WindowType.OTHER;
+//		}
+//	}
+//	
+//	
+	// ######################
+
+	public Window getClient() {
+		return client;
+	}
+
+	public Window getBorder() {
+		return border;
+	}
+
+	public WindowType getType() {
+		return type;
+	}
 
 	public String getScreenId() {
 		return screenId;
 	}
-	public void setScreenId(String screenId) {
+
+	public void setXRScreenId(String screenId) {
 		this.screenId = screenId;
 	}
 }
