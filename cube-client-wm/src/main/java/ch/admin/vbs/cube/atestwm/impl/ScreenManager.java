@@ -41,8 +41,8 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		synchronizeScreenList();
 	}
 
-	@Override
-	public Window getTabWindow(String winName) {
+	// @Override
+	public MWindow getTabWindow(String winName) {
 		for (Screen screen : screens.values()) {
 			if (screen.tabsPanel != null && screen.tabsPanel.getTitle().equals(winName)) {
 				return screen.tabWindow;
@@ -50,18 +50,17 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		}
 		return null;
 	}
-	@Override
-	public Rectangle getTabWindowBounds(String winName) {
-		for (Screen screen : screens.values()) {
-			if (screen.tabsPanel != null && screen.tabsPanel.getTitle().equals(winName)) {
-				return screen.tabBnds;
-			}
-		}
-		return null;
-	}
 
-	
-
+	// @Override
+	// public Rectangle getTabWindowBounds(String winName) {
+	// for (Screen screen : screens.values()) {
+	// if (screen.tabsPanel != null &&
+	// screen.tabsPanel.getTitle().equals(winName)) {
+	// return screen.tabBnds;
+	// }
+	// }
+	// return null;
+	// }
 	private void synchronizeScreenList() {
 		HashSet<Screen> nScreen = new HashSet<Screen>();
 		for (XRScreen s : xrandr.getScreens()) {
@@ -91,29 +90,27 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 	}
 
 	public class Screen {
-		Rectangle bounds;
+		Rectangle scrBnds;
 		TabFrame tabsPanel;
 		String id;
-		Rectangle bgBnds;
-		Window bgWindow;
-		Rectangle tabBnds;
-		Window tabWindow;
+		MWindow bgWindow;
+		MWindow tabWindow;
 
 		public Screen(XRScreen s) {
 			id = s.getId();
-			bounds = new Rectangle(s.getPosX(), s.getPosY(), s.getCurrentWidth(), s.getCurrentHeight());
+			scrBnds = new Rectangle(s.getPosX(), s.getPosY(), s.getCurrentWidth(), s.getCurrentHeight());
 			// create BG window
-			bgBnds = new Rectangle(//
-					bounds.x, //
-					bounds.y + TabManager.TAB_BAR_HEIGHT, //
-					bounds.width, //
-					bounds.height - TabManager.TAB_BAR_HEIGHT);
+			Rectangle bgBnds = new Rectangle(//
+					scrBnds.x, //
+					scrBnds.y + TabManager.TAB_BAR_HEIGHT, //
+					scrBnds.width, //
+					scrBnds.height - TabManager.TAB_BAR_HEIGHT);
 			bgWindow = wm.createAndMapWindow(bgBnds);
 			// create tab window (X)
-			tabBnds = new Rectangle(//
-					bounds.x, //
+			Rectangle tabBnds = new Rectangle(//
+					scrBnds.x, //
 					0, //
-					bounds.width, //
+					scrBnds.width, //
 					TabManager.TAB_BAR_HEIGHT);
 			tabWindow = wm.createAndMapWindow(tabBnds);
 			// create tab panel (JFrame)
@@ -121,39 +118,39 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		}
 
 		private void dispose() {
+			LOG.debug("TODO: dispose XRScreen");
 			// move managed window on another screen
 			LOG.error("TODO: move managed window on another screen");
 			// dispose BG
 			wm.disposeWindow(bgWindow);
 			// dispose tab frame
 			tabManager.disposeTabPanel(fmtTabId(id));
-			wm.disposeWindow(tabWindow);	
+			wm.disposeWindow(tabWindow);
 		}
 
 		private void update(XRScreen s) {
-			bounds = new Rectangle(s.getPosX(), s.getPosY(), s.getCurrentWidth(), s.getCurrentHeight());
+			LOG.debug("TODO: update XRScreen");
+			Rectangle newBounds = new Rectangle(s.getPosX(), s.getPosY(), s.getCurrentWidth(), s.getCurrentHeight());
 			// update tab window (X)
-			tabBnds = new Rectangle(//
-					bounds.x, //
+			Rectangle tabBnds = new Rectangle(//
+					newBounds.x, //
 					0, //
-					bounds.width, //
+					newBounds.width, //
 					TabManager.TAB_BAR_HEIGHT);
 			wm.moveAndResizeWindow(tabWindow, tabBnds);
 			// create tab panel (JFrame)
 			tabManager.updateTabPanel(fmtTabId(id), tabBnds);
 			// update BG window
-			bgBnds = new Rectangle(//
-					bounds.x, //
-					bounds.y + TabManager.TAB_BAR_HEIGHT, //
-					bounds.width, //
-					bounds.height - TabManager.TAB_BAR_HEIGHT);
+			Rectangle bgBnds = new Rectangle(//
+					newBounds.x, //
+					newBounds.y + TabManager.TAB_BAR_HEIGHT, //
+					newBounds.width, //
+					newBounds.height - TabManager.TAB_BAR_HEIGHT);
 			wm.moveAndResizeWindow(bgWindow, bgBnds);
 			// update managed windows size and position
 			LOG.error("TODO : update managed windows size and position");
 		}
 	}
-
-	
 
 	public class BgPanel {
 		Rectangle bounds;

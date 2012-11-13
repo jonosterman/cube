@@ -8,5 +8,5 @@ public interface ITabManager {
 	public TabFrame createTabPanel(String frameTitle, Rectangle bounds);
 	public void updateTabPanel(String frameTitle, Rectangle bounds);
 	public void disposeTabPanel(String frameTitle);
-	public boolean isTabPanel(String winName);
+	public boolean matchTabPanel(String winName);
 }

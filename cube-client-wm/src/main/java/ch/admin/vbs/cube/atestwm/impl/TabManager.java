@@ -96,7 +96,7 @@ public class TabManager implements ITabManager {
 	}
 	
 	@Override
-	public boolean isTabPanel(String winName) {
+	public boolean matchTabPanel(String winName) {
 		return tabPanels.containsKey(winName);
 	}
 	

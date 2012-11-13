@@ -58,8 +58,9 @@ public class MockXrandr implements IXrandr {
 						Socket s = serv.accept();
 						try {
 							InputStream in = s.getInputStream();
-							while (true) {
-								int c = in.read();
+							int c = 0;
+							while (c >= 0) {
+								c = in.read();
 								switch (c) {
 								case 1:
 									int rmd = rnd.nextInt(3);
@@ -81,6 +82,7 @@ public class MockXrandr implements IXrandr {
 									}
 									break;
 								default:
+									LOG.debug("Bad command [{}]", c);
 									break;
 								}
 								LOG.debug("Screen list updated [{}]", monListModel.size());

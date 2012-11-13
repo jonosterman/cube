@@ -45,6 +45,7 @@ public class MockXrandrUI extends JPanel {
 		try {
 			Socket client = new Socket("localhost", 9122);
 			outClient = client.getOutputStream();
+			LOG.debug("Reconnected");
 		} catch (Exception e) {
 			LOG.debug("Failed to reconnect");
 		}

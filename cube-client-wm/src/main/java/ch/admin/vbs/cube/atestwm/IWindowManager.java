@@ -2,13 +2,14 @@ package ch.admin.vbs.cube.atestwm;
 
 import java.awt.Rectangle;
 
+import ch.admin.vbs.cube.atestwm.impl.MWindow;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IWindowManager {
 
-	Window createAndMapWindow(Rectangle bgBnds);
+	MWindow createAndMapWindow(Rectangle bgBnds);
 
-	void disposeWindow(Window window);
+	void disposeWindow(MWindow window);
 
-	void moveAndResizeWindow(Window bgWindow, Rectangle bgBnds);
+	void moveAndResizeWindow(MWindow bgWindow, Rectangle newBnds);
 }

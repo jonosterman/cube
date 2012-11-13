@@ -113,7 +113,25 @@ public class XWm {
 		});
 		eventThread.start();
 		//
-		lock.lock();		
+		lock.lock();
+		
+		try {
+			Window mywin = x11.XCreateSimpleWindow(//
+					display, //
+					x11.XRootWindow(display, xScreenIndex), //
+					10, 30, //
+					144, 284, //
+					2, //
+					Color.RED.getRGB(), Color.CYAN.getRGB());
+			x11.XMapRaised(display, mywin);
+			x11.XFlush(display);
+			Thread.sleep(2000);
+		} catch (Exception e3) {
+			e3.printStackTrace();
+		}
+		System.exit(0);
+		
+		//
 		// initial : check all already opened windows
 		LOG.info("---------------------------");
 		target = debug_selectTargetWindow();
