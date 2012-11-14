@@ -28,6 +28,8 @@ import ch.admin.vbs.cube.atestwm.impl.TabManager;
 import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
 import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
+import ch.admin.vbs.cube3.core.impl.VMMgr;
+import ch.admin.vbs.cube3.core.impl.VBoxMgr;
 
 public class DemoCubeWM {
 	private static final Logger LOG = LoggerFactory.getLogger(DemoCubeWM.class);
@@ -51,6 +53,8 @@ public class DemoCubeWM {
 		ioc.addBean(new AutoMonitorLayout());
 		ioc.addBean(new TabManager());
 		ioc.addBean(new ScreenManager());
+		ioc.addBean(new VMMgr());
+		ioc.addBean(new VBoxMgr());
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

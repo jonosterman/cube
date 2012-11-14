@@ -288,6 +288,34 @@ public class XSimpleWindowManager implements IWindowManager {
 				x11.XUngrabServer(display);
 				sendResizeEvent(display, e.window, bnd);
 				x11.XFlush(display);
+			} else if (winName!=null && winName.endsWith(" - Oracle VM VirtualBox")) {
+				// it is a VM -> authorize mapping. re-parent to border window 				
+				MWindow vmWin = screenManager.getVmWindow(winName);
+				if (vmWin == null) {
+					// should not happend
+					LOG.error("VM want Map but the Window is not ready yet");
+					return;
+				}
+				LOG.warn("Process MapRequest for window [{}]", winName);
+				vmWin.setXclient(e.window);
+				x11.XGrabServer(display);
+				x11.XReparentWindow(display, e.window, vmWin.getXWindow(), 0, 0);
+				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
+				x11.XSelectInput(display, e.window, //
+						new NativeLong(X11.PropertyChangeMask //
+								| X11.SubstructureNotifyMask //
+								| X11.ResizeRedirectMask //
+								| X11.StructureNotifyMask));
+				x11.XFlush(display);
+				// effectively resize and map client window
+				LOG.debug("Configure ,Map client window and send it a ResizeEvent");
+				Rectangle bnd = vmWin.getBounds();				
+				//x11.XConfigureWindow(display, e.window, new NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0, bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
+				x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
+				x11.XMapRaised(display, e.window);
+				x11.XUngrabServer(display);
+				sendResizeEvent(display, e.window, bnd);
+				x11.XFlush(display);
 			} else {
 				LOG.warn("Ignore MapRequest for window [{}]", winName);
 			}

@@ -95,6 +95,7 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		String id;
 		MWindow bgWindow;
 		MWindow tabWindow;
+		
 
 		public Screen(XRScreen s) {
 			id = s.getId();
