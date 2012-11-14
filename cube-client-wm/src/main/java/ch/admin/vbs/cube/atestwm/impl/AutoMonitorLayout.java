@@ -1,6 +1,7 @@
 package ch.admin.vbs.cube.atestwm.impl;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
@@ -8,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.atestwm.IMonitorLayout;
-import ch.admin.vbs.cube.atestwm.IMonitorLayout.IMonitorLayoutListener;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
@@ -46,7 +46,9 @@ public class AutoMonitorLayout implements IMonitorLayout {
 	public void pack() {
 		// re-layout monitors
 		int x = 0;
-		for (XRScreen s : xrandr.getScreens()) {
+		ArrayList<XRScreen> n = new ArrayList<XRScreen>(xrandr.getScreens());
+		Collections.reverse(n);
+		for (XRScreen s : n) {
 			if (s.getState() == State.CONNECTED_AND_ACTIVE || s.getState() == State.CONNECTED) {
 				xrandr.setScreen(s, true, x, 0);
 				x += s.getCurrentWidth();

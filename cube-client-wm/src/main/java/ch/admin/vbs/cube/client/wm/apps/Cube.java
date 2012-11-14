@@ -60,6 +60,8 @@ import ch.admin.vbs.cube.core.network.impl.NetManager;
 import ch.admin.vbs.cube.core.vm.IVmController;
 import ch.admin.vbs.cube.core.vm.VmAudioControl;
 import ch.admin.vbs.cube.core.vm.VmController;
+import ch.admin.vbs.cube3.core.impl.VBoxMgr;
+import ch.admin.vbs.cube3.core.impl.VMMgr;
 
 /**
  * This class is the entry point to start the cube secure client.
@@ -112,6 +114,9 @@ public final class Cube {
 		ioc.addBean(new AutoMonitorLayout());		
 		ioc.addBean(new TabManager());		
 		ioc.addBean(new ScreenManager());
+		ioc.addBean(new VMMgr());
+		ioc.addBean(new VBoxMgr());
+		
 		//
 		ioc.setupDependenciesOnAllBeans();
 		//

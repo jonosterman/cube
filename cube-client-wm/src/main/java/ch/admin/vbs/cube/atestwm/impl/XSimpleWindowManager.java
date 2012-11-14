@@ -290,7 +290,7 @@ public class XSimpleWindowManager implements IWindowManager {
 				x11.XFlush(display);
 			} else if (winName!=null && winName.endsWith(" - Oracle VM VirtualBox")) {
 				// it is a VM -> authorize mapping. re-parent to border window 				
-				MWindow vmWin = screenManager.getVmWindow(winName);
+				/*MWindow vmWin = screenManager.getVmWindow(winName);
 				if (vmWin == null) {
 					// should not happend
 					LOG.error("VM want Map but the Window is not ready yet");
@@ -315,7 +315,7 @@ public class XSimpleWindowManager implements IWindowManager {
 				x11.XMapRaised(display, e.window);
 				x11.XUngrabServer(display);
 				sendResizeEvent(display, e.window, bnd);
-				x11.XFlush(display);
+				x11.XFlush(display);*/
 			} else {
 				LOG.warn("Ignore MapRequest for window [{}]", winName);
 			}

@@ -130,7 +130,6 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		}
 
 		private void update(XRScreen s) {
-			LOG.debug("TODO: update XRScreen");
 			Rectangle newBounds = new Rectangle(s.getPosX(), s.getPosY(), s.getCurrentWidth(), s.getCurrentHeight());
 			// update tab window (X)
 			Rectangle tabBnds = new Rectangle(//
