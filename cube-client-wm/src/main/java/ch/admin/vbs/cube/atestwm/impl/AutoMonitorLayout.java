@@ -23,21 +23,23 @@ public class AutoMonitorLayout implements IMonitorLayout {
 	public void addListener(IMonitorLayoutListener l) {
 		listeners.add(l);
 	}
+
 	@Override
 	public void removeListener(IMonitorLayoutListener l) {
 		listeners.remove(l);
 	}
+
 	private void fireLayoutChanged() {
 		exec.execute(new Runnable() {
 			@Override
 			public void run() {
-				for(IMonitorLayoutListener l : listeners) {
+				for (IMonitorLayoutListener l : listeners) {
 					l.layoutChanged();
 				}
 			}
 		});
 	}
-	
+
 	public void setup(IXrandr xrandr) {
 		this.xrandr = xrandr;
 	}
@@ -47,14 +49,16 @@ public class AutoMonitorLayout implements IMonitorLayout {
 		// re-layout monitors
 		int x = 0;
 		ArrayList<XRScreen> n = new ArrayList<XRScreen>(xrandr.getScreens());
-		Collections.reverse(n);
+		// Collections.reverse(n); was to test re-layout in disorder. to spot
+		// real-life bugs where client windows where not correctly located at
+		// 0:0.
 		for (XRScreen s : n) {
 			if (s.getState() == State.CONNECTED_AND_ACTIVE || s.getState() == State.CONNECTED) {
 				xrandr.setScreen(s, true, x, 0);
 				x += s.getCurrentWidth();
 			}
 		}
-		LOG.debug("Re-layout monitor(s) complete. Notify listeners [{}].",listeners.size());
+		LOG.debug("Re-layout monitor(s) complete. Notify listeners [{}].", listeners.size());
 		// refresh xrandr intern state and notify listeners
 		xrandr.reloadConfiguration();
 		fireLayoutChanged();

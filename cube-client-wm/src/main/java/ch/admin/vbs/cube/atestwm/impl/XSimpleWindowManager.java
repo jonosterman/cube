@@ -30,10 +30,12 @@ import ch.admin.vbs.cube.atestwm.IWindowManager;
 import ch.admin.vbs.cube.atestwm.IXrandrMonitor;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.EWMH;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.WindowByReference;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XConfigureEvent;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XEvent;
+import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XSizeHints;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XTextProperty;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.XWindowChanges;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
@@ -165,14 +167,14 @@ public class XSimpleWindowManager implements IWindowManager {
 			// case X11.DestroyNotify:
 			// handleDestroyNotify(event);
 			// break;
-			// case X11.ConfigureNotify:
-			// handleConfigureNotify(event);
-			// break;
+			case X11.ConfigureNotify:
+				handleConfigureNotify(event);
+				break;
 			case X11.ResizeRequest:
 				handleResizeRequest(event);
 				break;
 			default:
-				LOG.debug("Got an XEvent [{}]", X11.XEventName.getEventName(event.type));
+				LOG.debug("({}) Ignore.", X11.XEventName.getEventName(event.type));
 				break;
 			}
 		}
@@ -208,13 +210,49 @@ public class XSimpleWindowManager implements IWindowManager {
 				// check if size match our own constraints
 				Rectangle bnd = mw.getBounds();
 				if (bnd.width != e.width || bnd.height != e.height) {
-					LOG.debug(String.format("Resize request from managed [%s] (%dx%d) when should (%dx%d)", //
+					LOG.debug(String.format("(XResizeRequestEvent) [%s] (managed) (%dx%d) when should (%dx%d) : Missmatch. Proceed Resize.", //
 							winName, e.width, e.height, bnd.width, bnd.height));
-					LOG.warn("TODO: client message with right size. resize to constraints");
+				} else {
+					LOG.debug(String.format("(XResizeRequestEvent) [%s] (managed) (%dx%d) : Correct. Proceed Resize.", //
+							winName, e.width, e.height, bnd.width, bnd.height));
 				}
 				x11.XResizeWindow(display, e.window, bnd.width, bnd.height);
 			} else {
-				LOG.debug("Resize request from unmanaged window [{}]", winName);
+				LOG.debug("(XResizeRequestEvent) [{}] (unmanaged). Ignore.", winName);
+			}
+		} finally {
+			unlock();
+		}
+	}
+
+	private void handleConfigureNotify(XEvent event) {
+		lock();
+		try {
+			X11.XConfigureEvent e = (X11.XConfigureEvent) event.getTypedValue(X11.XConfigureEvent.class);
+			String winName = getWindowNameNoLock(e.window);
+			if (e.window == null) {
+				LOG.debug("(ConfigureNotify) [null]. Ignore.");
+				return;
+			}
+			MWindow mw = wmodel.getMWindowByClient(e.window);
+			if (mw != null) {
+				// check if size match our own constraints
+				Rectangle bnd = mw.getBounds();
+				if (bnd.width != e.width || bnd.height != e.height || 0 != e.x || 0 != e.y) {
+					LOG.debug(String.format("(ConfigureNotify) [%s] (managed) (%d:%d)(%dx%d) when should (%d:%d)(%dx%d) : Missmatch. Force re-configure", //
+							winName, e.x, e.y, e.width, e.height, 0, 0, bnd.width, bnd.height));
+					x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
+					sendResizeEvent(display, e.window, bnd, mw.getXWindow());
+					x11.XFlush(display);
+				} else {
+					LOG.debug(String.format("(ConfigureNotify) [%s] (managed) (%d:%d)(%dx%d) : Correct. Ignore.", //
+							winName, e.x, e.y, e.width, e.height));
+				}
+				// force to constraint
+				// LOG.debug("TODO: force resize to right constraints");
+				// x11.XResizeWindow(display, e.window, bnd.width, bnd.height);
+			} else {
+				LOG.debug("(ConfigureNotify) [{}] (unmanaged). Ignore.", winName);
 			}
 		} finally {
 			unlock();
@@ -228,14 +266,36 @@ public class XSimpleWindowManager implements IWindowManager {
 			String winName = getWindowNameNoLock(e.window);
 			MWindow mw = wmodel.getMWindowByClient(e.window);
 			if (mw == null) {
-				LOG.debug(String.format("XConfigureRequestEvent for unmanaged window [%s] (%d:%d)(%dx%d)", winName, e.x, e.y, e.width, e.height));
+				LOG.debug(String.format(
+						"(XConfigureRequestEvent) [%s] (unmanaged) (%d:%d)(%dx%d) [ppos:%b, psize:%b, upos:%b, usize:%b]. Apply as-is.", //
+						winName, e.x, e.y, e.width,
+						e.height, //
+						(e.value_mask.longValue() & X11.PPosition) > 0, (e.value_mask.longValue() & X11.PSize) > 0,
+						(e.value_mask.longValue() & X11.USPosition) > 0, (e.value_mask.longValue() & X11.USSize) > 0));
+				x11.XConfigureWindow(display, e.window, e.value_mask, prepareChgX(e.x, e.y, e.width, e.height, e.border_width, e.send_event, e.above));
 			} else {
 				Rectangle bnd = mw.getBounds();
-				boolean progResize = (e.value_mask.longValue() & (X11.PPosition | X11.PSize)) >0;
-				boolean userResize = (e.value_mask.longValue() & (X11.USPosition | X11.USSize)) >0;				
-				LOG.debug(String.format("XConfigureRequestEvent for managed window (client) [%s] (prog:%b, user:%b) ", getWindowNameNoLock(e.parent), progResize, userResize));
+				// boolean progResize = (e.value_mask.longValue() &
+				// (X11.PPosition | X11.PSize)) > 0;
+				boolean userResize = (e.value_mask.longValue() & (X11.USPosition | X11.USSize)) > 0;
+				// check user submitted position
+				if (userResize) {
+					if (e.x != 0 || e.y != 0) {
+						LOG.debug("patch user submitted (x:y) with (0:0)");
+						// patch x & y since client window is in managed window
+						e.x = 0;
+						e.y = 0;
+					}
+				}
+				LOG.debug(String.format(
+						"(XConfigureRequestEvent) [%s] (managed) (%d:%d)(%dx%d) [ppos:%b, psize:%b, upos:%b, usize:%b]. Apply as-is.", //
+						winName, e.x, e.y, e.width,
+						e.height, //
+						(e.value_mask.longValue() & X11.PPosition) > 0, (e.value_mask.longValue() & X11.PSize) > 0,
+						(e.value_mask.longValue() & X11.USPosition) > 0, (e.value_mask.longValue() & X11.USSize) > 0));
+				x11.XConfigureWindow(display, e.window, e.value_mask, prepareChgX(e.x, e.y, e.width, e.height, e.border_width, e.send_event, e.above));
 			}
-			
+			x11.XFlush(display);
 		} finally {
 			unlock();
 		}
@@ -250,7 +310,8 @@ public class XSimpleWindowManager implements IWindowManager {
 		chg.x = x;
 		chg.y = y;
 		chg.stack_mode = details;
-		LOG.debug(String.format("XWindowChanges (%d:%d)(%dx%d)", chg.x, chg.y, chg.width, chg.height));
+		// LOG.debug(String.format("XWindowChanges (%d:%d)(%dx%d)", chg.x,
+		// chg.y, chg.width, chg.height));
 		return chg;
 	}
 
@@ -268,56 +329,57 @@ public class XSimpleWindowManager implements IWindowManager {
 					LOG.error("TabFrame want Map but the Window is not ready yet");
 					return;
 				}
-				LOG.warn("Process MapRequest for window [{}]", winName);
 				tapWin.setXclient(e.window);
+				LOG.warn("(XMapRequest) [{}] (tabs frame) ", winName);
 				x11.XGrabServer(display);
 				x11.XReparentWindow(display, e.window, tapWin.getXWindow(), 0, 0);
 				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
 				x11.XSelectInput(display, e.window, //
 						new NativeLong(X11.PropertyChangeMask //
 								| X11.SubstructureNotifyMask //
+								| X11.SubstructureRedirectMask // debug
 								| X11.ResizeRedirectMask //
 								| X11.StructureNotifyMask));
 				x11.XFlush(display);
 				// effectively resize and map client window
 				LOG.debug("Configure ,Map client window and send it a ResizeEvent");
-				Rectangle bnd = tapWin.getBounds();				
-				//x11.XConfigureWindow(display, e.window, new NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0, bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
+				Rectangle bnd = tapWin.getBounds();
+				// x11.XConfigureWindow(display, e.window, new
+				// NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0,
+				// bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
 				x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
+				LOG.warn(String.format("(XMapRequest) [%s] (tabs frame: config, map & ResizeEvent) (%d:%d)(%dx%d)", winName, 0, 0, bnd.width, bnd.height));
 				x11.XMapRaised(display, e.window);
 				x11.XUngrabServer(display);
-				sendResizeEvent(display, e.window, bnd);
 				x11.XFlush(display);
-			} else if (winName!=null && winName.endsWith(" - Oracle VM VirtualBox")) {
-				// it is a VM -> authorize mapping. re-parent to border window 				
-				/*MWindow vmWin = screenManager.getVmWindow(winName);
-				if (vmWin == null) {
-					// should not happend
-					LOG.error("VM want Map but the Window is not ready yet");
-					return;
-				}
-				LOG.warn("Process MapRequest for window [{}]", winName);
-				vmWin.setXclient(e.window);
-				x11.XGrabServer(display);
-				x11.XReparentWindow(display, e.window, vmWin.getXWindow(), 0, 0);
-				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
-				x11.XSelectInput(display, e.window, //
-						new NativeLong(X11.PropertyChangeMask //
-								| X11.SubstructureNotifyMask //
-								| X11.ResizeRedirectMask //
-								| X11.StructureNotifyMask));
-				x11.XFlush(display);
-				// effectively resize and map client window
-				LOG.debug("Configure ,Map client window and send it a ResizeEvent");
-				Rectangle bnd = vmWin.getBounds();				
-				//x11.XConfigureWindow(display, e.window, new NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0, bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
-				x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
-				x11.XMapRaised(display, e.window);
-				x11.XUngrabServer(display);
-				sendResizeEvent(display, e.window, bnd);
-				x11.XFlush(display);*/
+			} else if (winName != null && winName.endsWith(" - Oracle VM VirtualBox")) {
+				// it is a VM -> authorize mapping. re-parent to border window
+				/*
+				 * MWindow vmWin = screenManager.getVmWindow(winName); if (vmWin
+				 * == null) { // should not happend
+				 * LOG.error("VM want Map but the Window is not ready yet");
+				 * return; } LOG.warn("Process MapRequest for window [{}]",
+				 * winName); vmWin.setXclient(e.window);
+				 * x11.XGrabServer(display); x11.XReparentWindow(display,
+				 * e.window, vmWin.getXWindow(), 0, 0);
+				 * x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
+				 * x11.XSelectInput(display, e.window, // new
+				 * NativeLong(X11.PropertyChangeMask // |
+				 * X11.SubstructureNotifyMask // | X11.ResizeRedirectMask // |
+				 * X11.StructureNotifyMask)); x11.XFlush(display); //
+				 * effectively resize and map client window LOG.debug(
+				 * "Configure ,Map client window and send it a ResizeEvent");
+				 * Rectangle bnd = vmWin.getBounds();
+				 * //x11.XConfigureWindow(display, e.window, new
+				 * NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0,
+				 * bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
+				 * x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width,
+				 * bnd.height); x11.XMapRaised(display, e.window);
+				 * x11.XUngrabServer(display); sendResizeEvent(display,
+				 * e.window, bnd); x11.XFlush(display);
+				 */
 			} else {
-				LOG.warn("Ignore MapRequest for window [{}]", winName);
+				LOG.warn("(XMapRequest) [{}]. Ignore.", winName);
 			}
 		} finally {
 			unlock();
@@ -461,28 +523,31 @@ public class XSimpleWindowManager implements IWindowManager {
 		}
 		return childrenWindowIdArray;
 	}
-	
-	private void sendResizeEvent(Display display, Window client, Rectangle bounds) {
-		LOG.debug("---> sendResizeEvent() to [{}] name[{}]", client, getWindowNameNoLock(client));
+
+	private void sendResizeEvent(Display display, Window client, Rectangle bounds, Window parent) {
+		LOG.debug("-> sendResizeEvent() [{}] "+BoundFormatterUtil.format(bounds), getWindowNameNoLock(client));
 		//
-		// XSizeHints hints = x11.XAllocSizeHints();
-		// hints.base_width = bounds.height;
-		// hints.base_height = bounds.width;
-		// hints.flags = new NativeLong(X11.PBaseSize);
-		// x11.XSetWMNormalHints(display, client, hints);
+		XSizeHints hints = x11.XAllocSizeHints();
+		hints.base_width = bounds.height;
+		hints.base_height = bounds.width;
+		hints.x = bounds.x;
+		hints.y = bounds.y;
+		hints.flags = new NativeLong(X11.PBaseSize);
+		x11.XSetWMNormalHints(display, client, hints);
 		// Send an event to force application (VirtualBox) to resize. It is
 		// needed if we move the VM on a 2nd screen with another resolution
 		// than the first one.
-		NativeLong event_mask = new NativeLong(X11.StructureNotifyMask);
 		XConfigureEvent event = new XConfigureEvent();
-		event.type = X11.ConfigureNotify;
+		event.window = client;
+		event.event = client;
+		event.type = X11.ConfigureNotify;		
 		event.display = display;
 		event.height = bounds.height;
 		event.width = bounds.width;
 		event.border_width = 0;
-		event.above = null;
+		event.above = parent;
 		event.override_redirect = 0;
-		x11.XSendEvent(display, client, 1, event_mask, event);
+		x11.XSendEvent(display, client, 1, new NativeLong(X11.StructureNotifyMask), event);
 		// flush
 		x11.XFlush(display);
 	}

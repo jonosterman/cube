@@ -77,7 +77,7 @@ public class TabManager implements ITabManager {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				if (e.isPopupTrigger()) {
-					System.out.println(e.getX());
+					System.out.println("[DEB] popup X: "+e.getX()+"   relative to: "+frame.getTitle()+" "+frame.getLocation().x+"  "+frame.getLocationOnScreen().x);
 					pmenu.show(frame, e.getX(), e.getY());
 				}
 			}

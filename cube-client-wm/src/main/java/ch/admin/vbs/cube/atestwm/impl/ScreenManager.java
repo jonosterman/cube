@@ -21,7 +21,7 @@ import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 
 public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
-	public static final String TABSFRAME_PREFIX = "cube##tabsframe-[";
+	public static final String TABSFRAME_PREFIX = "ctsf#[";
 	public static final String TABSFRAME_POSTFIX = "]";
 	private static final Logger LOG = LoggerFactory.getLogger(ScreenManager.class);
 	private HashMap<String, Screen> screens = new HashMap<String, Screen>();
