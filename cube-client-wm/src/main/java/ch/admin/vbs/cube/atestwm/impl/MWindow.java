@@ -30,7 +30,7 @@ public class MWindow {
 		return xwindow;
 	}
 
-	public Window getXclient() {
+	public Window getXClient() {
 		return xclient;
 	}
 

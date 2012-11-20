@@ -60,7 +60,7 @@ public class TabManager implements ITabManager {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					VirtualMachine vm = new VirtualMachine(vmid);					
-					vmMgr.command(vm, Command.START);
+					//vmMgr.command(vm, Command.START);
 				}
 			});
 			menu = new JMenuItem("stop vm#" + i);
@@ -77,8 +77,7 @@ public class TabManager implements ITabManager {
 			@Override
 			public void mousePressed(MouseEvent e) {
 				if (e.isPopupTrigger()) {
-					System.out.println("[DEB] popup X: "+e.getX()+"   relative to: "+frame.getTitle()+" "+frame.getLocation().x+"  "+frame.getLocationOnScreen().x);
-					pmenu.show(frame, e.getX(), e.getY());
+					pmenu.show(e.getComponent(), e.getX(), e.getY());
 				}
 			}
 		});
@@ -88,7 +87,7 @@ public class TabManager implements ITabManager {
 		LOG.debug("Create Tab Frame [{}]", fId);
 		frame.setContentPane(p);
 		frame.pack();
-		frame.setLocation(bounds.x, bounds.y);
+		//frame.setLocation(bounds.x, bounds.y);
 		frame.setVisible(true);
 		return frame;
 	}
@@ -106,7 +105,6 @@ public class TabManager implements ITabManager {
 		LOG.debug("Move/resize JFrame {}", BoundFormatterUtil.format(bounds));
 		tf.setPreferredSize(new Dimension(bounds.width, bounds.height));
 		tf.pack();
-		tf.setLocation(bounds.x, bounds.y);
 	}
 
 	@Override

@@ -50,6 +50,7 @@ public class AutoMonitorLayout implements IMonitorLayout {
 		int x = 0;
 		ArrayList<XRScreen> n = new ArrayList<XRScreen>(xrandr.getScreens());
 		// Collections.reverse(n); was to test re-layout in disorder. to spot
+		//Collections.reverse(n);
 		// real-life bugs where client windows where not correctly located at
 		// 0:0.
 		for (XRScreen s : n) {

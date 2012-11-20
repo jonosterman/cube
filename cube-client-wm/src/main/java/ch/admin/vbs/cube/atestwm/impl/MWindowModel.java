@@ -38,7 +38,7 @@ public class MWindowModel {
 		lock.lock();
 		try {
 			for (MWindow mw: windows) {
-				if (mw.getXclient()!=null && mw.getXclient().longValue() == client.longValue()) {
+				if (mw.getXClient()!=null && mw.getXClient().longValue() == client.longValue()) {
 					return mw;
 				}
 			}
