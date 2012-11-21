@@ -4,6 +4,8 @@ import java.awt.Rectangle;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map.Entry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +17,7 @@ import ch.admin.vbs.cube.atestwm.IScreenManager;
 import ch.admin.vbs.cube.atestwm.IMonitorLayout.IMonitorLayoutListener;
 import ch.admin.vbs.cube.atestwm.ITabManager;
 import ch.admin.vbs.cube.atestwm.IWindowManager;
+import ch.admin.vbs.cube.atestwm.impl.ScreenManager.Screen;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
@@ -41,7 +44,7 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		synchronizeScreenList();
 	}
 
-	// @Override
+	@Override
 	public MWindow getTabWindow(String winName) {
 		for (Screen screen : screens.values()) {
 			if (screen.tabsPanel != null && screen.tabsPanel.getTitle().equals(winName)) {
@@ -50,17 +53,26 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		}
 		return null;
 	}
+	
+	@Override
+	public Screen getDefaultScreen() {
+		Iterator<Entry<String, Screen>> it = screens.entrySet().iterator();
+		it.next();
+		return it.next().getValue();
+	}
+	
+	@Override
+	public MWindow getAppWindow(Window window) {
+		for (Screen screen : screens.values()) {
+			for (MWindow mw : screen.appWindows) {
+				if (mw.getXClient()!= null && mw.getXClient().equals(window)) {
+					return mw;
+				}
+			}
+		}
+		return null;
+	}
 
-	// @Override
-	// public Rectangle getTabWindowBounds(String winName) {
-	// for (Screen screen : screens.values()) {
-	// if (screen.tabsPanel != null &&
-	// screen.tabsPanel.getTitle().equals(winName)) {
-	// return screen.tabBnds;
-	// }
-	// }
-	// return null;
-	// }
 	private void synchronizeScreenList() {
 		HashSet<Screen> nScreen = new HashSet<Screen>();
 		for (XRScreen s : xrandr.getScreens()) {
@@ -95,7 +107,7 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 		String id;
 		MWindow bgWindow;
 		MWindow tabWindow;
-		
+		ArrayList<MWindow> appWindows = new ArrayList<MWindow>();
 
 		public Screen(XRScreen s) {
 			id = s.getId();
@@ -150,6 +162,8 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 			// update managed windows size and position
 			LOG.error("TODO : update managed windows size and position");
 		}
+		
+		
 	}
 
 	public class BgPanel {

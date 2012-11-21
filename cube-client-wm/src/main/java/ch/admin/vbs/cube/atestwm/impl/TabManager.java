@@ -60,7 +60,7 @@ public class TabManager implements ITabManager {
 				@Override
 				public void actionPerformed(ActionEvent arg0) {
 					VirtualMachine vm = new VirtualMachine(vmid);					
-					//vmMgr.command(vm, Command.START);
+					vmMgr.command(vm, Command.START);
 				}
 			});
 			menu = new JMenuItem("stop vm#" + i);
