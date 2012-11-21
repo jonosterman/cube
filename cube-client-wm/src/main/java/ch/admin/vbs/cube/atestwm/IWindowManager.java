@@ -7,7 +7,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IWindowManager {
 
-	MWindow createAndMapWindow(Rectangle bgBnds);
+	MWindow createAndMapWindow(Rectangle externBnds, int border);
 
 	void disposeWindow(MWindow window);
 

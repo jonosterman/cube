@@ -56,9 +56,11 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 	
 	@Override
 	public Screen getDefaultScreen() {
-		Iterator<Entry<String, Screen>> it = screens.entrySet().iterator();
-		it.next();
-		return it.next().getValue();
+		if (screens.size() == 0) {
+			LOG.error("No screen to return as default");
+			return null;
+		}
+		return screens.entrySet().iterator().next().getValue();
 	}
 	
 	@Override
@@ -118,14 +120,14 @@ public class ScreenManager implements IScreenManager, IMonitorLayoutListener {
 					scrBnds.y + TabManager.TAB_BAR_HEIGHT, //
 					scrBnds.width, //
 					scrBnds.height - TabManager.TAB_BAR_HEIGHT);
-			bgWindow = wm.createAndMapWindow(bgBnds);
+			bgWindow = wm.createAndMapWindow(bgBnds, 5);
 			// create tab window (X)
 			Rectangle tabBnds = new Rectangle(//
 					scrBnds.x, //
 					0, //
 					scrBnds.width, //
 					TabManager.TAB_BAR_HEIGHT);
-			tabWindow = wm.createAndMapWindow(tabBnds);
+			tabWindow = wm.createAndMapWindow(tabBnds, 5);
 			// create tab panel (JFrame)
 			tabsPanel = tabManager.createTabPanel(fmtTabId(id), tabBnds);
 		}

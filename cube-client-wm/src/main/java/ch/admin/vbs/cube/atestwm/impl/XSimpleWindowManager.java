@@ -221,12 +221,12 @@ public class XSimpleWindowManager implements IWindowManager {
 			MWindow mw = wmodel.getMWindowByClient(e.window);
 			if (mw != null) {
 				// check if size match our own constraints
-				Rectangle bnd = mw.getBounds();
+				Rectangle bnd = mw.getClientBounds();
 				if (bnd.width != e.width || bnd.height != e.height) {
 					LOG.debug(String.format("(XResizeRequestEvent) [%s] (managed) (%dx%d) when should (%dx%d) : Missmatch. Enforce.", //
-							winName, e.width, e.height, bnd.width, bnd.height));					
+							winName, e.width, e.height, bnd.width, bnd.height));
 					x11.XResizeWindow(display, e.window, bnd.width, bnd.height);
-					sendResizeEvent(display, mw.getXClient(), mw.getBounds(), mw.getXWindow());
+					sendResizeEvent(display, mw.getXClient(), bnd, mw.getXWindow());
 				} else {
 					LOG.debug(String.format("(XResizeRequestEvent) [%s] (managed) (%dx%d) :  Ignore.", //
 							winName, e.width, e.height, bnd.width, bnd.height));
@@ -251,7 +251,7 @@ public class XSimpleWindowManager implements IWindowManager {
 			MWindow mw = wmodel.getMWindowByClient(e.window);
 			if (mw != null) {
 				// check if size match our own constraints
-				Rectangle bnd = mw.getBounds();
+				Rectangle bnd = mw.getClientBounds();
 				if (bnd.width != e.width || bnd.height != e.height || bnd.x != e.x || bnd.y != e.y) {
 					LOG.debug(String.format(
 							"(ConfigureNotify) [%s] (managed) (%d:%d)(%dx%d) when should (%d:%d)(%dx%d) : Missmatch. Force move resize and send event.", //
@@ -261,7 +261,7 @@ public class XSimpleWindowManager implements IWindowManager {
 					x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
 					// send configure event (with the right coordinates so it
 					// knows where to place pop-ups, etc.)
-					sendResizeEvent(display, mw.getXClient(), mw.getBounds(), mw.getXWindow());
+					sendResizeEvent(display, mw.getXClient(), bnd, mw.getXWindow());
 					x11.XFlush(display);
 				} else {
 					LOG.debug(String.format("(ConfigureNotify) [%s] (managed) (%d:%d)(%dx%d) : Correct. Ignore.", //
@@ -292,29 +292,12 @@ public class XSimpleWindowManager implements IWindowManager {
 			} else {
 				// see void BlackboxWindow::configure for details (this is a
 				// simplified/hacked version of it.)
-				Rectangle bnd = mw.getBounds();
 				boolean posOrSizeReq = (e.value_mask.longValue() & (X11.CWX | X11.CWX | X11.CWWidth | X11.CWHeight)) > 0;
 				// boolean sendEvent = (e.x != bnd.x) || (e.y != bnd.y); // see
 				// ICCCM specs
 				if (posOrSizeReq) {
 					LOG.debug(String.format("(XConfigureRequestEvent) [%s] (managed)", winName));
-					// ---
-					XConfigureEvent cevent = new XConfigureEvent();
-					cevent.window = mw.getXClient();
-					cevent.event = mw.getXClient();
-					cevent.type = X11.ConfigureNotify;
-					cevent.display = display;
-					// need proper x,y or popup will show up elsewhere
-					cevent.x = bnd.x;
-					cevent.y = bnd.y;
-					cevent.height = bnd.height;
-					cevent.width = bnd.width;
-					cevent.border_width = 0;
-					cevent.above = mw.getXWindow();
-					cevent.override_redirect = 0;
-					x11.XSendEvent(display, mw.getXClient(), 0, new NativeLong(X11.StructureNotifyMask), cevent);
-					// flush
-					x11.XFlush(display);
+					sendResizeEvent(display, mw.getXClient(), mw.getClientBounds(), mw.getXWindow());
 				} else {
 					LOG.debug(String.format("(XConfigureRequestEvent) [%s] (managed) without x, y, width or height: Ignore.", winName));
 				}
@@ -372,9 +355,19 @@ public class XSimpleWindowManager implements IWindowManager {
 				// it is a VM -> authorize mapping. re-parent to border window
 				MWindow mw = screenManager.getAppWindow(e.window);
 				if (mw == null) {
-					// app window does not exists (unexepected but possible)
+					// app window does not exists (unexpected but possible)
 					Screen defScr = screenManager.getDefaultScreen();
-					mw = createAndMapWindow(defScr.bgWindow.getBounds());
+					// create managed window
+					Rectangle bounds = defScr.bgWindow.getBounds();					
+					// 
+					Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), 2, Color.GREEN, Color.BLACK, bounds);
+					x11.XSelectInput(display, w, new NativeLong(X11.NoEventMask));
+					mw = new MWindow(w, bounds, 2);
+					x11.XMapRaised(display, w);
+					x11.XFlush(display);
+					// add to list of managed windows
+					wmodel.addWindow(mw);
+					// add to screen's appWindows
 					defScr.appWindows.add(mw);
 				}
 				LOG.debug(String.format("(XMapRequest) [%s] (VM). Reparent and map.", winName));
@@ -395,34 +388,34 @@ public class XSimpleWindowManager implements IWindowManager {
 				x11.XFlush(display);
 			} else {
 				LOG.warn("(XMapRequest) [{}]. Ignore.", winName);
-				// debug
-				MWindow mwin = screenManager.getTabWindow(winName);
-				if (mwin == null) {
-					mwin = createAndMapWindow(new Rectangle(25, 35, 300, 200));
-					wmodel.addWindow(mwin);
-					mwin.setXclient(e.window);
-				}
-				x11.XGrabServer(display);
-				x11.XReparentWindow(display, e.window, mwin.getXWindow(), 0, 0);
-				x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
-				x11.XSelectInput(display, e.window, //
-						new NativeLong(X11.PropertyChangeMask //
-								| X11.SubstructureNotifyMask //
-								| X11.SubstructureRedirectMask // debug
-								| X11.ResizeRedirectMask //
-								| X11.StructureNotifyMask));
-				x11.XFlush(display);
-				// effectively resize and map client window
-				LOG.debug("Configure ,Map client window and send it a ResizeEvent");
-				Rectangle bnd = mwin.getBounds();
-				// x11.XConfigureWindow(display, e.window, new
-				// NativeLong(X11.StructureNotifyMask), prepareChgX(0, 0,
-				// bnd.width, bnd.height, 0, 0, tapWin.getXWindow()));
-				x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width, bnd.height);
-				LOG.warn(String.format("(XMapRequest) [%s] (tabs frame: config, map & ResizeEvent) (%d:%d)(%dx%d)", winName, 0, 0, bnd.width, bnd.height));
-				x11.XMapRaised(display, e.window);
-				x11.XUngrabServer(display);
-				x11.XFlush(display);
+				// // debug
+				// MWindow mwin = screenManager.getTabWindow(winName);
+				// if (mwin == null) {
+				// mwin = createAndMapWindow(new Rectangle(25, 35, 300, 200));
+				// wmodel.addWindow(mwin);
+				// mwin.setXclient(e.window);
+				// }
+				// x11.XGrabServer(display);
+				// x11.XReparentWindow(display, e.window, mwin.getXWindow(), 0,
+				// 0);
+				// x11.XChangeSaveSet(display, e.window, X11.SetModeInsert);
+				// x11.XSelectInput(display, e.window, //
+				// new NativeLong(X11.PropertyChangeMask //
+				// | X11.SubstructureNotifyMask //
+				// | X11.SubstructureRedirectMask // debug
+				// | X11.ResizeRedirectMask //
+				// | X11.StructureNotifyMask));
+				// x11.XFlush(display);
+				// // effectively resize and map client window
+				// LOG.debug("Configure, map client window and send it a ResizeEvent");
+				// Rectangle bnd = mwin.getBounds();
+				// x11.XMoveResizeWindow(display, e.window, 0, 0, bnd.width,
+				// bnd.height);
+				// LOG.warn(String.format("(XMapRequest) [%s] (tabs frame: config, map & ResizeEvent) (%d:%d)(%dx%d)",
+				// winName, 0, 0, bnd.width, bnd.height));
+				// x11.XMapRaised(display, e.window);
+				// x11.XUngrabServer(display);
+				// x11.XFlush(display);
 			}
 		} finally {
 			unlock();
@@ -430,10 +423,12 @@ public class XSimpleWindowManager implements IWindowManager {
 	}
 
 	// ==========================================
-	public MWindow createAndMapWindow(Rectangle bounds) {
-		Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), 1, Color.RED, Color.ORANGE, bounds);
+	public MWindow createAndMapWindow(Rectangle externBnds, int border) {
+		Rectangle inBnd = new Rectangle(externBnds.x+border,externBnds.y+border,externBnds.width-2*border, externBnds.height-2*border);
+		// TODO: black and no border
+		Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), border, Color.RED, Color.ORANGE, inBnd);
 		x11.XSelectInput(display, w, new NativeLong(X11.NoEventMask));
-		MWindow mw = new MWindow(w, bounds);
+		MWindow mw = new MWindow(w, externBnds, 5);
 		x11.XMapRaised(display, w);
 		x11.XFlush(display);
 		wmodel.addWindow(mw);
@@ -473,7 +468,7 @@ public class XSimpleWindowManager implements IWindowManager {
 	}
 
 	// ==========================================
-	private Window createBorderWindow(Window frame, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
+	private Window createBorderWindow(Window parent, int borderSize, Color borderColor, Color backgroundColor, Rectangle bounds) {
 		lock();
 		try {
 			/*
@@ -489,7 +484,7 @@ public class XSimpleWindowManager implements IWindowManager {
 			 */
 			Window borderWindow = x11.XCreateSimpleWindow(//
 					display, //
-					frame, //
+					parent, //
 					bounds.x, //
 					bounds.y, //
 					bounds.width, //

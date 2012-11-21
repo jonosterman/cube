@@ -8,22 +8,34 @@ public class MWindow {
 	private Rectangle bounds;
 	private final Window xwindow;
 	private Window xclient;
-	
-	
-	public MWindow(Window xwindow, Rectangle bounds) {
+	private final int border;
+	private Rectangle clientBounds;
+
+	public MWindow(Window xwindow, Rectangle bounds, int border) {
 		this.xwindow = xwindow;
 		this.bounds = bounds;
+		this.border = border;
+		updateClientBounds();
 	}
-	
+
 	// ###############################
+	private void updateClientBounds() {
+		clientBounds = new Rectangle(bounds.x + border, bounds.y + border, bounds.width - 2 * border, bounds.height - 2 * border);
+	}
 
 	// ###############################
 	public Rectangle getBounds() {
 		return bounds;
 	}
 
+	public Rectangle getClientBounds() {
+//		return clientBounds;
+		return bounds;
+	}
+
 	public void setBounds(Rectangle bounds) {
 		this.bounds = bounds;
+		updateClientBounds();
 	}
 
 	public Window getXWindow() {
