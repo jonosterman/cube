@@ -14,6 +14,7 @@ import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 
 public class AutoMonitorLayout implements IMonitorLayout {
+	private final static boolean DEBUG_REVERSE_ORDER = false;
 	private static final Logger LOG = LoggerFactory.getLogger(AutoMonitorLayout.class);
 	private IXrandr xrandr;
 	private ArrayList<IMonitorLayoutListener> listeners = new ArrayList<IMonitorLayout.IMonitorLayoutListener>(2);
@@ -45,26 +46,36 @@ public class AutoMonitorLayout implements IMonitorLayout {
 	}
 
 	@Override
+	/** This method is called by XRandrMonitor when it detects a change in available monitors list. */
 	public void pack() {
-		// re-layout monitors
+		// arbitrary re-layout monitors side by side.
 		int x = 0;
-		ArrayList<XRScreen> n = new ArrayList<XRScreen>(xrandr.getScreens());
-		// Collections.reverse(n); was to test re-layout in disorder. to spot
-		//Collections.reverse(n);
-		// real-life bugs where client windows where not correctly located at
-		// 0:0.
-		for (XRScreen s : n) {
+		ArrayList<XRScreen> screenList = new ArrayList<XRScreen>(xrandr.getScreens());
+		if (DEBUG_REVERSE_ORDER) {
+			/**
+			 * In practice, new screen may be added at the beginning of the list
+			 * (or somewhere else). And it trigger some layout bugs (windows
+			 * content was misplaced). In order to simulate that during tests
+			 * (using only Xephyr server) we reverse this list.
+			 */
+			Collections.reverse(screenList);
+		}
+		// update x coordinate of all XRScreens. So they will be side by side.
+		for (XRScreen s : screenList) {
 			if (s.getState() == State.CONNECTED_AND_ACTIVE || s.getState() == State.CONNECTED) {
+				// apply changes using xrandr
 				xrandr.setScreen(s, true, x, 0);
 				x += s.getCurrentWidth();
 			}
 		}
-		LOG.debug("Re-layout monitor(s) complete. Notify listeners [{}].", listeners.size());
-		// refresh xrandr intern state and notify listeners
+		// refresh xrandr intern state
 		xrandr.reloadConfiguration();
+		// notify listeners
+		LOG.debug("Monitor(s) have been re-configured with new layout. Notify listeners [{}].", listeners.size());
 		fireLayoutChanged();
 	}
 
 	public void start() {
+		// nothing
 	}
 }
