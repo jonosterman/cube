@@ -18,6 +18,7 @@ public class VMMgr implements IVMMgr{
 			vboxMgr.command(vm, VBoxCommand.REGISTER_AND_POWER_ON);
 			break;
 		case STOP:
+			vboxMgr.command(vm, VBoxCommand.POWER_OFF_AND_CLEANUP);
 			break;
 		case PAUSE:
 			break;

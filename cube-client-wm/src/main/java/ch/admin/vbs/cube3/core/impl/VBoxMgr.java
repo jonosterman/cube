@@ -25,6 +25,11 @@ public class VBoxMgr implements IVBoxMgr {
 		case STANDBY_AND_CLEANUP:
 			break;
 		case POWER_OFF_AND_CLEANUP:
+			try {
+				su.run("VBoxManage", "poweroff", vm.getId());
+			} catch (ShellUtilException e) {
+				LOG.error("Failed to start VM");
+			}
 			break;
 		case CONFIGURE:
 			break;
