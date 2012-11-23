@@ -23,6 +23,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.atestwm.IMessageManager;
 import ch.admin.vbs.cube.atestwm.IMonitorLayout;
 import ch.admin.vbs.cube.atestwm.IScreenManager;
 import ch.admin.vbs.cube.atestwm.ITabManager;
@@ -66,6 +67,7 @@ public class XSimpleWindowManager implements IWindowManager {
 	private IXrandrMonitor monMgr;
 	private IXrandr xrandr;
 	private ITabManager tabManager;
+	private IMessageManager msgManager;
 	private IScreenManager screenManager;
 	//
 	private MWindowModel wmodel = new MWindowModel();
@@ -326,10 +328,10 @@ public class XSimpleWindowManager implements IWindowManager {
 		try {
 			X11.XMapEvent e = (X11.XMapEvent) event.getTypedValue(X11.XMapEvent.class);
 			String winName = getWindowNameNoLock(e.window);
-			if (tabManager.matchTabPanel(winName)) {
+			if (tabManager.matchTabPanel(winName) || msgManager.matchMsgPanel(winName)) {
 				// it is a tab panel -> authorize mapping. re-parent to tab
 				// window
-				MWindow mw = screenManager.getTabWindow(winName);
+				MWindow mw = screenManager.getTabOrMsgWindow(winName);
 				if (mw == null) {
 					// should never happen
 					LOG.error("TabFrame want Map but the Window is not ready yet");
@@ -503,11 +505,12 @@ public class XSimpleWindowManager implements IWindowManager {
 		lock.unlock();
 	}
 
-	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager, IScreenManager screenManager) {
+	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager, IScreenManager screenManager, IMessageManager msgManager) {
 		this.monMgr = monMgr;
 		this.xrandr = xrandr;
 		this.tabManager = tabManager;
 		this.screenManager = screenManager;
+		this.msgManager = msgManager;
 	}
 
 	// ####################

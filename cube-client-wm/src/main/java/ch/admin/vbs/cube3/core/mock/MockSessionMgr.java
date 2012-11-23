@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube3.core.impl;
+package ch.admin.vbs.cube3.core.mock;
 
 import ch.admin.vbs.cube3.core.ISessionMgr;
 

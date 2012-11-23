@@ -23,13 +23,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.atestwm.impl.AutoMonitorLayout;
+import ch.admin.vbs.cube.atestwm.impl.MessageManager;
 import ch.admin.vbs.cube.atestwm.impl.ScreenManager;
 import ch.admin.vbs.cube.atestwm.impl.TabManager;
 import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
 import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
+import ch.admin.vbs.cube3.core.impl.Login;
 import ch.admin.vbs.cube3.core.impl.VMMgr;
 import ch.admin.vbs.cube3.core.impl.VBoxMgr;
+import ch.admin.vbs.cube3.core.mock.MockToken;
 
 public class DemoCubeWM {
 	private static final Logger LOG = LoggerFactory.getLogger(DemoCubeWM.class);
@@ -55,6 +58,10 @@ public class DemoCubeWM {
 		ioc.addBean(new ScreenManager());
 		ioc.addBean(new VMMgr());
 		ioc.addBean(new VBoxMgr());
+		//
+		ioc.addBean(new MessageManager());
+		ioc.addBean(new Login());
+		ioc.addBean(new MockToken());
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

@@ -6,7 +6,7 @@ import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;
 
 public interface IScreenManager {
 
-	MWindow getTabWindow(String winName);
+	MWindow getTabOrMsgWindow(String winName);
 
 	MWindow getAppWindow(Window window);
 	
