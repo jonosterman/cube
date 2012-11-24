@@ -18,31 +18,29 @@ public class MessageManager implements IMessageManager {
 	}
 
 	@Override
-	public MessageFrame createTabPanel(String fId, Rectangle bounds) {
+	public MessageFrame createPanel(String fId, Rectangle bounds) {
 		LOG.debug("Create Message Frame [{}]", fId);
 		MessageFrame frame = new MessageFrame(fId);
 		panels.put(fId, frame);
-		frame.pack();
-		frame.setVisible(true);
 		return frame;
 	}
 
 	@Override
-	public void disposeTabPanel(String fId) {
+	public void disposePanel(String fId) {
 		MessageFrame tf = panels.get(fId);
 		tf.setVisible(false);
 		tf.dispose();
 	}
 
 	@Override
-	public void updateTabPanel(String fId, Rectangle bounds) {
+	public void updatePanel(String fId, Rectangle bounds) {
 		MessageFrame tf = panels.get(fId);
 		tf.setPreferredSize(new Dimension(bounds.width, bounds.height));
 		tf.pack();
 	}
 
 	@Override
-	public boolean matchMsgPanel(String winName) {
+	public boolean matchPanelName(String winName) {
 		return panels.containsKey(winName);
 	}
 }

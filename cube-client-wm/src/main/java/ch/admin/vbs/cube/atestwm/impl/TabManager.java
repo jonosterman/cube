@@ -34,60 +34,10 @@ public class TabManager implements ITabManager {
 	}
 
 	@Override
-	public TabFrame createTabPanel(String fId, Rectangle bounds) {
-		final TabFrame frame = new TabFrame(fId);
-		final JPanel p = new JPanel();
-		p.setPreferredSize(new Dimension(bounds.width, TAB_BAR_HEIGHT));
-		p.setBackground(Color.PINK);
-		SpringLayout layout = new SpringLayout();
-		p.setLayout(layout);
-		JLabel l = new JLabel("L:" + fId);
-		JLabel r = new JLabel(":R");
-		p.add(l);
-		p.add(r);
-		layout.putConstraint(SpringLayout.NORTH, l, 2, SpringLayout.NORTH, p);
-		layout.putConstraint(SpringLayout.WEST, l, 2, SpringLayout.WEST, p);
-		layout.putConstraint(SpringLayout.NORTH, r, 2, SpringLayout.NORTH, p);
-		layout.putConstraint(SpringLayout.EAST, r, -2, SpringLayout.EAST, p);
-		//
-		final JPopupMenu pmenu = new JPopupMenu();
-		for (int i = 1; i < 3; i++) {
-			JMenuItem menu = new JMenuItem("start vm#" + i);
-			final String vmid = "dev-vm"+i;
-			pmenu.add(menu);
-			menu.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					VirtualMachine vm = new VirtualMachine(vmid);					
-					vmMgr.command(vm, Command.START);
-				}
-			});
-			menu = new JMenuItem("stop vm#" + i);
-			pmenu.add(menu);
-			menu.addActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent arg0) {
-					VirtualMachine vm = new VirtualMachine(vmid);					
-					vmMgr.command(vm, Command.STOP);
-				}
-			});
-		}
-		p.addMouseListener(new MouseAdapter() {
-			@Override
-			public void mousePressed(MouseEvent e) {
-				if (e.isPopupTrigger()) {
-					pmenu.show(e.getComponent(), e.getX(), e.getY());
-				}
-			}
-		});
-		//
+	public TabFrame createPanel(String fId, Rectangle bounds) {
+		final TabFrame frame = new TabFrame(fId, vmMgr);
 		tabPanels.put(fId, frame);
-		//
-		LOG.debug("Create Tab Frame [{}]", fId);
-		frame.setContentPane(p);
-		frame.pack();
 		//frame.setLocation(bounds.x, bounds.y);
-		frame.setVisible(true);
 		return frame;
 	}
 

@@ -34,7 +34,7 @@ public class Meta {
 		// ------------------- champ europ course traineau
 		
 		TabManager m = new TabManager();
-		m.createTabPanel("test", new Rectangle(20,30,400,325));
+		m.createPanel("test", new Rectangle(20,30,400,325));
 		// -------------------
 		System.out.println("done.");
 	}

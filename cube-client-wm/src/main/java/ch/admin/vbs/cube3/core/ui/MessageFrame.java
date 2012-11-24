@@ -15,8 +15,9 @@ public class MessageFrame extends JFrame {
 		setUndecorated(true);
 		JPanel panel = new JPanel(new BorderLayout());
 		setContentPane(panel);
-		getContentPane().setBackground(Color.BLACK);
+		panel.setBackground(Color.BLACK);
 		JLabel l = new JLabel(IconManager.getInstance().getIcon("frame_bg.png"));
-		getContentPane().add(l, BorderLayout.CENTER);
+		panel.add(l, BorderLayout.CENTER);
+		pack();
 	}
 }

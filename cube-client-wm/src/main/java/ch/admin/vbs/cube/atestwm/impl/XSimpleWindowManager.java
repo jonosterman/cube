@@ -328,16 +328,16 @@ public class XSimpleWindowManager implements IWindowManager {
 		try {
 			X11.XMapEvent e = (X11.XMapEvent) event.getTypedValue(X11.XMapEvent.class);
 			String winName = getWindowNameNoLock(e.window);
-			if (tabManager.matchTabPanel(winName) || msgManager.matchMsgPanel(winName)) {
+			if (tabManager.matchTabPanel(winName) || msgManager.matchPanelName(winName)) {
 				// it is a tab panel -> authorize mapping. re-parent to tab
 				// window
 				MWindow mw = screenManager.getTabOrMsgWindow(winName);
 				if (mw == null) {
 					// should never happen
-					LOG.error("TabFrame want Map but the Window is not ready yet");
+					LOG.error(String.format("(XMapRequest) [%s] (JFrame). But Window is not set.", winName));
 					return;
 				}
-				LOG.debug(String.format("(XMapRequest) [%s] (tabs frame). Reparent and map.", winName));
+				LOG.debug(String.format("(XMapRequest) [%s] (JFrame). Reparent and map.", winName));
 				// re-parent
 				mw.setXclient(e.window);
 				x11.XReparentWindow(display, e.window, mw.getXWindow(), 0, 0);
@@ -362,8 +362,10 @@ public class XSimpleWindowManager implements IWindowManager {
 					Screen defScr = screenManager.getDefaultScreen();
 					// create managed window
 					Rectangle parentXBnd = defScr.bgWindow.getXBounds();
-					// x & y at parent origin. width & height smaller due to child borders (see X spec.) 
-					Rectangle childBnd = new Rectangle(parentXBnd.x, parentXBnd.y, parentXBnd.width-2*MWindow.BORDER_WM, parentXBnd.height-2*MWindow.BORDER_WM);
+					// x & y at parent origin. width & height smaller due to
+					// child borders (see X spec.)
+					Rectangle childBnd = new Rectangle(parentXBnd.x, parentXBnd.y, parentXBnd.width - 2 * MWindow.BORDER_WM, parentXBnd.height - 2
+							* MWindow.BORDER_WM);
 					Window w = createBorderWindow(x11.XRootWindow(display, screenIndex), 2, Color.GREEN, Color.BLACK, childBnd);
 					x11.XSelectInput(display, w, new NativeLong(X11.NoEventMask));
 					mw = new MWindow(w, parentXBnd, 2);
@@ -505,7 +507,8 @@ public class XSimpleWindowManager implements IWindowManager {
 		lock.unlock();
 	}
 
-	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager, IScreenManager screenManager, IMessageManager msgManager) {
+	public void setup(IXrandrMonitor monMgr, IXrandr xrandr, IMonitorLayout layout, ITabManager tabManager, IScreenManager screenManager,
+			IMessageManager msgManager) {
 		this.monMgr = monMgr;
 		this.xrandr = xrandr;
 		this.tabManager = tabManager;

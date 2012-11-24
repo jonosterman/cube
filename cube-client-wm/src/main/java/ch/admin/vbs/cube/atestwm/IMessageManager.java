@@ -5,8 +5,8 @@ import java.awt.Rectangle;
 import ch.admin.vbs.cube3.core.ui.MessageFrame;
 
 public interface IMessageManager {
-	public MessageFrame createTabPanel(String frameTitle, Rectangle bounds);
-	public void updateTabPanel(String frameTitle, Rectangle bounds);
-	public void disposeTabPanel(String frameTitle);
-	public boolean matchMsgPanel(String winName);
+	public MessageFrame createPanel(String frameTitle, Rectangle bounds);
+	public void updatePanel(String frameTitle, Rectangle bounds);
+	public void disposePanel(String frameTitle);
+	public boolean matchPanelName(String winName);
 }
