@@ -37,7 +37,6 @@ public class DemoSC {
 		IoC ioc = new IoC();
 		ioc.addBean(new ScTokenDevice());
 		ioc.addBean(new Login());
-		ioc.addBean(new MockToken());
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

@@ -37,7 +37,7 @@ import ch.admin.vbs.cube.core.AuthModuleEvent.AuthEventType;
 import ch.admin.vbs.cube.core.impl.CaValidation;
 import ch.admin.vbs.cube.core.impl.scauthmodule.AbstractState.ScAuthStateTransition;
 
-class OpenKeyStoreTask implements Runnable, CallbackHandler {
+public class OpenKeyStoreTask implements Runnable, CallbackHandler {
 	private static final Logger LOG = LoggerFactory.getLogger(OpenKeyStoreTask.class);
 	private final ScAuthModule scAuthModule;
 	private SunPKCS11 provider;
