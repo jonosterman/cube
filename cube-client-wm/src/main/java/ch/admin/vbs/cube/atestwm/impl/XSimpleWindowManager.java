@@ -393,7 +393,8 @@ public class XSimpleWindowManager implements IWindowManager {
 				x11.XMapWindow(display, mw.getXWindow());
 				x11.XFlush(display);
 			} else {
-				LOG.warn("(XMapRequest) [{}]. Ignore.", winName);
+				x11.XMapWindow(display, e.window);				
+				LOG.warn("(XMapRequest) [{}]. default map.", winName);
 			}
 		} finally {
 			unlock();

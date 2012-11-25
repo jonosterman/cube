@@ -1,7 +1,6 @@
 package ch.admin.vbs.cube3.core;
 
 public interface ILogin {
-	void showLogin();
 
 	void addListener(LoginListener l);
 

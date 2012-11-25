@@ -25,7 +25,7 @@
 	
 	<!-- Configuration specific for the SCAdapter-->
 	<entry key="SCAdapter.pkcs11Library">/usr/local/lib/libxltCk.so</entry>
-	<entry key="SCAdapter.smartcardioLibrary">/lib/libpcsclite.so.1</entry>
+	<entry key="SCAdapter.smartcardioLibrary">/lib/x86_64-linux-gnu/libpcsclite.so.1</entry>
 
 	<!-- DescriptorManager cache filename within the keyring -->
 	<entry key="descriptorManager.propsfile">imageList.properties</entry>

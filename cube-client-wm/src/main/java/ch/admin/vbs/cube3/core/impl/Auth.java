@@ -2,15 +2,16 @@ package ch.admin.vbs.cube3.core.impl;
 
 import java.util.ArrayList;
 
-import ch.admin.vbs.cube3.core.ILogin;
+import ch.admin.vbs.cube3.core.IAuth;
 import ch.admin.vbs.cube3.core.IToken;
 import ch.admin.vbs.cube3.core.IToken.ITokenListener;
 import ch.admin.vbs.cube3.core.IToken.TokenEvent;
 
-public class Login implements ILogin, ITokenListener {
-	private ArrayList<LoginListener> listeners = new ArrayList<ILogin.LoginListener>(2);
+public class Auth implements IAuth, ITokenListener {
+	private ArrayList<AuthListener> listeners = new ArrayList<AuthListener>(2);
 
-	public Login() {
+	public Auth(IToken token) {
+		token.addListener(this);
 	}
 
 	@Override
@@ -25,20 +26,19 @@ public class Login implements ILogin, ITokenListener {
 		}
 	}
 
-	public void setup(IToken token) {
-		token.addListener(this);
+	public void setup() {
 	}
 
 	public void start() {
 	}
 
 	@Override
-	public void addListener(LoginListener l) {
+	public void addListener(AuthListener l) {
 		listeners.add(l);
 	}
 
 	@Override
-	public void removeListener(LoginListener l) {
+	public void removeListener(AuthListener l) {
 		listeners.remove(l);
 	}
 }

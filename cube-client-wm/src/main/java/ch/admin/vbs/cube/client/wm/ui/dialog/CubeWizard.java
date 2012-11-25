@@ -30,6 +30,7 @@ import javax.swing.JPanel;
 import javax.swing.JSeparator;
 import javax.swing.SpringLayout;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.utils.IconManager;
@@ -103,6 +104,14 @@ public abstract class CubeWizard extends StandardDialog {
 
 	protected abstract JPanel createCenterContentPanel();
 
+	public void displayWizardLater() {
+		SwingUtilities.invokeLater(new Runnable() {
+			@Override
+			public void run() {
+				displayWizard();
+			}
+		});
+	}
 	/**
 	 * Shows the message dialog.
 	 */
