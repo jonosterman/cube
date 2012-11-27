@@ -29,7 +29,7 @@ import ch.admin.vbs.cube.atestwm.impl.TabManager;
 import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
 import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
-import ch.admin.vbs.cube3.core.impl.Login;
+import ch.admin.vbs.cube3.core.impl.ScLogin;
 import ch.admin.vbs.cube3.core.impl.VMMgr;
 import ch.admin.vbs.cube3.core.impl.VBoxMgr;
 import ch.admin.vbs.cube3.core.mock.MockToken;
@@ -56,7 +56,7 @@ public class DemoCubeWM {
 		ioc.addBean(new VBoxMgr());
 		//
 		ioc.addBean(new MessageManager());
-		ioc.addBean(new Login());
+		ioc.addBean(new ScLogin());
 		ioc.addBean(new MockToken());
 		//
 		ioc.setupDependenciesOnAllBeans();

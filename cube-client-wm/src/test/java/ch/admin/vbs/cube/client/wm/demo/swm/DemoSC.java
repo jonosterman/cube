@@ -20,8 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
-import ch.admin.vbs.cube3.core.impl.Login;
-import ch.admin.vbs.cube3.core.mock.MockToken;
+import ch.admin.vbs.cube3.core.impl.ScLogin;
+import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 
 public class DemoSC {
 	private static final Logger LOG = LoggerFactory.getLogger(DemoSC.class);
@@ -35,8 +35,10 @@ public class DemoSC {
 		// ------------------- 
 		LOG.info("Init Cube..");
 		IoC ioc = new IoC();
+		
+		ioc.addBean(new MockLoginUI("111222"));
 		ioc.addBean(new ScTokenDevice());
-		ioc.addBean(new Login());
+		ioc.addBean(new ScLogin());
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

@@ -29,8 +29,10 @@ import ch.admin.vbs.cube.core.impl.CaValidation;
 import ch.admin.vbs.cube.core.impl.TokenEvent;
 import ch.admin.vbs.cube.core.impl.scauthmodule.OpenKeyStoreTask;
 import ch.admin.vbs.cube3.core.ILogin;
+import ch.admin.vbs.cube3.core.ILoginUI;
+import ch.admin.vbs.cube3.core.ILoginUI.ILoginUIListener;
 
-public class Login implements ILogin, ITokenListener {
+public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 	// pkcs library
 	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
 	private String pkcs11LibraryPath;
@@ -42,13 +44,12 @@ public class Login implements ILogin, ITokenListener {
 	private SunPKCS11 provider;
 	private Builder builder;
 	private KeyStore keystore;
-	private boolean killed;
 	private char[] password;
 	private CaValidation caValid = new CaValidation();
 	private Lock lock = new ReentrantLock();
 	private Task task;
 
-	public Login() {
+	public ScLogin() {
 		// get PKCS11 library path from configuration file
 		pkcs11LibraryPath = CubeClientCoreProperties.getProperty(SC_PKCS11_LIBRARY_PROPERTY);
 	}
@@ -60,15 +61,17 @@ public class Login implements ILogin, ITokenListener {
 			// handle new request
 			switch (event.getType()) {
 			case TOKEN_INSERTED:
-				// cancel old task
+				// cancel current task
 				if (task != null) {
 					task.cancel();
 					password = null;
 				}
+				// start new task
 				task = new Task();
 				exec.execute(task);
 				break;
 			case TOKEN_REMOVED:
+				// cancel current task
 				if (task != null) {
 					task.cancel();
 					password = null;
@@ -81,7 +84,7 @@ public class Login implements ILogin, ITokenListener {
 	}
 
 	public class Task implements Runnable, CallbackHandler {
-		private boolean canceled;
+		private boolean taskCancel;
 		private boolean keyStoreOpeningLock;
 
 		@Override
@@ -95,7 +98,7 @@ public class Login implements ILogin, ITokenListener {
 					Security.removeProvider(provider.getName());
 					provider = null;
 				}
-				// initialize provider
+				// initialize provider & builder
 				StringBuilder buf = new StringBuilder();
 				buf.append("library = ").append(pkcs11LibraryPath).append("\nname = Cube\n");
 				LOG.debug("## PKCS11 Config ##########\n" + buf.toString() + "\n############");
@@ -103,21 +106,21 @@ public class Login implements ILogin, ITokenListener {
 				Security.addProvider(provider);
 				// create builder
 				builder = KeyStore.Builder.newInstance("PKCS11", provider, new KeyStore.CallbackHandlerProtection(this));
-				/*
-				 * request keystore getKeyStore will block until user gave its
-				 * password via method "handle(Callback[] callbacks)" and
-				 * "handle(Callback[] callbacks)" will block until
-				 * OpenKeyStoreState will call 'finalizeKeyStoreOpening'
-				 */
-				if (canceled) {
+				if (taskCancel) {
 					LOG.debug("Canceled.");
 					return;
 				}
+				/*
+				 * builder.getKeyStore will block until user give its
+				 * password via method "handle(Callback[] callbacks)" and
+				 * "handle(Callback[] callbacks)" will block until
+				 * password is set via UI.
+				 */
 				keystore = builder.getKeyStore();
 				// check certificates chain
 				caValid.validate(keystore);
 			} catch (Exception e) {
-				if (canceled) {
+				if (taskCancel) {
 					LOG.debug("Canceled [in exception]");
 					return;
 				}
@@ -158,32 +161,61 @@ public class Login implements ILogin, ITokenListener {
 		}
 
 		public void cancel() {
-			canceled = true;
+			taskCancel = true;
 		}
 
 		@Override
+		/** Datastore call this method when it needs its password. */
 		public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException {
 			keyStoreOpeningLock = true;
 			// this.scAuthModule.enqueue(ScAuthStateTransition.PASSWORD_REQUEST);
 			/* wait until user entered its password */
-			while (!killed && keyStoreOpeningLock) {
+			while (!taskCancel && keyStoreOpeningLock) {
 				try {
 					Thread.sleep(400);
 				} catch (InterruptedException e) {
 					LOG.error("", e);
 				}
 			}
-			((PasswordCallback) callbacks[0]).setPassword(password);
+			if (!taskCancel) {
+				((PasswordCallback) callbacks[0]).setPassword(password);
+			}
 		}
 	}
 
-	public void setup(ITokenDevice token) {
+	// ==================================================
+	// IoC
+	// ==================================================
+	public void setup(ITokenDevice token, ILoginUI loginUI) {
 		token.addListener(this);
+		loginUI.addListener(this);
 	}
 
 	public void start() {
 	}
 
+	// ==================================================
+	// Implements ILoginListener
+	// ==================================================
+	@Override
+	public void setPassord(char[] passwd) {
+		lock.lock();
+		if (task == null) {
+			LOG.debug("Ignore password because no task is set.");
+		} else {
+			password = passwd;
+			task.keyStoreOpeningLock = false;
+		}
+		lock.unlock();
+	}
+
+	@Override
+	public void shutdown() {
+	}
+
+	// ==================================================
+	// Implements ILogin
+	// ==================================================
 	@Override
 	public void addListener(LoginListener l) {
 		listeners.add(l);
@@ -194,6 +226,9 @@ public class Login implements ILogin, ITokenListener {
 		listeners.remove(l);
 	}
 
+	// ==================================================
+	// Exception diagnose / handling
+	// ==================================================
 	/** exception handling */
 	boolean handleCanceled(Exception e) {
 		return e instanceof RuntimeException && "cancel".equals(e.getMessage());
