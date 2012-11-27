@@ -15,17 +15,24 @@
  */
 package ch.admin.vbs.cube.client.wm.demo.swm;
 
+import java.io.File;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.utils.IoC;
+import ch.admin.vbs.cube.common.CubeCommonProperties;
+import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
+import ch.admin.vbs.cube.common.container.impl.SymlinkContainerFactory;
 import ch.admin.vbs.cube.core.impl.ScTokenDevice;
 import ch.admin.vbs.cube3.core.impl.ScLogin;
 import ch.admin.vbs.cube3.core.impl.SessionMgr;
+import ch.admin.vbs.cube3.core.impl.StaticP12Login;
 import ch.admin.vbs.cube3.core.mock.MockLoginUI;
+import ch.admin.vbs.cube3.core.mock.MockTokenDevice;
 
-public class DemoSC {
-	private static final Logger LOG = LoggerFactory.getLogger(DemoSC.class);
+public class DemoP12 {
+	private static final Logger LOG = LoggerFactory.getLogger(DemoP12.class);
 
 	public static void main(String[] args) throws Exception {
 		// start Xephyr if not started
@@ -33,14 +40,22 @@ public class DemoSC {
 		// Xephyr -ac -host-cursor -screen 640x480 -br -reset :9
 		// ! this application must be started with env DISPLAY=:9
 		// Simple Window Manager
-		// ------------------- 
+		// -------------------
 		LOG.info("Init Cube..");
+		// initalize directories
+		new File(CubeCommonProperties.getProperty("cube.mountpoints.dir")).mkdirs();
+		new File(CubeCommonProperties.getProperty("cube.keys.dir")).mkdirs();
+		new File(CubeCommonProperties.getProperty("cube.containers.dir")).mkdirs();
+		// cleanup older containers
+		DmcryptContainerFactory.cleanup();
+		// Beans
 		IoC ioc = new IoC();
-		//
 		ioc.addBean(new MockLoginUI());
-		ioc.addBean(new ScTokenDevice());
-		ioc.addBean(new ScLogin());
+		ioc.addBean(new MockTokenDevice());
+		ioc.addBean(new StaticP12Login());
 		ioc.addBean(new SessionMgr());
+//		ioc.addBean(new SymlinkContainerFactory());
+		ioc.addBean(new DmcryptContainerFactory());
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

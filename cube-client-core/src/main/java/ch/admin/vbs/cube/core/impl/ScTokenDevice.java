@@ -136,10 +136,6 @@ public class ScTokenDevice implements ITokenDevice, Runnable {
 		}
 	}
 
-	@Override
-	public void addListener(ITokenListener l) {
-		listeners.add(l);
-	}
 
 	public synchronized void start() {
 		if (terminal == null) {
@@ -152,11 +148,17 @@ public class ScTokenDevice implements ITokenDevice, Runnable {
 			LOG.error("ScTokenDevice is already started");
 		}
 	}
+	
+	public void setup() {}
 
 	public synchronized void stop() {
 		running = false;
 	}
 
+	@Override
+	public void addListener(ITokenListener l) {
+		listeners.add(l);
+	}
 	@Override
 	public boolean isTokenReady() {
 		return tokenState;

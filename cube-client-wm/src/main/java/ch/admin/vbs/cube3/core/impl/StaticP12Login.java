@@ -1,7 +1,8 @@
 package ch.admin.vbs.cube3.core.impl;
 
-import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
+import java.net.URL;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.NoSuchAlgorithmException;
@@ -25,33 +26,29 @@ import sun.security.pkcs11.SunPKCS11;
 import sun.security.pkcs11.wrapper.PKCS11Exception;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.impl.IdentityToken;
-import ch.admin.vbs.cube.core.CubeClientCoreProperties;
 import ch.admin.vbs.cube.core.ITokenDevice;
 import ch.admin.vbs.cube.core.ITokenListener;
 import ch.admin.vbs.cube.core.impl.CaValidation;
 import ch.admin.vbs.cube.core.impl.TokenEvent;
-import ch.admin.vbs.cube.core.impl.scauthmodule.OpenKeyStoreTask;
 import ch.admin.vbs.cube3.core.ILogin;
 import ch.admin.vbs.cube3.core.ILoginUI;
 import ch.admin.vbs.cube3.core.ILoginUI.ILoginUIListener;
 
-public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
+public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener {
 	// pkcs library
-	private static final String SC_PKCS11_LIBRARY_PROPERTY = "SCAdapter.pkcs11Library";
 	private static final int MAX_FAILURE_CNT = 2;
-	private String pkcs11LibraryPath;
 	// listeners
 	private ArrayList<ILoginListener> listeners = new ArrayList<ILogin.ILoginListener>(2);
 	// DataStore stuff
 	private Executor exec = Executors.newCachedThreadPool(new ThreadFactory() {
 		@Override
 		public Thread newThread(Runnable r) {
-			Thread t = new Thread(r, "ScLoginTask");
+			Thread t = new Thread(r, "StaticP12LoginTask");
 			t.setDaemon(true);
 			return t;
 		}
 	});
-	private static final Logger LOG = LoggerFactory.getLogger(OpenKeyStoreTask.class);
+	private static final Logger LOG = LoggerFactory.getLogger(StaticP12Login.class);
 	private SunPKCS11 provider;
 	private Builder builder;
 	private KeyStore keystore;
@@ -61,12 +58,17 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 	private Lock lock = new ReentrantLock();
 	private Task task;
 	private int failureCountdown = MAX_FAILURE_CNT;
+	private File p12File;
 
-	public ScLogin() {
-		// get PKCS11 library path from configuration file
-		pkcs11LibraryPath = CubeClientCoreProperties.getProperty(SC_PKCS11_LIBRARY_PROPERTY);
+	public StaticP12Login() {
+		// file
+		URL url = getClass().getResource("/cube-01_pwd-is-111222.p12");
+		p12File = new File(url.getFile());
 	}
 
+	// ===============================================
+	// Implements ITokenDevice
+	// ===============================================
 	@Override
 	public void notifyTokenEvent(TokenEvent event) {
 		lock.lock();
@@ -76,15 +78,19 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 			case TOKEN_INSERTED:
 				// cancel current task
 				if (task != null) {
+					LOG.debug("Cancel old task before starting a new one.");
 					task.cancel();
+					task = null;
 					password = null;
 				}
 				if (failureCountdown > 0) {
 					// start new task
+					LOG.debug("Start new task");
 					task = new Task();
 					exec.execute(task);
 				} else {
-					// will not try to open datastore because it may block the smart-card definitevly.
+					// will not try to open datastore because it may block the
+					// smart-card definitevly.
 					LOG.debug("Max failure count has been reached. Remove token.");
 					fireEvent(Event.AUTHENTIFICATION_FAILURE_MAX, null);
 				}
@@ -92,6 +98,7 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 			case TOKEN_REMOVED:
 				// cancel current task
 				if (task != null) {
+					LOG.debug("Cancel task because token has been removed");
 					task.cancel();
 					task = null;
 				}
@@ -120,13 +127,7 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 					provider = null;
 				}
 				// initialize provider & builder
-				StringBuilder buf = new StringBuilder();
-				buf.append("library = ").append(pkcs11LibraryPath).append("\nname = Cube\n");
-				LOG.debug("PKCS11 Config library [{}]", pkcs11LibraryPath);
-				provider = new sun.security.pkcs11.SunPKCS11(new ByteArrayInputStream(buf.toString().getBytes()));
-				Security.addProvider(provider);
-				// create builder
-				builder = KeyStore.Builder.newInstance("PKCS11", provider, new KeyStore.CallbackHandlerProtection(this));
+				builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.CallbackHandlerProtection(this));
 				if (taskCancel) {
 					LOG.debug("Canceled.");
 					return;
@@ -138,17 +139,14 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 				 * set via UI.
 				 */
 				keystore = builder.getKeyStore();
-				// check certificates chain
-				caValid.validate(keystore);
 				// notify
 				if (taskCancel) {
 					LOG.debug("Canceled.");
 					return;
 				}
 				failureCountdown = MAX_FAILURE_CNT;
-				//
-				IdentityToken id = new IdentityToken(keystore, builder, password); 
-				fireEvent(Event.USER_AUTHENTICATED, id);
+				LOG.debug("User authentificated.");
+				fireEvent(Event.USER_AUTHENTICATED, new IdentityToken(keystore, builder, password));
 			} catch (Exception e) {
 				if (taskCancel) {
 					LOG.debug("Canceled [with exception]");
@@ -191,6 +189,8 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 				}
 				fireEvent(Event.AUTHENTIFICATION_FAILURE, null);
 			}
+			// remove itself from current running task
+			task = null;
 		}
 
 		public void cancel() {
@@ -213,6 +213,7 @@ public class ScLogin implements ILogin, ITokenListener, ILoginUIListener {
 				LOG.debug("callback will not return the password because task has been canceled");
 				return;
 			}
+			LOG.debug("Provide password [{}]", new String(password));
 			((PasswordCallback) callbacks[0]).setPassword(password);
 		}
 	}

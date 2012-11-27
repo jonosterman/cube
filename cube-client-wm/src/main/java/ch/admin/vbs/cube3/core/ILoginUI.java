@@ -6,7 +6,7 @@ public interface ILoginUI {
 	void removeListener(ILoginUIListener l);
 
 	public interface ILoginUIListener {
-		void setPassord(char[] passwd);
+		void setPassword(char[] passwd);
 
 		void shutdown();
 	}
