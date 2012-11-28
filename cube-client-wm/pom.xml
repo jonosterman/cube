@@ -28,9 +28,6 @@
 
 	<properties>
 		<mainClass>ch.admin.vbs.cube.client.wm.apps.Cube</mainClass>
-		<slf4j.version>1.6.2</slf4j.version>
-		<logback.version>0.9.30</logback.version>
-		<junit.version>4.8.1</junit.version>
 		<jide.version>2.10.2</jide.version>
 		<jna.version>3.3</jna.version>
 	</properties>
@@ -52,16 +49,6 @@
 
 	<build>
 		<plugins>
-			<plugin>
-				<version>2.9</version>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-eclipse-plugin</artifactId>
-				<configuration>
-					<downloadSources>true</downloadSources>
-					<!--downloadJavadocs>true</downloadJavadocs -->
-					<!--useProjectReferences>false</useProjectReferences -->
-				</configuration>
-			</plugin>
 			<plugin>
 				<version>2.4</version>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -135,6 +122,7 @@
 	</build>
 
 	<dependencies>
+		<!-- Other libs -->
 		<dependency>
 			<groupId>com.sun.jna</groupId>
 			<artifactId>jna</artifactId>
@@ -146,6 +134,7 @@
 			<version>${jide.version}</version>
 		</dependency>
 
+		<!-- Cube sub-projects -->
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>cube-client-core</artifactId>
@@ -156,33 +145,5 @@
 			<artifactId>cube-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>${junit.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>slf4j-api</artifactId>
-			<version>${slf4j.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.slf4j</groupId>
-			<artifactId>jcl-over-slf4j</artifactId>
-			<version>${slf4j.version}</version>
-			<scope>runtime</scope>
-		</dependency>
-		<!--<dependency> <groupId>org.slf4j</groupId> <artifactId>slf4j-simple</artifactId> 
-			<version>${slf4j.version}</version> <scope>runtime</scope> </dependency> -->
-		<dependency>
-			<groupId>ch.qos.logback</groupId>
-			<artifactId>logback-classic</artifactId>
-			<version>${logback.version}</version>
-			<scope>runtime</scope>
-		</dependency>
-
 	</dependencies>
 </project>

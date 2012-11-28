@@ -11,7 +11,10 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+		<slf4j.version>1.6.2</slf4j.version>
+		<logback.version>0.9.30</logback.version>
+		<junit.version>4.8.1</junit.version>
+	</properties>
 
   <modules>
    <module>cube-common</module>
@@ -30,6 +33,44 @@
 					<target>1.6</target>
 				</configuration>
 			</plugin>
+			<plugin>
+        <version>2.9</version>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-eclipse-plugin</artifactId>
+				<configuration>
+					<downloadSources>true</downloadSources>
+					<!--downloadJavadocs>true</downloadJavadocs -->
+					<!--useProjectReferences>false</useProjectReferences -->
+				</configuration>
+			</plugin>
     </plugins>
    </build>
+
+
+	<dependencies>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+			<version>${logback.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
+
 </project>
