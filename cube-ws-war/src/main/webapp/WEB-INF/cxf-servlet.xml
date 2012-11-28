@@ -12,6 +12,6 @@
         id="doubleit"
         implementor="service.DoubleItPortTypeImpl"
         wsdlLocation="WEB-INF/wsdl/DoubleIt.wsdl"
-        address="/doubleit">
+        address="/cube-server">
     </jaxws:endpoint>
 </beans>

@@ -48,7 +48,7 @@
    <wsdl:service name="DoubleItService">
       <wsdl:port name="DoubleItPort" binding="tns:DoubleItBinding">
          <soap:address
-            location="http://localhost:8080/doubleit/services/doubleit"/>
+            location="http://localhost:8080/cube-server/services/doubleit"/>
       </wsdl:port>
    </wsdl:service>
 </wsdl:definitions> 

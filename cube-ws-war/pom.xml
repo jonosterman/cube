@@ -129,7 +129,7 @@
 			</plugin>
 		</plugins>
 		<!-- Name of the generated WAR file -->
-		<finalName>doubleit</finalName>
+		<finalName>cube-server</finalName>
 	</build>
 
 	<dependencies>
