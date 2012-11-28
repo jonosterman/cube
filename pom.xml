@@ -20,6 +20,10 @@
    <module>cube-common</module>
    <module>cube-client-core</module>
    <module>cube-client-wm</module>
+
+   <module>cube-ws-service</module>
+   <module>cube-ws-war</module>
+   <module>cube-ws-client</module>
   </modules>
 
 	<build>
