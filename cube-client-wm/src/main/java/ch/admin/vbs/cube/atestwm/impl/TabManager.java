@@ -1,27 +1,14 @@
 package ch.admin.vbs.cube.atestwm.impl;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Rectangle;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.HashMap;
-
-import javax.swing.JLabel;
-import javax.swing.JMenuItem;
-import javax.swing.JPanel;
-import javax.swing.JPopupMenu;
-import javax.swing.SpringLayout;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.atestwm.ITabManager;
 import ch.admin.vbs.cube3.core.IVMMgr;
-import ch.admin.vbs.cube3.core.IVMMgr.Command;
-import ch.admin.vbs.cube3.core.VirtualMachine;
 
 public class TabManager implements ITabManager {
 	private static final Logger LOG = LoggerFactory.getLogger(TabManager.class);

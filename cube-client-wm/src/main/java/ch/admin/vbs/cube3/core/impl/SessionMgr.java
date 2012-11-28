@@ -13,7 +13,6 @@ import ch.admin.vbs.cube.core.impl.TokenEvent;
 import ch.admin.vbs.cube3.core.ILogin;
 import ch.admin.vbs.cube3.core.ILogin.Event;
 import ch.admin.vbs.cube3.core.ILogin.ILoginListener;
-import ch.admin.vbs.cube3.core.impl.StaticP12Login.Task;
 import ch.admin.vbs.cube3.core.ISessionMgr;
 
 public class SessionMgr implements ISessionMgr, ILoginListener, ITokenListener {

@@ -15,10 +15,6 @@
  */
 package ch.admin.vbs.cube.client.wm.demo.swm;
 
-import java.awt.Dimension;
-
-import javax.swing.JFrame;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +26,8 @@ import ch.admin.vbs.cube.atestwm.impl.XSimpleWindowManager;
 import ch.admin.vbs.cube.atestwm.impl.XrandrMonitor;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube3.core.impl.ScLogin;
-import ch.admin.vbs.cube3.core.impl.VMMgr;
 import ch.admin.vbs.cube3.core.impl.VBoxMgr;
+import ch.admin.vbs.cube3.core.impl.VMMgr;
 import ch.admin.vbs.cube3.core.mock.MockToken;
 
 public class DemoCubeWM {

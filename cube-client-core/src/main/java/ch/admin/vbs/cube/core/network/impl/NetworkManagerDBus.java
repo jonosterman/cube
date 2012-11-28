@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.freedesktop.NetworkManager;
-import org.freedesktop.NetworkManager.Device;
 import org.freedesktop.dbus.DBusConnection;
 import org.freedesktop.dbus.DBusSigHandler;
 import org.freedesktop.dbus.DBusSignal;

@@ -5,12 +5,7 @@ import java.util.ArrayList;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.atestwm.IScreenManager;
-import ch.admin.vbs.cube.client.wm.ui.dialog.ButtonLessDialog;
-import ch.admin.vbs.cube.client.wm.ui.dialog.CubeMessageDialog;
-import ch.admin.vbs.cube3.core.ILogin;
 import ch.admin.vbs.cube3.core.IToken;
-import ch.admin.vbs.cube3.core.IToken.ITokenListener;
 
 public class MockToken implements IToken {
 	private static final Logger LOG = LoggerFactory.getLogger(MockToken.class);

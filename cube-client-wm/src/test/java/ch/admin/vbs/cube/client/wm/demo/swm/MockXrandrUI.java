@@ -18,7 +18,6 @@ package ch.admin.vbs.cube.client.wm.demo.swm;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.io.IOException;
 import java.io.OutputStream;
 import java.net.Socket;
 
