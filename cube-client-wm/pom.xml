@@ -28,7 +28,7 @@
 
 	<properties>
 		<mainClass>ch.admin.vbs.cube.client.wm.apps.Cube</mainClass>
-		<jide.version>2.10.2</jide.version>
+		<jide.version>3.4.9_2</jide.version>
 		<jna.version>3.3</jna.version>
 	</properties>
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
