@@ -12,12 +12,19 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
+
 	<artifactId>cube-client-core</artifactId>
 	<groupId>ch.admin.vbs.cube</groupId>
 	<version>4.0</version>
 	<packaging>jar</packaging>
 	<name>cube-client-core</name>
 	<url>http://cube.forge.osor.eu</url>
+
+  <parent>
+     <groupId>ch.admin.vbs.cube</groupId>
+     <artifactId>cube</artifactId>
+     <version>4.0</version>
+  </parent>
 
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->

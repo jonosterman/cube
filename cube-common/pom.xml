@@ -18,9 +18,14 @@
 	<groupId>ch.admin.vbs.cube</groupId>
 	<version>4.0</version>
 	<packaging>jar</packaging>
-
 	<name>cube-common</name>
 	<url>http://cube.forge.osor.eu</url>
+
+  <parent>
+     <groupId>ch.admin.vbs.cube</groupId>
+     <artifactId>cube</artifactId>
+     <version>4.0</version>
+  </parent>
 
 	<properties>
 		<slf4j.version>1.6.2</slf4j.version>
