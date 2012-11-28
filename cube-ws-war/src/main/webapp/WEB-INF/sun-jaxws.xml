@@ -3,8 +3,8 @@
     version="2.0">
 
     <endpoint
-        name="Endpoint_for_DoubleIt"
-        implementation="service.DoubleItPortTypeImpl"
-        wsdl="WEB-INF/wsdl/DoubleIt.wsdl"
-        url-pattern="/services/doubleit"/>       
+        name="Endpoint_for_CubeManage"
+        implementation="service.CubeManagePortTypeImpl"
+        wsdl="WEB-INF/wsdl/CubeManage.wsdl"
+        url-pattern="/services/cubemanage"/>       
 </endpoints>

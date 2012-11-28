@@ -1,21 +1,26 @@
 package client;
 
-import org.example.contract.doubleit.DoubleItPortType;
-import org.example.contract.doubleit.DoubleItService;
+import org.example.contract.cubemanage.CubeManagePortType;
+import org.example.contract.cubemanage.CubeManageService;
+import org.example.schema.cubemanage.SomeParamComplex;
 
 public class WSClient {
     public static void main (String[] args) {
-        DoubleItService service = new DoubleItService();
-        DoubleItPortType port = service.getDoubleItPort();           
+    	CubeManageService service = new CubeManageService();
+    	CubeManagePortType port = service.getCubeManagePort();
 
         doubleIt(port, 10);
         doubleIt(port, 0);
         doubleIt(port, -10);
+        System.out.println("done.");
     } 
     
-    public static void doubleIt(DoubleItPortType port, 
+    public static void doubleIt(CubeManagePortType port, 
             int numToDouble) {
-        int resp = port.doubleIt(numToDouble);
+    	SomeParamComplex p = new SomeParamComplex();
+    	p.setMachine("blah");
+    	p.setSize(32);
+        int resp = port.tripleIt(p);
         System.out.println("The number " + numToDouble + " doubled is " 
             + resp);
     }

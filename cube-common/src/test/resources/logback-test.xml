@@ -50,7 +50,7 @@
   <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>
  
   -->
- 
+
   <root level="debug">
     <appender-ref ref="STDOUT" />
   </root>

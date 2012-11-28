@@ -137,7 +137,18 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-web</artifactId>
 			<version>3.0.6.RELEASE</version>
-		</dependency>		
+		</dependency>
+		<dependency>
+			<groupId>ch.admin.vbs.cube</groupId>
+			<artifactId>cube-ws-service</artifactId>
+			<version>4.0</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.admin.vbs.cube</groupId>
+			<artifactId>cube-common</artifactId>
+			<version>4.0</version>
+		</dependency>
+
 	</dependencies>
 
 </project>

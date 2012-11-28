@@ -9,9 +9,9 @@
          http://cxf.apache.org/schemas/jaxws.xsd">
 
     <jaxws:endpoint 
-        id="doubleit"
-        implementor="service.DoubleItPortTypeImpl"
-        wsdlLocation="WEB-INF/wsdl/DoubleIt.wsdl"
-        address="/cube-server">
+        id="cubemanage"
+        implementor="service.CubeManagePortTypeImpl"
+        wsdlLocation="WEB-INF/wsdl/CubeManage.wsdl"
+        address="/cubemanage">
     </jaxws:endpoint>
 </beans>

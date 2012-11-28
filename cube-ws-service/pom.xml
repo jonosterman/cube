@@ -137,9 +137,9 @@
 							<wsdlOptions>
 								<wsdlOption>
 									<wsdl>
-										${basedir}/src/main/resources/DoubleIt.wsdl
+										${basedir}/src/main/resources/CubeManage.wsdl
 									</wsdl>
-									<wsdlLocation>classpath:DoubleIt.wsdl</wsdlLocation>
+									<wsdlLocation>classpath:CubeManage.wsdl</wsdlLocation>
 								</wsdlOption>
 							</wsdlOptions>
 						</configuration>
@@ -189,6 +189,11 @@
 			<groupId>org.apache.cxf</groupId>
 			<artifactId>cxf-rt-core</artifactId>
 			<version>${cxf.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>ch.admin.vbs.cube</groupId>
+			<artifactId>cube-common</artifactId>
+			<version>4.0</version>
 		</dependency>
 	</dependencies>
 
