@@ -1,0 +1,80 @@
+
+## Setup Tomcat7
+## install tomcat7-manager
+## Update /etc/tomcat7/tomcat-users.xml
+  <role rolename="manager-gui"/>
+  <role rolename="manager"/>
+  <user username="tomcat" password="tomcat" roles="tomcat,manager,manager-gui"/>
+## restart tomcat
+
+
+############ KEYS ###########
+# Create keys stuff for development.
+# (From : http://users.skynet.be/pascalbotte/art/ca.htm)
+
+## create CA
+mkdir private
+openssl genrsa -des3 -out private/ca.key 1024
+#(need a password: 123456)
+## After you can self-sign your CA certificate
+mkdir public
+openssl req -new -x509 -key private/ca.key -out public/ca.crt -days 3600
+
+## create server certificate
+openssl genrsa -des3 -out private/server.key 1024
+#(need a password: 123456)
+## Then we can create our server certificate signing request (csr)
+openssl req -new -key private/server.key -out server.csr
+#(need CN 'server', but no password
+
+## sign CSR (first server)
+openssl x509 -req -days 2000 -in server.csr -CA public/ca.crt -CAkey private/ca.key -CAcreateserial -out public/server.crt
+## sign CSR (next)
+#openssl x509 -req -days 2000 -in server2.csr -CA public/ca.crt -CAkey private/ca.key -CAserial -out public/server2.crt
+
+## create pkcs12 file for server with both public and private keys
+openssl pkcs12 -export -in public/server.crt -inkey private/server.key -out server.p12
+#(need export password: 123456)
+
+## We need now to transform the pkcs12 to a keystore file.
+keytool -importkeystore -srckeystore server.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore server.jks
+#(need password for jks file: 123456)
+#check with keytool -v -list -keystore server.jks
+
+## client certificates
+openssl req -new -newkey rsa:1024 -nodes -out client/client.req -keyout client/client.key
+openssl x509 -CA public/ca.crt -CAkey private/ca.key -CAserial public/ca.srl -req -in client/client.req -out client/client.pem -days 1000
+openssl pkcs12 -export -clcerts -in client/client.pem -inkey client/client.key -out client/client.p12 -name your_certificate_client_name
+keytool -importkeystore -srckeystore client/client.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore client/client.jks
+
+
+## trusted store
+keytool -genkey -alias dummy -keyalg RSA -keystore truststore.jks
+keytool -delete -alias dummy -keystore truststore.jks
+keytool -import -v -trustcacerts -alias my_ca -file public/ca.crt -keystore truststore.jks
+keytool -v -list -keystore truststore.jks
+
+
+## configure tomcat with SSL
+## (as root)
+cd /etc/tomcat7
+cp server.xml server.xml_ori
+
+<Connector port="8443" protocol="HTTP/1.1" SSLEnabled="true"
+               maxThreads="150" scheme="https" secure="true"
+               clientAuth="true" sslProtocol="TLS" 
+               keystoreFile="/etc/tomcat7/certs/server.jks" keystorePass="123456"
+               SSLVerifyClient="require" 
+               truststoreFile="/etc/tomcat7/certs/truststore.jks" truststorePass="123456"
+/>
+
+mkdir /etc/tomcat7/certs
+cp server.jks /etc/tomcat7/certs
+cp truststore.jks /etc/tomcat7/certs
+
+service tomcat7 restart
+
+## import ca.crt and client.crt into firefox
+it's all done
+
+

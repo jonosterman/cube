@@ -8,7 +8,7 @@ public class WSClient {
     public static void main (String[] args) {
     	CubeManageService service = new CubeManageService();
     	CubeManagePortType port = service.getCubeManagePort();
-
+    	port.login();
         doubleIt(port, 10);
         doubleIt(port, 0);
         doubleIt(port, -10);

@@ -117,7 +117,6 @@
       <dependency>
          <groupId>ch.admin.vbs.cube</groupId>
          <artifactId>cube-common</artifactId>
-         <classifier>jaxws</classifier>
          <version>4.0</version>
       </dependency>
    </dependencies>
