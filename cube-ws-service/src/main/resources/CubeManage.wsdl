@@ -60,7 +60,7 @@
    <wsdl:service name="CubeManageService">
       <wsdl:port name="CubeManagePort" binding="tns:CubeManageBinding">
          <soap:address
-            location="http://localhost:8080/cube-server/services/cubemanage"/>
+            location="https://server.cube.com:8443/cube-server/services/cubemanage"/>
       </wsdl:port>
    </wsdl:service>
 </wsdl:definitions> 
