@@ -1,14 +1,48 @@
-
+##################################################
 ## Setup Tomcat7
-## install tomcat7-manager
+##################################################
+apt-get install tomcat7 tomcat7-manager
+
+
 ## Update /etc/tomcat7/tomcat-users.xml
   <role rolename="manager-gui"/>
   <role rolename="manager"/>
   <user username="tomcat" password="tomcat" roles="tomcat,manager,manager-gui"/>
+
+
 ## restart tomcat
+service tomcat7 restart
+
+##################################################
+## Update maven config
+##################################################
+~/.m2$ cat settings.xml 
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+  <localRepository/>
+  <interactiveMode/>
+  <usePluginRegistry/>
+  <offline/>
+  <pluginGroups/>
+  <servers>
+   <server>
+    <id>tomcat-localhost</id>
+    <username>tomcat</username>
+    <password>tomcat</password>
+   </server>
+  </servers>
+  <mirrors/>
+  <proxies/>
+  <profiles/>
+  <activeProfiles/>
+</settings>
 
 
-############ KEYS ###########
+##################################################
+## KEYS
+##################################################
 # Create keys stuff for development.
 # (From : http://users.skynet.be/pascalbotte/art/ca.htm)
 
@@ -80,5 +114,9 @@ service tomcat7 restart
 
 ## import ca.crt and client.crt into firefox
 it's all done
+
+## update /etc/hosts with hostname in cert
+127.0.0.1       localhost server.cube.com
+
 
 

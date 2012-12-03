@@ -17,12 +17,20 @@ import org.example.contract.cubemanage.CubeManagePortType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.cube.ws.CubeWsServiceProperties;
+import ch.admin.cube.ws.ICubeManageDAO;
+import ch.admin.cube.ws.impl.CubeManageDAO;
+
 @WebService(targetNamespace = "http://www.example.org/contract/CubeManage", //
 portName = "CubeManagePort", //
 serviceName = "CubeManageService", //
 endpointInterface = "org.example.contract.cubemanage.CubeManagePortType")
 public class CubeManagePortTypeImpl implements CubeManagePortType {
 	private static final Logger LOG = LoggerFactory.getLogger(CubeManagePortTypeImpl.class);
+	private ICubeManageDAO dao = new CubeManageDAO();
+
+	public CubeManagePortTypeImpl() {
+	}
 
 	@Override
 	public int tripleIt(org.example.schema.cubemanage.SomeParamComplex parameters) {
@@ -47,6 +55,7 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 				if (x509.getKeyUsage() != null && x509.getKeyUsage()[0]) {
 					// this is the right certificate. probably from a smartcard
 					LOG.debug("Good certificate [" + x509.getSubjectDN().getName() + "]");
+					dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
 					return;
 				}
 			}
@@ -56,6 +65,7 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 				// on datastore certs)
 				X509Certificate x509 = (X509Certificate) cs[0];
 				LOG.debug("Dev certificate [" + x509.getSubjectDN().getName() + "]");
+				dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
 				return;
 			}
 		}
