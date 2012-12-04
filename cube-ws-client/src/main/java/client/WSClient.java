@@ -13,6 +13,7 @@ import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.cert.CertificateException;
+import java.util.Date;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyStoreBuilderParameters;
@@ -84,6 +85,7 @@ public class WSClient {
 		
 		//
 		port.login();
+		//
 		doubleIt(port, 10);
 	}
 

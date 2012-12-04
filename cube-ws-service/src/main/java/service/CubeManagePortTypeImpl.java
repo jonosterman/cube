@@ -1,5 +1,6 @@
 package service;
 
+import java.security.PublicKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
@@ -16,6 +17,8 @@ import org.apache.cxf.security.transport.TLSSessionInfo;
 import org.example.contract.cubemanage.CubeManagePortType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import sun.security.x509.X509Key;
 
 import ch.admin.cube.ws.CubeWsServiceProperties;
 import ch.admin.cube.ws.ICubeManageDAO;
@@ -34,6 +37,11 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 
 	@Override
 	public int tripleIt(org.example.schema.cubemanage.SomeParamComplex parameters) {
+		if (!performAuth()) {
+			LOG.debug("User not logged. Abort.");
+			return 0;
+		}
+		// implementation
 		System.out.println("TriplIt: " + parameters.getMachine());
 		return 35;
 	};
@@ -44,11 +52,17 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 	@Override
 	@WebMethod
 	public void login() {
-		System.out.println("##################### Service #################");
+		if (!performAuth()) {
+			LOG.debug("User not logged. Abort.");
+			return;
+		}
+	}
+	
+	private boolean performAuth() {
 		TLSSessionInfo info = (TLSSessionInfo) context.getMessageContext().get("org.apache.cxf.security.transport.TLSSessionInfo");
 		Certificate[] cs = info.getPeerCertificates();
-		if (cs == null) {
-			LOG.debug("No certificate in TLSSessionInfo. No auth is possible");
+		if (cs == null || cs.length == 0) {
+			LOG.debug("No certificate in TLSSessionInfo. No auth is possible.");
 		} else {
 			for (Certificate c : cs) {
 				X509Certificate x509 = (X509Certificate) c;
@@ -56,18 +70,24 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 					// this is the right certificate. probably from a smartcard
 					LOG.debug("Good certificate [" + x509.getSubjectDN().getName() + "]");
 					dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
-					return;
+					return true;
+				} else {
+					LOG.debug("Skip certificate [" + x509.getSubjectDN().getName() + "]");
 				}
 			}
-			if (cs.length > 0) {
+			if (cs.length == 0) {
+				LOG.debug("No certificate in request.");
 			} else {
 				// probably dev certificate (I did not found how to set keyusage
 				// on datastore certs)
 				X509Certificate x509 = (X509Certificate) cs[0];
 				LOG.debug("Dev certificate [" + x509.getSubjectDN().getName() + "]");
 				dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
-				return;
+				return true;
 			}
 		}
+		return false;
 	}
+	
+	
 }
