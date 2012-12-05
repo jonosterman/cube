@@ -69,7 +69,7 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 				if (x509.getKeyUsage() != null && x509.getKeyUsage()[0]) {
 					// this is the right certificate. probably from a smartcard
 					LOG.debug("Good certificate [" + x509.getSubjectDN().getName() + "]");
-					dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
+					dao.storePublicKey(x509);
 					return true;
 				} else {
 					LOG.debug("Skip certificate [" + x509.getSubjectDN().getName() + "]");
@@ -82,7 +82,7 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 				// on datastore certs)
 				X509Certificate x509 = (X509Certificate) cs[0];
 				LOG.debug("Dev certificate [" + x509.getSubjectDN().getName() + "]");
-				dao.storePublicKey(x509.getSubjectDN().getName(), x509.getPublicKey());
+				dao.storePublicKey(x509);
 				return true;
 			}
 		}
