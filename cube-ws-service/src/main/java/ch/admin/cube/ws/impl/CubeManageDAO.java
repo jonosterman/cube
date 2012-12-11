@@ -60,14 +60,16 @@ public class CubeManageDAO implements ICubeManageDAO {
 		try {
 			//
 			String dn = x509.getSubjectDN().getName();
-			String dnHash = HashUtil.md5(dn);
+			String dnHash = HashUtil.sha512UrlInBase64(dn);
 			// check/create user directory
 			File userDir = new File(baseDir, dnHash);
 			if (!userDir.exists()) {
 				userDir.mkdirs();
+				// create a file with user DN in clear text inside. Ony for
+				// debug purpose, may be removed.
 				File userCfg = new File(userDir, "user_config");
 				FileWriter fw = new FileWriter(userCfg);
-				fw.write("DN="+dn+"\nDN_hash="+dnHash+"\n");
+				fw.write("DN=" + dn + "\nDN_hash=" + dnHash + "\n");
 				fw.close();
 			}
 			//

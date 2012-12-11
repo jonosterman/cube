@@ -19,6 +19,9 @@ Start tool (java webstart)
 
 -> create new keystore (PKCS12) (password: 111222)
 -> create 3 new keystore entry, private key vers #3, RSA
+    CN : cubeXX
+    Country: US
+    -----
     cube-XX_auth	: (digitalSignature) (client auth,Microsoft Enrollment Infrastucture: smartcardlogon)
     cube-XX_enciph	: (keyEncipherment, dataEncipherment) (email protection)
     cube-XX_sign	: (digitalSignature, nonRepudiation) (email protection)

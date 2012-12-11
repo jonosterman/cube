@@ -63,6 +63,7 @@ public class AESEncrypter {
 			ecipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			dcipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
 			// CBC requires an initialization vector
+			//iv = ecipher.getParameters().getParameterSpec(IvParameterSpec.class).getIV();
 			ecipher.init(Cipher.ENCRYPT_MODE, key, paramSpec);
 			dcipher.init(Cipher.DECRYPT_MODE, key, paramSpec);
 		} catch (Exception e) {
