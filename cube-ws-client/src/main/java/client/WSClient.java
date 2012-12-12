@@ -14,7 +14,10 @@ import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.cert.CertificateException;
 import java.util.Date;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 
+import javax.activation.DataHandler;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.SSLContext;
@@ -50,7 +53,7 @@ public class WSClient {
 		System.out.println("done.");
 	}
 
-	public void https1() throws Exception {
+	public void https() throws Exception {
 		// TrustStore & TrustManagerFactory
 		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 		KeyStore ts = KeyStore.getInstance("JKS");
@@ -68,25 +71,34 @@ public class WSClient {
 		// SocketFactory
 		SSLSocketFactory factory = ctx.getSocketFactory();
 		// test request
-		//testHttpsRequest(factory);
+		// testHttpsRequest(factory);
 		// web service (use local wdsl since it will not work online with client
 		// auth)
 		CubeManageService service = new CubeManageService(getClass().getResource("/CubeManage.wsdl"));
 		CubeManagePortType port = service.getCubeManagePort();
 		//
 		Client proxy = ClientProxy.getClient(port);
-		((BindingProvider)port).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);		
+		((BindingProvider) port).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
 		HTTPConduit conduit = (HTTPConduit) proxy.getConduit();
 		TLSClientParameters tlsParam = new TLSClientParameters();
 		tlsParam.setDisableCNCheck(false);
 		tlsParam.setSSLSocketFactory(factory);
 		addFilters(tlsParam);
 		conduit.setTlsClientParameters(tlsParam);
-		
 		//
 		port.login();
 		//
+		port.report("login", System.currentTimeMillis());
+		//
 		doubleIt(port, 10);
+		DataHandler dh = port.listVMs();
+		ZipInputStream zis = new ZipInputStream(dh.getInputStream());
+		while (zis.available() > 0) {
+			ZipEntry entry = zis.getNextEntry();
+			System.out.println("Entry ["+entry.getName()+"] <<");
+		}
+		//
+		port.report("logout", System.currentTimeMillis());
 	}
 
 	private void addFilters(TLSClientParameters tlsClientParameters) {
@@ -136,11 +148,10 @@ public class WSClient {
 
 	public static void main(String[] args) throws Exception {
 		WSClient c = new WSClient();
-		System.out.println("## HTTP ############");
-		//c.http();
+		// System.out.println("## HTTP ############");
+		// c.http();
 		System.out.println("## HTTPS ###########");
-		c.https1();	
-		
+		c.https();
 	}
 
 	public static void doubleIt(CubeManagePortType port, int numToDouble) {
@@ -150,6 +161,4 @@ public class WSClient {
 		int resp = port.tripleIt(p);
 		System.out.println("The number " + numToDouble + " doubled is " + resp);
 	}
-
-
 }

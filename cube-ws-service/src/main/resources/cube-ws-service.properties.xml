@@ -20,5 +20,5 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 
 <properties>
-	<entry key="cube.manage.datastore.path">/opt/cube/cubemanage</entry>
+	<entry key="cube.manage.datastore.path">/opt/cube/cubedataowner/output/</entry>
 </properties>

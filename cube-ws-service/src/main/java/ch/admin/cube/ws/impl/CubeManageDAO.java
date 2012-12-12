@@ -1,24 +1,26 @@
 package ch.admin.cube.ws.impl;
 
-import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.FilenameFilter;
 import java.io.IOException;
-import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.sql.Savepoint;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Properties;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,9 +54,75 @@ public class CubeManageDAO implements ICubeManageDAO {
 		return (X509Certificate) fact.generateCertificate(new FileInputStream(pemFile));
 	}
 
+	private void log(X509Certificate x509, String message) throws IOException {
+		log(x509, message, System.currentTimeMillis());
+	}
+
+	private void log(X509Certificate x509, String message, long timestamp) throws IOException {
+		String dn = x509.getSubjectDN().getName();
+		String dnHash = HashUtil.sha512UrlInBase64(dn);
+		// log into user directory
+		File log = new File(new File(baseDir, dnHash), "report.log");
+		GregorianCalendar c = new GregorianCalendar(TimeZone.getTimeZone("UTC"));
+		c.setTimeInMillis(timestamp);
+		String msg = String.format("[%1$tY.%1$tm.%1$td %1$tH:%1$tM:%1$tS.%1$tL] %2$s\n", c, message); 
+		LOG.debug(msg);
+		BufferedWriter br = new BufferedWriter(new FileWriter(log, true));
+		br.write(msg);
+		br.close();
+	}
+	
+	private void zip(File out, File... files) throws IOException {
+		byte[] buf = new byte[1024];
+		ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(out));
+		//
+		for (File filename : files) {
+			FileInputStream fis = new FileInputStream(filename);
+			zos.putNextEntry(new ZipEntry(filename.getName()));
+			int len;
+			while ((len = fis.read(buf)) > 0)
+				zos.write(buf, 0, len);
+			zos.closeEntry();
+		}
+		zos.close();
+	}
+
 	// ====================================
 	// ICubeManageDAO
 	// ====================================
+	public File listVMs(X509Certificate x509) {
+		lock.lock();
+		try {
+			log(x509, "(WebService) listVMs");
+			//
+			String dn = x509.getSubjectDN().getName();
+			String dnHash = HashUtil.sha512UrlInBase64(dn);
+			// list files in user directory
+			File userDir = new File(baseDir, dnHash);
+			ArrayList<File> fileToSend = new ArrayList<File>();
+			LOG.debug("List files from ["+userDir.getAbsolutePath()+"]..");
+			for (File file : userDir.listFiles(new FilenameFilter() {
+				@Override
+				public boolean accept(File dir, String name) {
+					return name.endsWith(".key.cube") || name.endsWith(".desc.cube");
+				}
+			})) {
+				LOG.debug("append file ["+file.getAbsolutePath()+"]");
+				fileToSend.add(file);				
+			}
+			// zip files
+			File tmp = File.createTempFile("CubeManagerDAO", ".data");
+			tmp.deleteOnExit();
+			zip(tmp, fileToSend.toArray(new File[fileToSend.size()]));
+			return tmp;
+			// log into user directory
+		} catch (Exception e) {
+			throw new RuntimeException("Failed to list user VMs.",e);
+		} finally {
+			lock.unlock();
+		}
+	}
+
 	public void storePublicKey(java.security.cert.X509Certificate x509) {
 		lock.lock();
 		try {
@@ -91,6 +159,18 @@ public class CubeManageDAO implements ICubeManageDAO {
 			}
 		} catch (Exception e) {
 			LOG.error("Failed to store public key.", e);
+		} finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public void report(X509Certificate x509, String message, long timestamp) {
+		lock.lock();
+		try {
+			log(x509, message, timestamp);
+		} catch (Exception e) {
+			LOG.error("Failed to report message [" + message + "].", e);
 		} finally {
 			lock.unlock();
 		}

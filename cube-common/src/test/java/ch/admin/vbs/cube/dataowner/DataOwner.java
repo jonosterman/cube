@@ -14,11 +14,13 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.zip.ZipEntry;
@@ -40,7 +42,7 @@ import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
  * Prototype Application to manage VM and prepare them to be published on the
  * server.
  * 
- * - this app scan its working directory (~/cubedataowner/) for VM templates. A
+ * - this app scan its working directory (/opt/cube/cubedataowner) for VM templates. A
  * VM template is a directory with a file 'vm.cfg' some VDI files and VPN
  * certificates. if the working directory does not exists yet, an example will
  * be created the first time this program is run. VMs are then encrypted for
@@ -54,7 +56,11 @@ public class DataOwner {
 
 	public DataOwner() {
 		// base directory. eventually generate example VM
-		baseDir = new File(new File(System.getProperty("user.home")), "cubedataowner");
+		baseDir = new File("/opt/cube/cubedataowner");
+
+		createExampleStructure();
+		System.exit(0);
+		
 		if (!baseDir.exists()) {
 			baseDir.mkdirs();
 			// make example:
@@ -147,9 +153,12 @@ public class DataOwner {
 		}
 		String uuidHash = HashUtil.sha512UrlInBase64(uuid);
 		// output files
-		File outKey = new File(outDir, uuidHash + ".key.cube");
-		File outDesc = new File(outDir, uuidHash + ".desc.cube");
-		File outData = new File(outDir, uuidHash + ".data.cube");
+		String userHash = HashUtil.sha512UrlInBase64(x509.getSubjectDN().getName());
+		File userOutDir = new File(outDir, userHash);
+		userOutDir.mkdirs();
+		File outKey = new File(userOutDir, uuidHash + ".key.cube");
+		File outDesc = new File(userOutDir, uuidHash + ".desc.cube");
+		File outData = new File(userOutDir, uuidHash + ".data.cube");
 		if (outKey.exists()) {
 			System.out.println("[VM] [" + prop.getProperty("label") + "] for user [" + x509.getSubjectDN().getName() + "]  [" + uuid
 					+ "] already packaged. delete [" + outKey.getAbsolutePath() + "] to force repackaging it.");
@@ -158,7 +167,6 @@ public class DataOwner {
 		//
 		System.out.println("[VM] " + prop.getProperty("label") + "  [" + prop.getProperty("uuid") + "]");
 		// user output dir
-		String userHash = HashUtil.sha512UrlInBase64(x509.getSubjectDN().getName());
 		File outUserDir = new File(outDir, userHash);
 		outUserDir.mkdirs();
 		// create file B : vdi file(s), config and additional files (VPN
@@ -281,6 +289,18 @@ public class DataOwner {
 			KeyStore keystoreTmp = builder.getKeyStore();// <- slow part
 			File userPemFile = new File(exDir, "user1.pem");
 			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
+			
+			Enumeration<String> en = keystoreTmp.aliases();
+			while(en.hasMoreElements()) {
+				String x = en.nextElement();
+				System.out.println(x);
+				X509Certificate c = (X509Certificate) keystoreTmp.getCertificate(x);
+				System.out.println(" dn: "+ c);
+			}
+			System.exit(0);
+			
+			
+			
 			X509Certificate cert = (X509Certificate) keystoreTmp.getCertificate("cube-02_enciph");
 			writePemFile(userPemFile, cert);
 			//

@@ -5,6 +5,7 @@
    xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
    xmlns:di="http://www.example.org/schema/CubeManage"
    xmlns:tns="http://www.example.org/contract/CubeManage"
+   xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
    targetNamespace="http://www.example.org/contract/CubeManage">
 
    <!-- ############## -->
@@ -18,6 +19,25 @@
       </xsd:sequence>
      </xsd:complexType>
     </xsd:element> 
+    <!-- ## real ## -->
+    <xsd:element name="report" type="di:report"/>
+    <xsd:complexType name="report">
+     <xsd:sequence>
+      <xsd:element minOccurs="0" name="message" type="xsd:string"/>
+      <xsd:element name="timestamp" type="xsd:long"/>
+     </xsd:sequence>
+    </xsd:complexType>
+       
+    <xsd:element name="listVMs" type="di:listVMs"/>
+    <xsd:complexType name="listVMs">
+     <xsd:sequence/>
+    </xsd:complexType>   
+    <xsd:element name="listVMsResponse" type="di:listVMsResponse"/>
+    <xsd:complexType name="listVMsResponse">
+     <xsd:sequence>
+      <xsd:element name="files" type="xsd:base64Binary" xmime:expectedContentTypes="application/octet-stream"/>
+     </xsd:sequence>
+    </xsd:complexType>   
    </xsd:schema>
   </wsdl:types>
    <!-- ############## -->
@@ -29,6 +49,11 @@
       <wsdl:part type="xsd:int" name="result" />
    </wsdl:message>
    <wsdl:message name="loginRequest"/>
+  
+   <!-- ## real ## -->
+   <wsdl:message name="report"><wsdl:part name="parameters" element="di:report"/></wsdl:message>
+   <wsdl:message name="listVMs"><wsdl:part name="parameters" element="di:listVMs"/></wsdl:message>
+   <wsdl:message name="listVMsResponse"><wsdl:part name="parameters" element="di:listVMsResponse"/></wsdl:message>
    
    <!-- ############## -->
 
@@ -40,6 +65,12 @@
          <wsdl:input message="tns:TripleItRequest" />
          <wsdl:output message="tns:TripleItResponse" />
       </wsdl:operation>
+      <!-- ## real ## -->
+      <wsdl:operation name="report"><wsdl:input name="report" message="tns:report"/></wsdl:operation>
+      <wsdl:operation name="listVMs">
+       <wsdl:input name="listVMs" message="tns:listVMs"/>
+       <wsdl:output name="listVMsResponse" message="tns:listVMsResponse"/>
+      </wsdl:operation>
    </wsdl:portType>
    
    <!-- ############## -->
@@ -48,19 +79,30 @@
       <soap:binding style="document"
          transport="http://schemas.xmlsoap.org/soap/http" />
       <wsdl:operation name="TripleIt">
-         <soap:operation soapAction=""/>
+         <soap:operation soapAction="" style="document"/>
          <wsdl:input><soap:body use="literal"/></wsdl:input>
          <wsdl:output><soap:body use="literal"/></wsdl:output>
       </wsdl:operation>
       <wsdl:operation name="login">
-         <soap:operation soapAction=""/>
+         <soap:operation soapAction="" style="document"/>
          <wsdl:input><soap:body use="literal"/></wsdl:input>
       </wsdl:operation>
+      <!-- ## real ## -->
+      <wsdl:operation name="report">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input name="report"><soap:body use="literal"/></wsdl:input>
+      </wsdl:operation>
+      <wsdl:operation name="listVMs">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input  name="listVMs"><soap:body use="literal"/></wsdl:input>
+         <wsdl:output name="listVMsResponse"><soap:body use="literal"/></wsdl:output>
+      </wsdl:operation>
+
+
    </wsdl:binding>
    <wsdl:service name="CubeManageService">
       <wsdl:port name="CubeManagePort" binding="tns:CubeManageBinding">
-         <soap:address
-            location="https://server.cube.com:8443/cube-server/services/cubemanage"/>
+         <soap:address location="https://server.cube.com:8443/cube-server/services/cubemanage"/>
       </wsdl:port>
    </wsdl:service>
 </wsdl:definitions> 
