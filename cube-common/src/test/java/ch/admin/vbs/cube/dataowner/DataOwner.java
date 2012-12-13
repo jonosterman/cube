@@ -55,6 +55,18 @@ public class DataOwner {
 	private HashSet<String> uuidSet = new HashSet<String>();
 
 	public DataOwner() {
+		
+		try {
+			X509Certificate x = readPemFile(new File("/opt/cube/fislw-pub-key/ya6_OHnvadcTpMoaFgPTCntCyjnphtonAXGVm3BiM9kLfNNPAoLha20VrkNRUSarIz7siWaANjjXUzVP_524ngXX.pem"));
+			System.out.println(x);
+		} catch (CertificateException e1) {
+			e1.printStackTrace();
+		} catch (FileNotFoundException e1) {
+			e1.printStackTrace();
+		}
+		
+		System.exit(0);
+		
 		// base directory. eventually generate example VM
 		baseDir = new File("/opt/cube/cubedataowner");
 

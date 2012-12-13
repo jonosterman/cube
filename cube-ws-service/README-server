@@ -1,22 +1,96 @@
-##################################################
-## Setup Tomcat7
-##################################################
-apt-get install tomcat7 tomcat7-manager
 
+###############################################
+## generate CA 
+###############################################
+mkdir ~/cube-pki
+cd ~/cube-pki
+mkdir root-ca
+mkdir root-ca/ca.db.certs
+touch root-ca/ca.db.index
+echo "1000" > root-ca/ca.db.serial
 
-## Update /etc/tomcat7/tomcat-users.xml
-  <role rolename="manager-gui"/>
-  <role rolename="manager"/>
-  <user username="tomcat" password="tomcat" roles="tomcat,manager,manager-gui"/>
+openssl genrsa -des3 -out root-ca/root-ca.key 2048
+> passphrase 123456
+## sign it 
+openssl req -new -x509 -days 3650 -key root-ca/root-ca.key -out root-ca/root-ca.crt -config openssl.cnf -extensions v3_ca
+> common name : Test-RootCA
+## check it
+openssl x509 -in root-ca/root-ca.crt -text
 
+###############################################
+## client certificates
+## 3 certificates :
+## - cube-XX_auth	: (digitalSignature) (client auth,Microsoft Enrollment Infrastucture: smartcardlogon)
+## - cube-XX_enciph	: (keyEncipherment, dataEncipherment) (email protection)
+## - cube-XX_sign	: (digitalSignature, nonRepudiation) (email protection)
+###############################################
 
-## restart tomcat
-service tomcat7 restart
+openssl genrsa -des3 -out client0.key 2048
+openssl req -key client0.key -new -out client0-auth.req
+openssl x509 -req -in client0-auth.req \
+ -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
+ -extfile client-auth.cnf -extensions auth_sect -out client0-auth.pem
+
+openssl req -key client0.key -new -out client0-enciph.req
+openssl x509 -req -in client0-enciph.req \
+ -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
+ -extfile client-enciph.cnf -extensions enciph_sect -out client0-enciph.pem
+
+openssl req -key client0.key -new -out client0-sign.req
+openssl x509 -req -in client0-sign.req \
+ -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
+ -extfile client-sign.cnf -extensions sign_sect -out client0-sign.pem
+
+## create PKCS12 file with all certificates
+
+cat client*.pem > /tmp/all.pem
+openssl pkcs12 -export \
+ -inkey client0.key  \
+ -in /tmp/all.pem   \
+ -caname client0-auth \
+ -caname client0-sign \
+ -caname client0-enciph \
+ -out client0.p12
+rm /tmp/all.pem
+
+## check
+openssl pkcs12 -info -in client0.p12
+
+###############################################
+## Server Certificates
+###############################################
+openssl genrsa -des3 -out server.key 1024
+#(need a password: 123456)
+## Then we can create our server certificate signing request (csr)
+openssl req -new -key server.key -out server.csr
+#(need CN: server.cube.com or what you will use for url to access your dev webservice: HAVE TO MATCH!!)
+#(no password needed)
+## sign CSR (first server)
+openssl x509 -req -days 1000 -in server.csr \
+ -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
+ -out server.crt
+
+## create pkcs12 file for server with both public and private keys
+openssl pkcs12 -export -in server.crt -inkey server.key -out server.p12
+#(need export password: 123456)
+
+## We need now to transform the pkcs12 to a keystore file.
+keytool -importkeystore -srckeystore server.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore server.jks
+#(need password for jks file: 123456)
+#check with keytool -v -list -keystore server.jks
+
+## trusted store
+keytool -genkey -alias dummy -keyalg RSA -keystore truststore.jks
+#(no password)
+keytool -delete -alias dummy -keystore truststore.jks
+keytool -import -v -trustcacerts -alias my_ca -file root-ca/root-ca.crt -keystore truststore.jks
+keytool -v -list -keystore truststore.jks
+
 
 ##################################################
 ## Update maven config
 ##################################################
-~/.m2$ cat settings.xml 
+vi ~/.m2/settings.xml 
 <settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
@@ -39,65 +113,18 @@ service tomcat7 restart
   <activeProfiles/>
 </settings>
 
-
 ##################################################
-## KEYS
+## Setup Tomcat7
 ##################################################
-# Create keys stuff for development.
-# (From : http://users.skynet.be/pascalbotte/art/ca.htm)
+apt-get install tomcat7 tomcat7-admin
 
-## create CA
-mkdir private
-openssl genrsa -des3 -out private/ca.key 1024
-#(need a password: 123456)
-## After you can self-sign your CA certificate
-mkdir public
-openssl req -new -x509 -key private/ca.key -out public/ca.crt -days 3600
-#(CN = ca)
-## create server certificate
-openssl genrsa -des3 -out private/server.key 1024
-#(need a password: 123456)
-## Then we can create our server certificate signing request (csr)
-openssl req -new -key private/server.key -out server.csr
-#(need CN: server.cube.com or what you will use for url to access your dev webservice: HAVE TO MATCH!!)
-#(no password needed)
+sudo vi /etc/tomcat7/tomcat-users.xml
+  <role rolename="manager-gui"/>
+  <role rolename="manager"/>
+  <user username="tomcat" password="tomcat" roles="tomcat,manager,manager-gui"/>
 
-## sign CSR (first server)
-openssl x509 -req -days 1000 -in server.csr -CA public/ca.crt -CAkey private/ca.key -CAcreateserial -out public/server.crt
-## sign CSR (next)
-#openssl x509 -req -days 1000 -in server2.csr -CA public/ca.crt -CAkey private/ca.key -CAserial -out public/server2.crt
-
-## create pkcs12 file for server with both public and private keys
-openssl pkcs12 -export -in public/server.crt -inkey private/server.key -out server.p12
-#(need export password: 123456)
-
-## We need now to transform the pkcs12 to a keystore file.
-keytool -importkeystore -srckeystore server.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore server.jks
-#(need password for jks file: 123456)
-#check with keytool -v -list -keystore server.jks
-
-## client certificates
-mkdir client
-openssl req -new -newkey rsa:1024 -nodes -out client/client.req -keyout client/client.key -config client/openssl.cnf
-#(CN = client1)
-#(no password)
-openssl x509 -CA public/ca.crt -CAkey private/ca.key -CAserial public/ca.srl -req -in client/client.req -out client/client.pem -days 1000
-openssl pkcs12 -export -clcerts -in client/client.pem -inkey client/client.key -out client/client.p12 -name client1
-keytool -importkeystore -srckeystore client/client.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore client/client.jks
-
-## trusted store
-keytool -genkey -alias dummy -keyalg RSA -keystore truststore.jks
-#(no password)
-keytool -delete -alias dummy -keystore truststore.jks
-keytool -import -v -trustcacerts -alias my_ca -file public/ca.crt -keystore truststore.jks
-keytool -v -list -keystore truststore.jks
-
-
-## configure tomcat with SSL
-## (as root)
-cd /etc/tomcat7
-cp server.xml server.xml_ori
-
+sudo cp /etc/tomcat7/server.xml /etc/tomcat7/server.xml_ori
+sudo vi /etc/tomcat7/server.xml
 <Connector port="8443" protocol="HTTP/1.1" SSLEnabled="true"
                maxThreads="150" scheme="https" secure="true"
                clientAuth="true" sslProtocol="TLS" 
@@ -106,17 +133,31 @@ cp server.xml server.xml_ori
                truststoreFile="/etc/tomcat7/certs/truststore.jks" truststorePass="123456"
 />
 
-mkdir /etc/tomcat7/certs
-cp server.jks /etc/tomcat7/certs
-cp truststore.jks /etc/tomcat7/certs
+sudo mkdir /etc/tomcat7/certs
+sudo cp server.jks /etc/tomcat7/certs
+sudo cp truststore.jks /etc/tomcat7/certs
+sudo service tomcat7 restart
 
-service tomcat7 restart
+##################################################
+## Test with browser
+##################################################
 
-## import ca.crt and client.crt into firefox
-it's all done
+## import root-ca.crt as new authority in firefox certificate manager
+## -> website
+## -> email
+## -> dev
+
+## import client0.p12 as new 'your certificates' in firefox certificate manager
+## password : 123456
 
 ## update /etc/hosts with hostname in cert
+sudo vi /etc/hosts
 127.0.0.1       localhost server.cube.com
+
+## browse
+https://server.cube.com:8443/manager/html
+
+
 
 
 
