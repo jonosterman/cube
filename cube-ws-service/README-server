@@ -11,8 +11,8 @@ echo "1000" > root-ca/ca.db.serial
 
 openssl genrsa -des3 -out root-ca/root-ca.key 2048
 > passphrase 123456
-## sign it 
-openssl req -new -x509 -days 3650 -key root-ca/root-ca.key -out root-ca/root-ca.crt -config openssl.cnf -extensions v3_ca
+## self-sign it 
+openssl req -new -x509 -days 3650 -key root-ca/root-ca.key -out root-ca/root-ca.crt -extensions v3_ca
 > common name : Test-RootCA
 ## check it
 openssl x509 -in root-ca/root-ca.crt -text
@@ -26,23 +26,43 @@ openssl x509 -in root-ca/root-ca.crt -text
 ###############################################
 
 openssl genrsa -des3 -out client0.key 2048
+> passphrase 123456
+
+
 openssl req -key client0.key -new -out client0-auth.req
+> Common Name: client0-auth
+> no password
+echo '[auth_sect]
+keyUsage=digitalSignature
+extendedKeyUsage=clientAuth,msSmartcardLogin
+' > client-auth.cnf
 openssl x509 -req -in client0-auth.req \
  -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
  -extfile client-auth.cnf -extensions auth_sect -out client0-auth.pem
 
 openssl req -key client0.key -new -out client0-enciph.req
+> Common Name: client0-enciph
+> no password
+echo '[enciph_sect]
+keyUsage=keyEncipherment, dataEncipherment
+extendedKeyUsage=emailProtection
+' > client-enciph.cnf
 openssl x509 -req -in client0-enciph.req \
  -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
  -extfile client-enciph.cnf -extensions enciph_sect -out client0-enciph.pem
 
 openssl req -key client0.key -new -out client0-sign.req
+> Common Name: client0-sign
+> no password
+echo '[sign_sect]
+keyUsage=digitalSignature, nonRepudiation
+extendedKeyUsage=emailProtection
+' > client-sign.cnf
 openssl x509 -req -in client0-sign.req \
  -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
  -extfile client-sign.cnf -extensions sign_sect -out client0-sign.pem
 
 ## create PKCS12 file with all certificates
-
 cat client*.pem > /tmp/all.pem
 openssl pkcs12 -export \
  -inkey client0.key  \
@@ -51,6 +71,7 @@ openssl pkcs12 -export \
  -caname client0-sign \
  -caname client0-enciph \
  -out client0.p12
+> password 123456
 rm /tmp/all.pem
 
 ## check
