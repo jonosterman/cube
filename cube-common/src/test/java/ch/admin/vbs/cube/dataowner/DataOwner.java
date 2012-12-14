@@ -4,6 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -14,7 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
-import java.security.cert.Certificate;
+import java.security.Security;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
@@ -31,6 +32,7 @@ import javax.crypto.SecretKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.security.pkcs11.SunPKCS11;
 import sun.security.provider.X509Factory;
 import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.crypto.AESEncrypter;
@@ -57,7 +59,6 @@ public class DataOwner {
 	public DataOwner() {
 		// base directory. eventually generate example VM
 		baseDir = new File("/opt/cube/cubedataowner");
-		createExampleStructure();
 		if (!baseDir.exists()) {
 			baseDir.mkdirs();
 			// make example:
@@ -281,32 +282,24 @@ public class DataOwner {
 			bw.write("vpn.ca=ca-example.crt\n");
 			bw.close();
 			// user keys
-			File p12File = new File(System.getProperty("user.home"), "cube-pki/client0.p12");
-			if (!p12File.exists()) {
-				System.err.println("No user certificate found. please look at README-server.txt to find out how to generate them.");
+			File jksFile1 = new File(System.getProperty("user.home"), "cube-pki/client1.jks");
+			File jksFile0 = new File(System.getProperty("user.home"), "cube-pki/client0.jks");
+			if ( !jksFile0.exists() || !jksFile1.exists()) {
+				System.err.println("No user certificate found. please look at README-server.txt to find out how to generate them (client0.jks and client1.jks).");
 			}
-			Builder builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.PasswordProtection("123456".toCharArray()));
+			//
+			Builder builder = KeyStore.Builder.newInstance("JKS", null, jksFile0, new KeyStore.PasswordProtection("123456".toCharArray()));
 			KeyStore keystoreTmp = builder.getKeyStore();// <- slow part
-			Enumeration<String> en = keystoreTmp.aliases();
-			while (en.hasMoreElements()) {
-				String x = en.nextElement();
-				System.out.println(x);
-				X509Certificate c = (X509Certificate) keystoreTmp.getCertificate(x);
-				
-				System.out.println(" dn: " + c.getSubjectDN()+" "+c.getType());
-			}
-			System.exit(0);
-			X509Certificate cert = (X509Certificate) keystoreTmp.getCertificate("cube-02_enciph");
-			File userPemFile = new File(exDir, "user1.pem");
-			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
+			X509Certificate cert = (X509Certificate) keystoreTmp.getCertificate("client0-enciph");
+			File userPemFile = new File(exDir, "user0.pem");
+			System.out.println(" - user0 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
 			writePemFile(userPemFile, cert);
 			//
-			p12File = new File(getClass().getResource("/cube-03_pwd-is-111222.p12").getFile());
-			builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.PasswordProtection("111222".toCharArray()));
+			builder = KeyStore.Builder.newInstance("JKS", null, jksFile1, new KeyStore.PasswordProtection("123456".toCharArray()));
 			keystoreTmp = builder.getKeyStore();// <- slow part
-			userPemFile = new File(exDir, "user3.pem");
-			System.out.println(" - user2 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
-			cert = (X509Certificate) keystoreTmp.getCertificate("cube-03_enciph");
+			cert = (X509Certificate) keystoreTmp.getCertificate("client1-enciph");
+			userPemFile = new File(exDir, "user1.pem");
+			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
 			writePemFile(userPemFile, cert);
 			// VPN
 			File ca = new File(exDir, "ca-example.crt");

@@ -12,12 +12,12 @@ import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 
 import org.apache.cxf.security.transport.TLSSessionInfo;
-import org.example.contract.cubemanage.CubeManagePortType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import ch.admin.cube.ws.ICubeManageDAO;
 import ch.admin.cube.ws.impl.CubeManageDAO;
+import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
 @WebService(targetNamespace = "http://www.example.org/contract/CubeManage", //
 portName = "CubeManagePort", //
@@ -26,47 +26,35 @@ endpointInterface = "org.example.contract.cubemanage.CubeManagePortType")
 public class CubeManagePortTypeImpl implements CubeManagePortType {
 	private static final Logger LOG = LoggerFactory.getLogger(CubeManagePortTypeImpl.class);
 	private ICubeManageDAO dao = new CubeManageDAO();
+	@Resource
+	private WebServiceContext context;
 
 	public CubeManagePortTypeImpl() {
 	}
 
 	@Override
-	public int tripleIt(org.example.schema.cubemanage.SomeParamComplex parameters) {
-		if (performAuth() == null) {
-			LOG.debug("User not logged. Abort.");
-			return 0;
-		}
-		// implementation
-		System.out.println("TriplIt: " + parameters.getMachine());
-		return 35;
-	};
-
-	@Resource
-	private WebServiceContext context;
-
-	@Override
 	@WebMethod
-	public void login() {
+	public void login(byte[] encPubkey) {
 		if (performAuth() == null) {
 			LOG.debug("User not logged. Abort.");
 			return;
 		}
 	}
-	
+
 	@Override
 	public void report(String message, long timestamp) {
-		X509Certificate x509 = performAuth(); 
+		X509Certificate x509 = performAuth();
 		if (x509 == null) {
 			LOG.debug("User not logged. Abort.");
 			return;
 		}
-		// log 
+		// log
 		dao.report(x509, message, timestamp);
 	}
-	
+
 	@Override
 	public DataHandler listVMs() {
-		X509Certificate x509 = performAuth(); 
+		X509Certificate x509 = performAuth();
 		if (x509 == null) {
 			LOG.debug("User not logged. Abort.");
 			return null;
@@ -75,14 +63,17 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 		File descs = dao.listVMs(x509);
 		return new DataHandler(new FileDataSource(descs));
 	}
-	
-	
+
 	private X509Certificate performAuth() {
 		TLSSessionInfo info = (TLSSessionInfo) context.getMessageContext().get("org.apache.cxf.security.transport.TLSSessionInfo");
 		Certificate[] cs = info.getPeerCertificates();
 		if (cs == null || cs.length == 0) {
 			LOG.debug("No certificate in TLSSessionInfo. No auth is possible.");
 		} else {
+			for (Certificate c : cs) {
+				X509Certificate x509 = (X509Certificate) c;
+				LOG.debug("List certificate [" + x509.getSubjectDN().getName() + "]");
+			}
 			for (Certificate c : cs) {
 				X509Certificate x509 = (X509Certificate) c;
 				if (x509.getKeyUsage() != null && x509.getKeyUsage()[0]) {
@@ -100,6 +91,4 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 		}
 		return null;
 	}
-	
-	
 }

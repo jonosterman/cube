@@ -11,7 +11,6 @@ import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
-import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -29,12 +28,14 @@ import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.endpoint.Client;
 import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
-import org.example.contract.cubemanage.CubeManagePortType;
-import org.example.contract.cubemanage.CubeManageService;
-import org.example.schema.cubemanage.SomeParamComplex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-	
+
+import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
+import ch.admin.vbs.cube.common.keyring.impl.IdentityToken;
+import ch.admin.vbs.cube.cubemanage.CubeManage;
+import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
+
 public class WSClient {
 	private static final Logger LOG = LoggerFactory.getLogger(WSClient.class);
 
@@ -49,9 +50,9 @@ public class WSClient {
 		tmf.init(ts);
 		// KeyStore & KeyManagerFactory
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-		Builder clientCrtBuilder = KeyStore.Builder.newInstance("PKCS12", //
+		Builder clientCrtBuilder = KeyStore.Builder.newInstance("JKS", //
 				null, //
-				new File(System.getProperty("user.home"), "cube-pki/client0.p12"), //
+				new File(System.getProperty("user.home"), "cube-pki/client0.jks"), //
 				new KeyStore.PasswordProtection("123456".toCharArray()));
 		KeyStoreBuilderParameters keyStoreBuilderParameters = new KeyStoreBuilderParameters(clientCrtBuilder);
 		kmf.init(keyStoreBuilderParameters);
@@ -64,7 +65,7 @@ public class WSClient {
 		// testHttpsRequest(factory); System.exit(0);
 		// web service (use local wdsl since it will not work online with client
 		// auth)
-		CubeManageService service = new CubeManageService(getClass().getResource("/CubeManage.wsdl"));
+		CubeManage service = new CubeManage(getClass().getResource("/CubeManage.wsdl"));
 		CubeManagePortType port = service.getCubeManagePort();
 		//
 		Client proxy = ClientProxy.getClient(port);
@@ -76,11 +77,11 @@ public class WSClient {
 		addFilters(tlsParam);
 		conduit.setTlsClientParameters(tlsParam);
 		//
-		port.login();
+		IdentityToken token = new IdentityToken(clientCrtBuilder.getKeyStore(), clientCrtBuilder, "123456".toCharArray());
+		port.login(token.getPublickey(KeyType.ENCIPHERMENT).getEncoded());
 		//
 		port.report("login", System.currentTimeMillis());
 		//
-		doubleIt(port, 10);
 		DataHandler dh = port.listVMs();
 		ZipInputStream zis = new ZipInputStream(dh.getInputStream());
 		while (zis.available() > 0) {
@@ -142,13 +143,5 @@ public class WSClient {
 		// c.http();
 		System.out.println("## HTTPS ###########");
 		c.https();
-	}
-
-	public static void doubleIt(CubeManagePortType port, int numToDouble) {
-		SomeParamComplex p = new SomeParamComplex();
-		p.setMachine("blah");
-		p.setSize(32);
-		int resp = port.tripleIt(p);
-		System.out.println("The number " + numToDouble + " doubled is " + resp);
 	}
 }

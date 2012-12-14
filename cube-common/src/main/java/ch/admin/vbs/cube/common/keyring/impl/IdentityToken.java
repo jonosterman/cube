@@ -71,7 +71,7 @@ public class IdentityToken implements IIdentityToken {
 					uuidHash = HashUtil.md5(uuid); // <- short and elegant hash
 					simpleName = extractName(uuid); // extract user name from DN
 				} else if (!uuid.equals(cert.getSubjectDN().getName())) {
-					throw new RuntimeException("This smart-card contains certificates with different subject DN. This is not allowed!");
+					throw new RuntimeException("This smart-card contains certificates with different subject DN. This is not allowed! ["+uuid+"]!=["+cert.getSubjectDN().getName()+"]");
 				}
 				// check certificate
 				boolean[] keyUsage = cert.getKeyUsage();
