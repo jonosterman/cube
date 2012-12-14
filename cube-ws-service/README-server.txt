@@ -138,7 +138,6 @@ server.cube.com
 
 " | openssl req -new -key server.key -out server.csr -passin file:password.txt
 #(need CN: server.cube.com or what you will use for url to access your dev webservice: HAVE TO MATCH!!)
-#(no password needed)
 ## sign CSR (first server)
 openssl x509 -req -days 1000 -in server.csr \
  -CA root-ca/root-ca.crt -CAkey root-ca/root-ca.key -CAserial root-ca/ca.db.serial \
@@ -153,13 +152,23 @@ keytool -srcstorepass 123456 -storepass 123456 -importkeystore -srckeystore serv
 #check with keytool -v -list -keystore server.jks
 
 ## trusted store
-keytool -storepass 123456 -genkey -alias dummy -keyalg RSA -keystore truststore.jks
-#(no password)
-keytool -delete -alias dummy -keystore truststore.jks
-keytool -import -v -trustcacerts -alias my_ca -file root-ca/root-ca.crt -keystore truststore.jks
-keytool -v -list -keystore truststore.jks
+rm truststore.jks
+echo "
 
 
+
+
+
+yes
+
+" | keytool -storepass 123456 -genkey -alias dummy -keyalg RSA -keystore truststore.jks
+keytool -storepass 123456 -delete -alias dummy -keystore truststore.jks
+echo "yes" | keytool -storepass 123456 -import -v -trustcacerts -alias my_ca -file root-ca/root-ca.crt -keystore truststore.jks
+keytool -storepass 123456 -v -list -keystore truststore.jks
+
+
+echo "certificates generated."
+exit 0
 ##################################################
 ## Update maven config
 ##################################################
@@ -206,10 +215,11 @@ sudo vi /etc/tomcat7/server.xml
                truststoreFile="/etc/tomcat7/certs/truststore.jks" truststorePass="123456"
 />
 
-sudo mkdir /etc/tomcat7/certs
+sudo mkdir -p /etc/tomcat7/certs
 sudo cp server.jks /etc/tomcat7/certs
 sudo cp truststore.jks /etc/tomcat7/certs
 sudo service tomcat7 restart
+cp truststore.jks /opt/cube/client/certificates/
 
 ##################################################
 ## Test with browser

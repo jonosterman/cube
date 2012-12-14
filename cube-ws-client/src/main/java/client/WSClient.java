@@ -78,6 +78,7 @@ public class WSClient {
 		conduit.setTlsClientParameters(tlsParam);
 		//
 		IdentityToken token = new IdentityToken(clientCrtBuilder.getKeyStore(), clientCrtBuilder, "123456".toCharArray());
+		
 		port.login(token.getPublickey(KeyType.ENCIPHERMENT).getEncoded());
 		//
 		port.report("login", System.currentTimeMillis());

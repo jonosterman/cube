@@ -19,10 +19,10 @@ import ch.admin.cube.ws.ICubeManageDAO;
 import ch.admin.cube.ws.impl.CubeManageDAO;
 import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
-@WebService(targetNamespace = "http://www.example.org/contract/CubeManage", //
+@WebService(targetNamespace = "http://cubemanage.cube.vbs.admin.ch/", //
 portName = "CubeManagePort", //
 serviceName = "CubeManageService", //
-endpointInterface = "org.example.contract.cubemanage.CubeManagePortType")
+endpointInterface = "ch.admin.vbs.cube.cubemanage.CubeManagePortType")
 public class CubeManagePortTypeImpl implements CubeManagePortType {
 	private static final Logger LOG = LoggerFactory.getLogger(CubeManagePortTypeImpl.class);
 	private ICubeManageDAO dao = new CubeManageDAO();
