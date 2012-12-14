@@ -98,6 +98,7 @@ openssl pkcs12 -export -in server.crt -inkey server.key -out server.p12
 ## We need now to transform the pkcs12 to a keystore file.
 keytool -importkeystore -srckeystore server.p12 -srcstoretype PKCS12 -deststoretype JKS -destkeystore server.jks
 #(need password for jks file: 123456)
+
 #check with keytool -v -list -keystore server.jks
 
 ## trusted store

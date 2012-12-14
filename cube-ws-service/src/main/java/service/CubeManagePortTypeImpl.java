@@ -95,14 +95,7 @@ public class CubeManagePortTypeImpl implements CubeManagePortType {
 				}
 			}
 			if (cs.length == 0) {
-				LOG.debug("No certificate in request.");
-			} else {
-				// probably dev certificate (I did not found how to set keyusage
-				// on datastore certs)
-				X509Certificate x509 = (X509Certificate) cs[0];
-				LOG.debug("Dev certificate [" + x509.getSubjectDN().getName() + "]");
-				dao.storePublicKey(x509);
-				return x509;
+				LOG.debug("No valid certificate in request.");
 			}
 		}
 		return null;

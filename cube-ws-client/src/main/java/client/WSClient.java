@@ -8,12 +8,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
-import java.security.cert.CertificateException;
-import java.util.Date;
+import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -24,8 +22,6 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
-import javax.net.ssl.X509TrustManager;
-import javax.xml.namespace.QName;
 import javax.xml.ws.BindingProvider;
 
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
@@ -38,31 +34,25 @@ import org.example.contract.cubemanage.CubeManageService;
 import org.example.schema.cubemanage.SomeParamComplex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+	
 public class WSClient {
 	private static final Logger LOG = LoggerFactory.getLogger(WSClient.class);
 
 	public WSClient() {
 	}
 
-	public void http() throws Exception {
-		CubeManageService service = new CubeManageService(new URL("http://localhost:8080/cube-server/services/cubemanage?wsdl"));
-		CubeManagePortType port = service.getCubeManagePort();
-		port.login();
-		doubleIt(port, 10);
-		System.out.println("done.");
-	}
-
 	public void https() throws Exception {
 		// TrustStore & TrustManagerFactory
 		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 		KeyStore ts = KeyStore.getInstance("JKS");
-		ts.load(new FileInputStream("/home/manhattan/dev/cube/cube-ws-service/keystuff/truststore.jks"), "123456".toCharArray());
+		ts.load(new FileInputStream(new File(System.getProperty("user.home"), "cube-pki/truststore.jks")), "123456".toCharArray());
 		tmf.init(ts);
 		// KeyStore & KeyManagerFactory
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
-		Builder clientCrtBuilder = KeyStore.Builder.newInstance("PKCS12", null,
-				new File("/home/manhattan/dev/cube/cube-ws-service/keystuff/client/client.p12"), new KeyStore.PasswordProtection("123456".toCharArray()));
+		Builder clientCrtBuilder = KeyStore.Builder.newInstance("PKCS12", //
+				null, //
+				new File(System.getProperty("user.home"), "cube-pki/client0.p12"), //
+				new KeyStore.PasswordProtection("123456".toCharArray()));
 		KeyStoreBuilderParameters keyStoreBuilderParameters = new KeyStoreBuilderParameters(clientCrtBuilder);
 		kmf.init(keyStoreBuilderParameters);
 		// SSL Context
@@ -71,7 +61,7 @@ public class WSClient {
 		// SocketFactory
 		SSLSocketFactory factory = ctx.getSocketFactory();
 		// test request
-		// testHttpsRequest(factory);
+		// testHttpsRequest(factory); System.exit(0);
 		// web service (use local wdsl since it will not work online with client
 		// auth)
 		CubeManageService service = new CubeManageService(getClass().getResource("/CubeManage.wsdl"));
@@ -95,7 +85,7 @@ public class WSClient {
 		ZipInputStream zis = new ZipInputStream(dh.getInputStream());
 		while (zis.available() > 0) {
 			ZipEntry entry = zis.getNextEntry();
-			System.out.println("Entry ["+entry.getName()+"] <<");
+			System.out.println("Entry [" + entry.getName() + "] <<");
 		}
 		//
 		port.report("logout", System.currentTimeMillis());

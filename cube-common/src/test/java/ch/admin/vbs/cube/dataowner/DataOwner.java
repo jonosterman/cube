@@ -42,11 +42,11 @@ import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
  * Prototype Application to manage VM and prepare them to be published on the
  * server.
  * 
- * - this app scan its working directory (/opt/cube/cubedataowner) for VM templates. A
- * VM template is a directory with a file 'vm.cfg' some VDI files and VPN
- * certificates. if the working directory does not exists yet, an example will
- * be created the first time this program is run. VMs are then encrypted for
- * each user individually and packaged with configuration files.
+ * - this app scan its working directory (/opt/cube/cubedataowner) for VM
+ * templates. A VM template is a directory with a file 'vm.cfg' some VDI files
+ * and VPN certificates. if the working directory does not exists yet, an
+ * example will be created the first time this program is run. VMs are then
+ * encrypted for each user individually and packaged with configuration files.
  */
 public class DataOwner {
 	private static final Logger LOG = LoggerFactory.getLogger(DataOwner.class);
@@ -55,24 +55,9 @@ public class DataOwner {
 	private HashSet<String> uuidSet = new HashSet<String>();
 
 	public DataOwner() {
-		
-		try {
-			X509Certificate x = readPemFile(new File("/opt/cube/fislw-pub-key/ya6_OHnvadcTpMoaFgPTCntCyjnphtonAXGVm3BiM9kLfNNPAoLha20VrkNRUSarIz7siWaANjjXUzVP_524ngXX.pem"));
-			System.out.println(x);
-		} catch (CertificateException e1) {
-			e1.printStackTrace();
-		} catch (FileNotFoundException e1) {
-			e1.printStackTrace();
-		}
-		
-		System.exit(0);
-		
 		// base directory. eventually generate example VM
 		baseDir = new File("/opt/cube/cubedataowner");
-
 		createExampleStructure();
-		System.exit(0);
-		
 		if (!baseDir.exists()) {
 			baseDir.mkdirs();
 			// make example:
@@ -296,24 +281,24 @@ public class DataOwner {
 			bw.write("vpn.ca=ca-example.crt\n");
 			bw.close();
 			// user keys
-			File p12File = new File(getClass().getResource("/cube-01_pwd-is-111222.p12").getFile());
-			Builder builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.PasswordProtection("111222".toCharArray()));
+			File p12File = new File(System.getProperty("user.home"), "cube-pki/client0.p12");
+			if (!p12File.exists()) {
+				System.err.println("No user certificate found. please look at README-server.txt to find out how to generate them.");
+			}
+			Builder builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.PasswordProtection("123456".toCharArray()));
 			KeyStore keystoreTmp = builder.getKeyStore();// <- slow part
-			File userPemFile = new File(exDir, "user1.pem");
-			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
-			
 			Enumeration<String> en = keystoreTmp.aliases();
-			while(en.hasMoreElements()) {
+			while (en.hasMoreElements()) {
 				String x = en.nextElement();
 				System.out.println(x);
 				X509Certificate c = (X509Certificate) keystoreTmp.getCertificate(x);
-				System.out.println(" dn: "+ c);
+				
+				System.out.println(" dn: " + c.getSubjectDN()+" "+c.getType());
 			}
 			System.exit(0);
-			
-			
-			
 			X509Certificate cert = (X509Certificate) keystoreTmp.getCertificate("cube-02_enciph");
+			File userPemFile = new File(exDir, "user1.pem");
+			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
 			writePemFile(userPemFile, cert);
 			//
 			p12File = new File(getClass().getResource("/cube-03_pwd-is-111222.p12").getFile());
