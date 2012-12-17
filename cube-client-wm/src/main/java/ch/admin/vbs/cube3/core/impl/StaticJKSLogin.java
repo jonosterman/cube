@@ -33,8 +33,9 @@ import ch.admin.vbs.cube.core.impl.TokenEvent;
 import ch.admin.vbs.cube3.core.ILogin;
 import ch.admin.vbs.cube3.core.ILoginUI;
 import ch.admin.vbs.cube3.core.ILoginUI.ILoginUIListener;
+import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 
-public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener {
+public class StaticJKSLogin implements ILogin, ITokenListener, ILoginUIListener {
 	// pkcs library
 	private static final int MAX_FAILURE_CNT = 2;
 	// listeners
@@ -48,7 +49,7 @@ public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener 
 			return t;
 		}
 	});
-	private static final Logger LOG = LoggerFactory.getLogger(StaticP12Login.class);
+	private static final Logger LOG = LoggerFactory.getLogger(StaticJKSLogin.class);
 	private SunPKCS11 provider;
 	private Builder builder;
 	private KeyStore keystore;
@@ -58,12 +59,11 @@ public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener 
 	private Lock lock = new ReentrantLock();
 	private Task task;
 	private int failureCountdown = MAX_FAILURE_CNT;
-	private File p12File;
+	private File jksFile;
 
-	public StaticP12Login() {
-		// file
-		URL url = getClass().getResource("/cube-01_pwd-is-111222.p12");
-		p12File = new File(url.getFile());
+	public StaticJKSLogin() {
+		URL url = getClass().getResource("/cube-pki/client0.jks");
+		jksFile = new File(url.getFile());
 	}
 
 	// ===============================================
@@ -127,7 +127,7 @@ public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener 
 					provider = null;
 				}
 				// initialize provider & builder
-				builder = KeyStore.Builder.newInstance("PKCS12", null, p12File, new KeyStore.CallbackHandlerProtection(this));
+				builder = KeyStore.Builder.newInstance("JKS", null, jksFile, new KeyStore.CallbackHandlerProtection(this));
 				if (taskCancel) {
 					LOG.debug("Canceled.");
 					return;
@@ -213,7 +213,7 @@ public class StaticP12Login implements ILogin, ITokenListener, ILoginUIListener 
 				LOG.debug("callback will not return the password because task has been canceled");
 				return;
 			}
-			LOG.debug("Provide password [{}]", new String(password));
+			LOG.debug("Provide password [{}].", new String(password));
 			((PasswordCallback) callbacks[0]).setPassword(password);
 		}
 	}

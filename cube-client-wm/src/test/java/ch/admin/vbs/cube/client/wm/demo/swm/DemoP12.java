@@ -24,7 +24,7 @@ import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
 import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
 import ch.admin.vbs.cube3.core.impl.SessionMgr;
-import ch.admin.vbs.cube3.core.impl.StaticP12Login;
+import ch.admin.vbs.cube3.core.impl.StaticJKSLogin;
 import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 import ch.admin.vbs.cube3.core.mock.MockTokenDevice;
 
@@ -48,10 +48,11 @@ public class DemoP12 {
 		// Beans
 		IoC ioc = new IoC();
 		ioc.addBean(new MockLoginUI());
+		MockLoginUI.setMockPassword("123456"); // to be used with StaticJKSLogin
 		ioc.addBean(new MockTokenDevice());
-		ioc.addBean(new StaticP12Login());
+		ioc.addBean(new StaticJKSLogin());
 		ioc.addBean(new SessionMgr());
-//		ioc.addBean(new SymlinkContainerFactory());
+		// ioc.addBean(new SymlinkContainerFactory());
 		ioc.addBean(new DmcryptContainerFactory());
 		//
 		ioc.setupDependenciesOnAllBeans();

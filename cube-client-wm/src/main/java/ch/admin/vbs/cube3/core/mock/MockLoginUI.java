@@ -1,8 +1,5 @@
 package ch.admin.vbs.cube3.core.mock;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Random;
 import java.util.concurrent.Executor;
@@ -19,19 +16,15 @@ import ch.admin.vbs.cube3.core.ILoginUI;
 public class MockLoginUI implements ILoginUI, ITokenListener {
 	private static final Logger LOG = LoggerFactory.getLogger(MockLoginUI.class);
 	private ArrayList<ILoginUIListener> listeners = new ArrayList<ILoginUI.ILoginUIListener>();
-	private char[] passwd;
 	private Executor exec = Executors.newCachedThreadPool();
 	private Random rnd = new Random(System.currentTimeMillis());
+	private static char[] mockPassword = "???".toCharArray();
 
+	public static final void setMockPassword(String str) {
+		mockPassword = str.toCharArray();
+	}
+	
 	public MockLoginUI() {
-		File file = new File(new File(System.getProperty("java.io.tmpdir")), "MockLoginUI_PIN.txt");
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
-			passwd = br.readLine().toCharArray();
-		} catch (Exception e) {
-			LOG.error("File ["+file.getAbsolutePath()+"] is not readable or does not contain a valid PIN. Exit.", e);
-			System.exit(0);
-		}
 	}
 
 	public void start() {
@@ -61,7 +54,7 @@ public class MockLoginUI implements ILoginUI, ITokenListener {
 						e.printStackTrace();
 					}
 					for (ILoginUIListener l : listeners) {
-						l.setPassword(passwd);
+						l.setPassword(mockPassword);
 					}
 				}
 			});
