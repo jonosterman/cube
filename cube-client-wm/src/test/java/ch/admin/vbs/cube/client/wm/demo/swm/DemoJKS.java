@@ -28,8 +28,8 @@ import ch.admin.vbs.cube3.core.impl.StaticJKSLogin;
 import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 import ch.admin.vbs.cube3.core.mock.MockTokenDevice;
 
-public class DemoP12 {
-	private static final Logger LOG = LoggerFactory.getLogger(DemoP12.class);
+public class DemoJKS {
+	private static final Logger LOG = LoggerFactory.getLogger(DemoJKS.class);
 
 	public static void main(String[] args) throws Exception {
 		// start Xephyr if not started
