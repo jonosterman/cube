@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package ch.admin.vbs.cube.client.wm.demo;
+package ch.admin.vbs.cube.client.wm.demo.old;
 
 import java.io.File;
 
@@ -30,7 +30,7 @@ import ch.admin.vbs.cube.client.wm.client.impl.VmMonitor;
 import ch.admin.vbs.cube.client.wm.mock.JMockDevice;
 import ch.admin.vbs.cube.client.wm.mock.MockAuthModule;
 import ch.admin.vbs.cube.client.wm.mock.MockNetworkManager;
-import ch.admin.vbs.cube.client.wm.mock.MockXrandr;
+import ch.admin.vbs.cube.client.wm.mock.MockXrandrOld;
 import ch.admin.vbs.cube.client.wm.ui.CubeUI;
 import ch.admin.vbs.cube.client.wm.ui.ICubeUI;
 import ch.admin.vbs.cube.client.wm.ui.tabs.action.CubeAbstractAction;
@@ -81,7 +81,7 @@ public class DemoUI {
 		// cleanup older containers
 		DmcryptContainerFactory.cleanup();
 		// create beans
-		ioc.addBean(new MockXrandr(false));
+		ioc.addBean(new MockXrandrOld(false));
 		ioc.addBean(new CubeUI());
 		ioc.addBean(new CubeClient());
 		ioc.addBean(new ClientFacade());

@@ -15,22 +15,18 @@
  */
 package ch.admin.vbs.cube.client.wm.mock;
 
-import java.awt.BorderLayout;
-import java.awt.Dimension;
-import java.awt.Toolkit;
+import java.awt.Rectangle;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.DefaultListModel;
-import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JPanel;
-import javax.swing.JSpinner;
-import javax.swing.SpinnerModel;
-import javax.swing.SpinnerNumberModel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import ch.admin.vbs.cube.client.wm.xrandx.IXrandr;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen;
@@ -38,89 +34,119 @@ import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.State;
 import ch.admin.vbs.cube.client.wm.xrandx.XRScreen.XRResolution;
 
 public class MockXrandr implements IXrandr {
-	private ArrayList<XRScreen> screens = new ArrayList<XRScreen>();
-	private ArrayList<XRResolution> res = new ArrayList<XRScreen.XRResolution>(2);
-	private ArrayList<String> freqs = new ArrayList<String>(2);
-	private Random rn = new Random();
-	private Object lock = new Object();
-	private DefaultListModel list = new DefaultListModel();
+	private static final Logger LOG = LoggerFactory.getLogger(MockXrandr.class);
+	private ArrayList<Monitor> monListModel = new ArrayList<MockXrandr.Monitor>();
+	private HashMap<String, Monitor> monitors = new HashMap<String, MockXrandr.Monitor>();
+	private ArrayList<XRScreen> list;
+	private Random rnd = new Random();
 
-	public MockXrandr(boolean twoScreens) {
-		freqs.add("50.0");
-		res.add(new XRResolution(320, 200, freqs));
-		res.add(new XRResolution(640, 480, freqs));
-		res.add(new XRResolution(800, 600, freqs));
-		screens.add(new XRScreen("screen-A", State.CONNECTED_AND_ACTIVE, 60, 60, res, res.get(2), "50.0"));
-		list.addElement(screens.get(0));
-		if (twoScreens) {
-			screens.add(new XRScreen("screen-B", State.CONNECTED_AND_ACTIVE, 720, 60, res, res.get(1), "50.0"));
-			list.addElement(screens.get(1));
+	public static void main(String[] args) throws Exception {
+		new MockXrandr();
+	}
+
+	public MockXrandr() throws Exception {
+		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 800, 600)));
+//		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 400, 260)));
+		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 320, 200)));
+//		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 800, 600)));
+//		monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 800, 600)));
+		reloadConfiguration();
+		//
+		new Thread(new Runnable() {
+			@Override
+			public void run() {
+				try {
+					ServerSocket serv = new ServerSocket(9122);
+					while (true) {
+						Socket s = serv.accept();
+						try {
+							InputStream in = s.getInputStream();
+							int c = 0;
+							while (c >= 0) {
+								c = in.read();
+								switch (c) {
+								case 1:
+									int rmd = rnd.nextInt(3);
+									switch (rmd) {
+									case 0:
+										monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 320, 200)));
+										break;
+									case 1:
+										monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 240, 150)));
+										break;
+									case 2:
+										monListModel.add(new Monitor("mon#" + monListModel.size(), new Rectangle(0, 0, 160, 100)));
+										break;
+									}
+									break;
+								case 2:
+									if (monListModel.size() > 1) {
+										monListModel.remove(monListModel.size() - 1);
+									}
+									break;
+								default:
+									LOG.debug("Bad command [{}]", c);
+									break;
+								}
+								LOG.debug("Screen list updated [{}]", monListModel.size());
+							}
+						} catch (IOException e) {
+							LOG.debug(e.getMessage());
+						}
+					}
+				} catch (Exception e) {
+					LOG.error("Failed to start server", e);
+				}
+			}
+		}).start();
+	}
+
+	public void start() {
+	}
+
+	private class Monitor {
+		Rectangle bounds;
+		String id;
+		public boolean active = true;
+
+		public Monitor(String id, Rectangle bounds) {
+			this.id = id;
+			this.bounds = bounds;
 		}
+
+		@Override
+		public String toString() {
+			return String.format("%s (%d:%d)(%dx%d)", id, bounds.x, bounds.y, bounds.width, bounds.height);
+		}
+	}
+
+	@Override
+	public List<XRScreen> getScreens() {
+		return list;
 	}
 
 	@Override
 	public void reloadConfiguration() {
-		// TODO Auto-generated method stub
-	}
-
-	@SuppressWarnings("unchecked")
-	@Override
-	public List<XRScreen> getScreens() {
-		synchronized (lock) {
-			return (List<XRScreen>) screens.clone();
+		list = new ArrayList<XRScreen>();
+		for (int i = 0; i < monListModel.size(); i++) {
+			Monitor m = (Monitor) monListModel.get(i);
+			List<XRResolution> resolutions = new ArrayList<XRScreen.XRResolution>();
+			XRResolution selectedResolution = new XRResolution(m.bounds.width, m.bounds.height, new ArrayList<String>());
+			resolutions.add(selectedResolution);
+			XRScreen s = new XRScreen(m.id, State.CONNECTED_AND_ACTIVE, m.bounds.x, m.bounds.y, resolutions, selectedResolution, "50");
+			list.add(s);
 		}
 	}
 
 	@Override
-	public void setScreen(XRScreen xrScreen, boolean connected, int x, int y) {
-		XRScreen s = new XRScreen(xrScreen.getId(), //
-				connected ? State.CONNECTED_AND_ACTIVE : State.DISCONNECTED, //
-				x, //
-				y, //
-				xrScreen.getResolutions(),//
-				xrScreen.getSelectedResolution(),//
-				xrScreen.getSelectedFrequency());
-		for (int i = 0; i < screens.size(); i++) {
-			if (screens.get(i).getId().equals(xrScreen.getId())) {
-				screens.set(i, s);
-				return;
+	public void setScreen(XRScreen xrScreen, boolean active, int x, int y) {
+		for (int i = 0; i < monListModel.size(); i++) {
+			Monitor m = (Monitor) monListModel.get(i);
+			if (m.id.equals(xrScreen.getId())) {
+				m.bounds.x = x;
+				m.bounds.y = y;
+				m.active = active;
 			}
 		}
-	}
-
-	@Override
-	public void start() {
-		JFrame screenCount = new JFrame("Heads");
-		screenCount.setUndecorated(true);
-		JPanel p = new JPanel();
-		p.setLayout(new BorderLayout());
-		screenCount.setContentPane(p);
-		p.setPreferredSize(new Dimension(300, 200));
-		final SpinnerModel model = new SpinnerNumberModel(2, 1, 5, 1);
-		model.addChangeListener(new ChangeListener() {
-			@Override
-			public void stateChanged(ChangeEvent e) {
-				synchronized (lock) {
-					int t = (Integer) model.getValue();
-					while (screens.size() < t) {
-						screens.add(new XRScreen("screen-" + screens.size(), //
-								rn.nextBoolean() ? State.CONNECTED_AND_ACTIVE : State.DISCONNECTED, //
-								0, 0, res, res.get(rn.nextInt(res.size())), "50.0"));
-						list.add(screens.size() - 1, screens.get(screens.size() - 1));
-					}
-					while (screens.size() > t) {
-						screens.remove(screens.size() - 1);
-						list.removeElementAt(screens.size());
-					}
-				}
-			}
-		});
-		JSpinner spin = new JSpinner(model);
-		p.add(spin, BorderLayout.NORTH);
-		JList l = new JList(list);
-		p.add(l, BorderLayout.CENTER);
-		screenCount.pack();
-		screenCount.setLocation(0, Toolkit.getDefaultToolkit().getScreenSize().height - 200);
-		screenCount.setVisible(true);
 	}
 }

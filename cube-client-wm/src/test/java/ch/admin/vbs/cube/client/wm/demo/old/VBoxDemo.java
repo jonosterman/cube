@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.admin.vbs.cube.client.wm.demo;
+package ch.admin.vbs.cube.client.wm.demo.old;
 
 import org.junit.Assert;
 import org.virtualbox_4_2.IMachine;

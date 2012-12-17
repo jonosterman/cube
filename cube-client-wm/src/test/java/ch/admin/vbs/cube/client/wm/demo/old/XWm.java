@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.admin.vbs.cube.client.wm.demo;
+package ch.admin.vbs.cube.client.wm.demo.old;
 
 import java.awt.Color;
 import java.awt.event.ActionEvent;
@@ -29,7 +29,7 @@ import javax.swing.JTextField;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.vbs.cube.client.wm.demo.XWm.IClientWindowLayout.WinType;
+import ch.admin.vbs.cube.client.wm.demo.old.XWm.IClientWindowLayout.WinType;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Display;
 import ch.admin.vbs.cube.client.wm.ui.x.imp.X11.Window;

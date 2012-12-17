@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ch.admin.vbs.cube.client.wm.demo.swm;
+package ch.admin.vbs.cube.client.wm.mock;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
