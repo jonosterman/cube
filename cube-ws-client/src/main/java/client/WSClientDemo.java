@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -11,6 +12,8 @@ import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -31,15 +34,19 @@ import org.apache.cxf.transport.http.HTTPConduit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import sun.security.provider.X509Factory;
+
+import ch.admin.vbs.cube.common.crypto.Base64;
+import ch.admin.vbs.cube.common.crypto.PemToolkit;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
 import ch.admin.vbs.cube.common.keyring.impl.IdentityToken;
 import ch.admin.vbs.cube.cubemanage.CubeManage;
 import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
-public class WSClient {
-	private static final Logger LOG = LoggerFactory.getLogger(WSClient.class);
+public class WSClientDemo {
+	private static final Logger LOG = LoggerFactory.getLogger(WSClientDemo.class);
 
-	public WSClient() {
+	public WSClientDemo() {
 	}
 
 	public void https() throws Exception {
@@ -67,7 +74,7 @@ public class WSClient {
 		// auth)
 		CubeManage service = new CubeManage(getClass().getResource("/CubeManage.wsdl"));
 		CubeManagePortType port = service.getCubeManagePort();
-		//
+		// update proxy to enforce ssl client certificate
 		Client proxy = ClientProxy.getClient(port);
 		((BindingProvider) port).getRequestContext().put(BindingProvider.SESSION_MAINTAIN_PROPERTY, true);
 		HTTPConduit conduit = (HTTPConduit) proxy.getConduit();
@@ -76,18 +83,23 @@ public class WSClient {
 		tlsParam.setSSLSocketFactory(factory);
 		addFilters(tlsParam);
 		conduit.setTlsClientParameters(tlsParam);
-		//
+		// load all certificates in token object
 		IdentityToken token = new IdentityToken(clientCrtBuilder.getKeyStore(), clientCrtBuilder, "123456".toCharArray());
-		
-		port.login(token.getPublickey(KeyType.ENCIPHERMENT).getEncoded());
-		//
+		// WebService: login command is used to send our public encryption key
+		port.login(token.getCertificate(KeyType.ENCIPHERMENT).getEncoded());
+		// WebService: report some message.
 		port.report("login", System.currentTimeMillis());
-		//
+		// WebService: list user VMs
 		DataHandler dh = port.listVMs();
 		ZipInputStream zis = new ZipInputStream(dh.getInputStream());
-		while (zis.available() > 0) {
-			ZipEntry entry = zis.getNextEntry();
-			System.out.println("Entry [" + entry.getName() + "] <<");
+		ZipEntry entry = zis.getNextEntry();
+		while (entry != null) {
+			try {
+				System.out.println("Entry [" + entry.getName() + "] <<");
+			} catch (Exception e) {
+				LOG.error("Failed to proces entry.", e);
+			}
+			entry = zis.getNextEntry();
 		}
 		//
 		port.report("logout", System.currentTimeMillis());
@@ -113,10 +125,8 @@ public class WSClient {
 		// test request
 		SSLSocket socket = (SSLSocket) factory.createSocket("server.cube.com", 8443);
 		/*
-		 * send http request
-		 * 
-		 * See SSLSocketClient.java for more information about why there is a
-		 * forced handshake here when using PrintWriters.
+		 * send http request See SSLSocketClient.java for more information about
+		 * why there is a forced handshake here when using PrintWriters.
 		 */
 		socket.startHandshake();
 		PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
@@ -139,7 +149,7 @@ public class WSClient {
 	}
 
 	public static void main(String[] args) throws Exception {
-		WSClient c = new WSClient();
+		WSClientDemo c = new WSClientDemo();
 		// System.out.println("## HTTP ############");
 		// c.http();
 		System.out.println("## HTTPS ###########");

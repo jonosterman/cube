@@ -38,6 +38,7 @@ import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.crypto.AESEncrypter;
 import ch.admin.vbs.cube.common.crypto.Base64;
 import ch.admin.vbs.cube.common.crypto.HashUtil;
+import ch.admin.vbs.cube.common.crypto.PemToolkit;
 import ch.admin.vbs.cube.common.crypto.RSAEncryptUtil;
 
 /**
@@ -135,7 +136,7 @@ public class DataOwner {
 	 */
 	private void processVm(File vmDir, Properties prop, File certFile, File uuidFile) throws CertificateException, IOException, Exception {
 		// load x509 certificate
-		X509Certificate x509 = readPemFile(certFile);
+		X509Certificate x509 = PemToolkit.readPem(certFile);
 		// get uuid
 		BufferedReader br = new BufferedReader(new FileReader(uuidFile));
 		String uuid = br.readLine().trim();
@@ -293,14 +294,14 @@ public class DataOwner {
 			X509Certificate cert = (X509Certificate) keystoreTmp.getCertificate("client0-enciph");
 			File userPemFile = new File(exDir, "user0.pem");
 			System.out.println(" - user0 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
-			writePemFile(userPemFile, cert);
+			PemToolkit.writePem(cert,userPemFile);
 			//
 			builder = KeyStore.Builder.newInstance("JKS", null, jksFile1, new KeyStore.PasswordProtection("123456".toCharArray()));
 			keystoreTmp = builder.getKeyStore();// <- slow part
 			cert = (X509Certificate) keystoreTmp.getCertificate("client1-enciph");
 			userPemFile = new File(exDir, "user1.pem");
 			System.out.println(" - user1 x509 certificate [" + userPemFile.getAbsolutePath() + "]");
-			writePemFile(userPemFile, cert);
+			PemToolkit.writePem(cert,userPemFile);
 			// VPN
 			File ca = new File(exDir, "ca-example.crt");
 			File crt = new File(exDir, "client-example.crt");
@@ -323,20 +324,6 @@ public class DataOwner {
 			bos.write('0');
 		}
 		bos.close();
-	}
-
-	private void writePemFile(File pemFile, X509Certificate x509) throws IOException, CertificateEncodingException {
-		FileWriter fw = new FileWriter(pemFile);
-		fw.write(X509Factory.BEGIN_CERT + '\n');
-		fw.write(Base64.encodeBytes(x509.getEncoded()));
-		fw.write('\n' + X509Factory.END_CERT + '\n');
-		fw.close();
-	}
-
-	private X509Certificate readPemFile(File pemFile) throws CertificateException, FileNotFoundException {
-		// decode
-		CertificateFactory fact = CertificateFactory.getInstance("X.509");
-		return (X509Certificate) fact.generateCertificate(new FileInputStream(pemFile));
 	}
 
 	public static void main(String[] args) {

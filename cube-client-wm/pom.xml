@@ -145,5 +145,10 @@
 			<artifactId>cube-common</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		      <dependency>
+         <groupId>ch.admin.vbs.cube</groupId>
+         <artifactId>cube-ws-client</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 	</dependencies>
 </project>

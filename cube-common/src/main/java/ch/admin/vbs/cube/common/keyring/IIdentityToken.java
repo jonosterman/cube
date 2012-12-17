@@ -19,6 +19,9 @@ package ch.admin.vbs.cube.common.keyring;
 import java.security.KeyStore.Builder;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.X509Certificate;
+
+import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
 
 public interface IIdentityToken {
 	enum KeyType {
@@ -51,4 +54,6 @@ public interface IIdentityToken {
 
 	/** needed to build SSL connections. */
 	Builder getBuilder();
+
+	X509Certificate getCertificate(KeyType type);
 }

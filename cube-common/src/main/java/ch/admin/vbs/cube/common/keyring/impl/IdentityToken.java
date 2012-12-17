@@ -191,6 +191,12 @@ public class IdentityToken implements IIdentityToken {
 	}
 
 	@Override
+	public X509Certificate getCertificate(KeyType type) {
+		LinkedList<X509Certificate> list = certificates.get(type);
+		return list == null || list.size() == 0 ? null : list.peek();
+	}
+
+	@Override
 	public PrivateKey[] getAllPrivatekey(KeyType type) {
 		ArrayList<PrivateKey> keys = new ArrayList<PrivateKey>();
 		LinkedList<X509Certificate> list = certificates.get(type);
