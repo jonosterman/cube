@@ -46,9 +46,9 @@
 	<entry key="webservice.cubemanager.protocol">http</entry>
 	<entry key="webservice.cubemanager.uri">CubeManager2/services/cubeManager/CubeManagerService</entry>
 	<entry key="webservice.cubemanager.downloadUri">/CubeManager2/fileDownload/download?disk=0&amp;uuid=</entry>
-	<!--  root ca -->
-	<entry key="rootca.keystore.file">../cube-common/src/test/resources/cube-pki/truststore.jks</entry>
-	<entry key="rootca.keystore.password">123456</entry>
+	<!--  truststore -->
+	<entry key="truststore.file">../cube-common/src/test/resources/cube-pki/truststore.jks</entry>
+	<entry key="truststore.password">123456</entry>
 	
 	<!-- cube VPN -->
     <entry key="INetworkManager.vpnIpCheck">172.20.0.5</entry>

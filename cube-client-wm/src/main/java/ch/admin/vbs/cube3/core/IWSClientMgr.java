@@ -1,7 +1,7 @@
 package ch.admin.vbs.cube3.core;
 
 
-public interface IWSClient {
+public interface IWSClientMgr {
 	public enum Event {
 		WS_CONNECTED, WS_CONNECTION_ERROR
 	}

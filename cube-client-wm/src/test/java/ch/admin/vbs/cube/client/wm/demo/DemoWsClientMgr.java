@@ -20,22 +20,18 @@ import java.io.File;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import ch.admin.vbs.cube.client.wm.mock.MockNetworkManager;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
 import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
 import ch.admin.vbs.cube3.core.impl.SessionMgr;
 import ch.admin.vbs.cube3.core.impl.StaticJKSLogin;
+import ch.admin.vbs.cube3.core.impl.WSClientMgr;
 import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 import ch.admin.vbs.cube3.core.mock.MockTokenDevice;
 
-/**
- * Test staticJKSLogin (use file base JKS), DmcryptContainerFactory (create and
- * access containers) and SessionMgr (manage session life-cylce).
- * 
- * MockTokenDevice simulate a user introducing and removing its token.
- */
-public class DemoJKS {
-	private static final Logger LOG = LoggerFactory.getLogger(DemoJKS.class);
+public class DemoWsClientMgr {
+	private static final Logger LOG = LoggerFactory.getLogger(DemoWsClientMgr.class);
 
 	public static void main(String[] args) throws Exception {
 		// start Xephyr if not started
@@ -49,17 +45,21 @@ public class DemoJKS {
 		new File(CubeCommonProperties.getProperty("cube.mountpoints.dir")).mkdirs();
 		new File(CubeCommonProperties.getProperty("cube.keys.dir")).mkdirs();
 		new File(CubeCommonProperties.getProperty("cube.containers.dir")).mkdirs();
-		// cleanup older containers
+		// cleanup old containers
 		DmcryptContainerFactory.cleanup();
 		// Beans
 		IoC ioc = new IoC();
 		ioc.addBean(new MockLoginUI());
 		MockLoginUI.setMockPassword("123456"); // to be used with StaticJKSLogin
-		ioc.addBean(new MockTokenDevice(10000)); // 10 seconds
+		ioc.addBean(new MockTokenDevice(60000)); // 10 seconds
 		ioc.addBean(new StaticJKSLogin());
 		ioc.addBean(new SessionMgr());
-		// ioc.addBean(new SymlinkContainerFactory());
 		ioc.addBean(new DmcryptContainerFactory());
+		//
+		ioc.addBean(new WSClientMgr());
+		ioc.addBean(new MockNetworkManager());
+		
+		
 		//
 		ioc.setupDependenciesOnAllBeans();
 		LOG.info("Start Cube..");

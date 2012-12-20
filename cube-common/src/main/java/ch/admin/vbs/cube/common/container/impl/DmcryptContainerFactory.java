@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package ch.admin.vbs.cube.common.container.impl;
 
 import java.io.File;
@@ -214,5 +213,14 @@ public class DmcryptContainerFactory implements IContainerFactory {
 		} catch (Exception e) {
 			throw new ContainerException("Could not unmount container [" + container + "]", e);
 		}
+	}
+
+	// ==================================================
+	// IoC
+	// ==================================================
+	public void setup() {
+	}
+
+	public void start() {
 	}
 }

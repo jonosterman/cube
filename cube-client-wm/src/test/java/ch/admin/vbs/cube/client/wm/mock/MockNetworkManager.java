@@ -18,51 +18,92 @@ package ch.admin.vbs.cube.client.wm.mock;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import ch.admin.vbs.cube.common.shell.ShellUtil;
 import ch.admin.vbs.cube.common.shell.ShellUtilException;
 import ch.admin.vbs.cube.core.network.INetManager;
 
-public class MockNetworkManager implements INetManager {
+public class MockNetworkManager implements INetManager, Runnable {
+	private static final Logger LOG = LoggerFactory.getLogger(MockNetworkManager.class);
+	private ArrayList<Listener> listeners = new ArrayList<INetManager.Listener>();
+	private int nStateIdx = 0;
+	private NetState[] sequence;
+
+	public MockNetworkManager() {
+		sequence = new NetState[] { //
+		NetState.DEACTIVATED, NetState.CONNECTING, NetState.CONNECTING_VPN, NetState.CONNECTED_BY_VPN, //
+				NetState.DEACTIVATED, NetState.CONNECTING, NetState.CONNECTED_DIRECT };
+	}
+
 	@Override
 	public void start() {
+		Thread t = new Thread(this);
+		t.setDaemon(true);
+		t.start();
+	}
+	
+	public void setup() {}
+
+	@Override
+	public void run() {
+		while (true) {
+			try {
+				Thread.sleep(10000);
+				NetState old = getState();
+				nStateIdx = (nStateIdx + 1) % sequence.length;
+				NetState sta = getState();
+				LOG.debug("Change Network State [{}]->[{}]",old,sta);
+				// fore event
+				for(Listener l : listeners) {
+					l.stateChanged(old, sta);
+				}
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	@Override
 	public void stop() {
 	}
-	
+
 	@Override
 	public List<String> getNetworkInterfaces() {
 		ArrayList<String> list = new ArrayList<String>();
 		ShellUtil su = new ShellUtil();
 		try {
 			su.run(null, ShellUtil.NO_TIMEOUT, "ifconfig");
-			for(String line : su.getStandardOutput().toString().split("\n")) {
+			for (String line : su.getStandardOutput().toString().split("\n")) {
 				if (line.startsWith("eth") | line.startsWith("wlan")) {
-					list.add(line.split(" +",2)[0]);					
+					String iface = line.split(" +", 2)[0];
+					list.add(iface);
+					LOG.debug("Add iface [{}]", iface);
 				}
 			}
 		} catch (ShellUtilException e) {
 			e.printStackTrace();
-		}		
+		}
 		return list;
 	}
-	
+
 	public static void main(String[] args) {
 		new MockNetworkManager().getNetworkInterfaces();
 	}
 
 	@Override
 	public void addListener(Listener l) {
+		listeners.add(l);
 	}
 
 	@Override
 	public void removeListener(Listener l) {
+		listeners.remove(l);
 	}
-	
+
 	@Override
 	public NetState getState() {
-		// TODO Auto-generated method stub
-		return null;
+		return sequence[nStateIdx];
 	}
 }

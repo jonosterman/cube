@@ -21,6 +21,7 @@ public class SessionMgr implements ISessionMgr, ILoginListener, ITokenListener {
 	private HashMap<String, Session> sessions = new HashMap<String, Session>();
 	private Session activeSession;
 	private IContainerFactory cFactory;
+
 	// ===============================================
 	// Implements ILoginListener
 	// ===============================================
@@ -45,6 +46,7 @@ public class SessionMgr implements ISessionMgr, ILoginListener, ITokenListener {
 					activeSession.init(id, cFactory);
 				}
 				activeSession.activate();
+				fireActiveSessionChange(activeSession);
 				break;
 			default:
 				break;
@@ -87,8 +89,9 @@ public class SessionMgr implements ISessionMgr, ILoginListener, ITokenListener {
 			}
 		} finally {
 			sessionsLock.unlock();
-		}		
+		}
 	}
+
 	// ===============================================
 	// Implements ISessionMgr
 	// ===============================================
@@ -100,5 +103,11 @@ public class SessionMgr implements ISessionMgr, ILoginListener, ITokenListener {
 	@Override
 	public void removeListener(ISessionsChangeListener l) {
 		listeners.remove(l);
+	}
+
+	private void fireActiveSessionChange(Session session) {
+		for (ISessionsChangeListener l : listeners) {
+			l.activeSessionChanged(session);
+		}
 	}
 }

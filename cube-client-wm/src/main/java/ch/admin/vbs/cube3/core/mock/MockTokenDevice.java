@@ -13,7 +13,12 @@ import ch.admin.vbs.cube.core.impl.TokenEvent.EventType;
 public class MockTokenDevice implements ITokenDevice, Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(MockTokenDevice.class);
 	private ArrayList<ITokenListener> listeners = new ArrayList<ITokenListener>();
+	private final long logInLogOutDelay;
 
+	public MockTokenDevice(long logInLogOutDelay) {
+		this.logInLogOutDelay = logInLogOutDelay;
+	}
+	
 	public void start() {
 		new Thread(this).start();
 	}
@@ -23,12 +28,12 @@ public class MockTokenDevice implements ITokenDevice, Runnable {
 		try {
 			Thread.sleep(2000);
 			fireStateChanged(true);
-			Thread.sleep(10000);
+			Thread.sleep(logInLogOutDelay);
 			for (int i=0;i<10;i++) {
 				fireStateChanged(false);				
-				Thread.sleep(10000);
+				Thread.sleep(logInLogOutDelay);
 				fireStateChanged(true);				
-				Thread.sleep(10000);
+				Thread.sleep(logInLogOutDelay);
 			}
 			fireStateChanged(false);				
 		} catch (InterruptedException e) {

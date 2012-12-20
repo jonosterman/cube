@@ -40,8 +40,8 @@ public class CaValidation {
 	private X509Certificate caCert;
 
 	public CaValidation() {
-		String caFile = CubeClientCoreProperties.getProperty("rootca.keystore.file");
-		char[] caPwd = CubeClientCoreProperties.getProperty("rootca.keystore.password").toCharArray();
+		String caFile = CubeClientCoreProperties.getProperty("truststore.file");
+		char[] caPwd = CubeClientCoreProperties.getProperty("truststore.password").toCharArray();
 		Builder builder = KeyStore.Builder.newInstance("JKS", null, new File(caFile), new KeyStore.PasswordProtection(caPwd));
 		try {
 			keystore = builder.getKeyStore();

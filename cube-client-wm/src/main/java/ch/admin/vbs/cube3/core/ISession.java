@@ -1,4 +1,4 @@
-package ch.admin.vbs.cube3.core.obj;
+package ch.admin.vbs.cube3.core;
 
 
 public interface ISession {

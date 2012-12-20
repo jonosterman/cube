@@ -20,6 +20,7 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 
 <properties>
-	<entry key="cube.manage.truststore.file">/opt/cube/client/certificates/truststore.jks</entry>
-	<entry key="cube.manage.truststore.password">123456</entry>
+	<!--  truststore -->
+	<entry key="cube.ws.truststore.JKS.file">/opt/cube/client/certificates/truststore.jks</entry>
+	<entry key="cube.ws.truststore.JKS.password">123456</entry>
 </properties>

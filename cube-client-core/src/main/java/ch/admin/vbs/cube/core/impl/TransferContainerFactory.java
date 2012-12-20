@@ -94,6 +94,10 @@ public class TransferContainerFactory {
 		}
 		// create a new container and mount it
 		LOG.debug("Create a new transfer container and mount it.");
+		if (trCnt.getContainerFile().exists()) {
+			// delete leftover from previous sessions.
+			trCnt.getContainerFile().delete();
+		}
 		try {
 			containerFactory.createContainer(trCnt, trKey);
 			containerFactory.mountContainer(trCnt, trKey);
