@@ -83,7 +83,9 @@ public class CubeManageDAO implements ICubeManageDAO {
 		// ensure that user directory exists and contains user.txt
 		File userDir = new File(baseDir, dnHash);
 		if (!userDir.exists()) {
-			userDir.mkdirs();
+			if (!userDir.mkdirs()) {
+				throw new IOException("Could not create directory ["+userDir.getAbsolutePath()+"]");
+			}
 			File userCfg = new File(userDir, "user.txt");
 			FileWriter fw = new FileWriter(userCfg);
 			fw.write("DN=" + dn + "\nDN_hash=" + dnHash + "\n");

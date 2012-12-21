@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import sun.security.provider.X509Factory;
 
+import ch.admin.vbs.cube.common.TestPKI;
 import ch.admin.vbs.cube.common.crypto.Base64;
 import ch.admin.vbs.cube.common.crypto.PemToolkit;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
@@ -52,14 +53,14 @@ public class WSClientDemo {
 	public void https() throws Exception {
 		// TrustStore & TrustManagerFactory
 		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
-		KeyStore ts = KeyStore.getInstance("JKS");
-		ts.load(new FileInputStream(new File(System.getProperty("user.home"), "cube-pki/truststore.jks")), "123456".toCharArray());
+		KeyStore ts = KeyStore.getInstance("JKS");		
+		ts.load(new FileInputStream(new File(TestPKI.getPKIDirectory(), "truststore.jks")), "123456".toCharArray());
 		tmf.init(ts);
 		// KeyStore & KeyManagerFactory
 		KeyManagerFactory kmf = KeyManagerFactory.getInstance("NewSunX509");
 		Builder clientCrtBuilder = KeyStore.Builder.newInstance("JKS", //
 				null, //
-				new File(System.getProperty("user.home"), "cube-pki/client0.jks"), //
+				new File(TestPKI.getPKIDirectory(), "client0.jks"), //
 				new KeyStore.PasswordProtection("123456".toCharArray()));
 		KeyStoreBuilderParameters keyStoreBuilderParameters = new KeyStoreBuilderParameters(clientCrtBuilder);
 		kmf.init(keyStoreBuilderParameters);

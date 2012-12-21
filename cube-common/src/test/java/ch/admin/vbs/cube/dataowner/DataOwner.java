@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 
 import sun.security.pkcs11.SunPKCS11;
 import sun.security.provider.X509Factory;
+import ch.admin.vbs.cube.common.TestPKI;
 import ch.admin.vbs.cube.common.UuidGenerator;
 import ch.admin.vbs.cube.common.crypto.AESEncrypter;
 import ch.admin.vbs.cube.common.crypto.Base64;
@@ -283,8 +284,8 @@ public class DataOwner {
 			bw.write("vpn.ca=ca-example.crt\n");
 			bw.close();
 			// user keys
-			File jksFile1 = new File(System.getProperty("user.home"), "cube-pki/client1.jks");
-			File jksFile0 = new File(System.getProperty("user.home"), "cube-pki/client0.jks");
+			File jksFile1 = new File(TestPKI.getPKIDirectory(), "client1.jks");
+			File jksFile0 = new File(TestPKI.getPKIDirectory(), "client0.jks");
 			if ( !jksFile0.exists() || !jksFile1.exists()) {
 				System.err.println("No user certificate found. please look at README-server.txt to find out how to generate them (client0.jks and client1.jks).");
 			}
