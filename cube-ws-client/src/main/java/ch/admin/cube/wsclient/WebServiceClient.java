@@ -33,17 +33,18 @@ import ch.admin.vbs.cube.common.keyring.IIdentityToken;
 import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
 import ch.admin.vbs.cube.cubemanage.CubeManage;
 import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
+import ch.qos.logback.core.joran.action.Action;
 
 public class WebServiceClient implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(WebServiceClient.class);
 	private static final long POOL_DELAY = 60000; // 60 secs.
-	private boolean suspended;
+	private boolean wsActive;
 	private final IIdentityToken id;
 	private boolean pubkeySent;
 	private Object poolLock = new Object();
 	private Lock portLock = new ReentrantLock();
 	private CubeManagePortType port;
-	private boolean connected;
+	private boolean loggedIn;
 	private boolean running;
 
 	public WebServiceClient(IIdentityToken id) {
@@ -64,14 +65,29 @@ public class WebServiceClient implements Runnable {
 		}
 	}
 
-	public synchronized void setSuspended(boolean suspended) {
-		if (this.suspended != suspended) {
+	public synchronized void setActive(boolean active) {
+		if (wsActive != active) {
 			// state changed
-			this.suspended = suspended;
-			// pool
+			if (active) {
+				// must trigger webservice reconnect
+				LOG.debug("Must reconnect WS...");
+			} else {
+				LOG.debug("Must stop WS...");
+				// must stop webservice
+				portLock.lock();
+				try {
+					port = null;
+					loggedIn = false;
+				} finally {
+					portLock.unlock();
+				}
+			}
+			wsActive = active;
 			synchronized (poolLock) {
 				poolLock.notifyAll();
 			}
+		} else {
+			LOG.debug("State did not changed [" + active + "]");
 		}
 	}
 
@@ -112,18 +128,23 @@ public class WebServiceClient implements Runnable {
 	public void run() {
 		try {
 			while (running) {
-				if (!suspended && !connected && running) {
+				if (loggedIn) {
+					LOG.debug("Webservice is already connected");
+				} else if (wsActive) {
 					// initialize webservice client (port)
 					try {
 						openHttps();
-						connected = true;
+						LOG.error("Connection to WebService succeed");
+						loggedIn = true;
 					} catch (Exception e) {
 						LOG.error("Failed to connect WebService", e);
-						connected = false;
+						loggedIn = false;
 					}
+				} else {
+					LOG.debug("Do not attempt to connect web service since suspended flag is set.");
 				}
 				synchronized (poolLock) {
-					LOG.debug("Wait [{} ms] before tying to connecting webservice again",POOL_DELAY);
+					LOG.debug("Wait [{} ms] before tying to connecting webservice again", POOL_DELAY);
 					poolLock.wait(POOL_DELAY);
 				}
 			}

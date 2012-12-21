@@ -24,6 +24,7 @@ import ch.admin.vbs.cube.client.wm.mock.MockNetworkManager;
 import ch.admin.vbs.cube.client.wm.utils.IoC;
 import ch.admin.vbs.cube.common.CubeCommonProperties;
 import ch.admin.vbs.cube.common.container.impl.DmcryptContainerFactory;
+import ch.admin.vbs.cube.core.network.INetManager.NetState;
 import ch.admin.vbs.cube3.core.impl.SessionMgr;
 import ch.admin.vbs.cube3.core.impl.StaticJKSLogin;
 import ch.admin.vbs.cube3.core.impl.WSClientMgr;
@@ -31,10 +32,10 @@ import ch.admin.vbs.cube3.core.mock.MockLoginUI;
 import ch.admin.vbs.cube3.core.mock.MockTokenDevice;
 
 /**
- * Test WS reconnect among token and network state changes.
+ * Test WebService vm listing 
  */
-public class DemoWsClientMgr {
-	private static final Logger LOG = LoggerFactory.getLogger(DemoWsClientMgr.class);
+public class DemoWebservice {
+	private static final Logger LOG = LoggerFactory.getLogger(DemoWebservice.class);
 
 	public static void main(String[] args) throws Exception {
 		LOG.info("Init Cube..");
@@ -48,13 +49,13 @@ public class DemoWsClientMgr {
 		IoC ioc = new IoC();
 		ioc.addBean(new MockLoginUI());
 		MockLoginUI.setMockPassword("123456"); // to be used with StaticJKSLogin
-		ioc.addBean(new MockTokenDevice(60000)); // 10 seconds
+		ioc.addBean(new MockTokenDevice(1000000)); // lot of time 
 		ioc.addBean(new StaticJKSLogin());
 		ioc.addBean(new SessionMgr());
 		ioc.addBean(new DmcryptContainerFactory());
 		//
 		ioc.addBean(new WSClientMgr());
-		ioc.addBean(new MockNetworkManager());
+		ioc.addBean(new MockNetworkManager(new NetState[] {NetState.CONNECTED_DIRECT},60000));
 		
 		
 		//

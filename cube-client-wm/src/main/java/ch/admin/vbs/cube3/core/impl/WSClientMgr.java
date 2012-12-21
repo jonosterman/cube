@@ -27,12 +27,13 @@ public class WSClientMgr implements IWSClientMgr, ILoginListener, Listener, ITok
 	private boolean isLoginReady;
 
 	private synchronized void restartWebService(IIdentityToken id) {
+		// desactive current webservice 
 		if (current != null) {
-			current.setSuspended(true);
+			current.setActive(false);
 		}
+		// active/create webservice for current user
 		WebServiceClient ws = webservices.get(id.getUuid());
 		if (ws == null) {
-			LOG.debug("Start WebService client...");
 			ws = new WebServiceClient(id);
 			ws.start();
 			webservices.put(id.getUuid(), ws);
@@ -44,7 +45,10 @@ public class WSClientMgr implements IWSClientMgr, ILoginListener, Listener, ITok
 
 	public void pool() {
 		if (current != null) {
-			current.setSuspended(isNetworkReady && isTokenReady && isLoginReady);
+			LOG.debug("pool (net:"+isNetworkReady+", token:"+isTokenReady+", login:"+isLoginReady+") -> setActive({})",isNetworkReady && isTokenReady && isLoginReady );			
+			current.setActive(isNetworkReady && isTokenReady && isLoginReady);
+		} else {
+			LOG.debug("No webservice currently activated");
 		}
 	}
 

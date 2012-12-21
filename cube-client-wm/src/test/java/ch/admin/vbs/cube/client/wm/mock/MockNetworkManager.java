@@ -30,11 +30,17 @@ public class MockNetworkManager implements INetManager, Runnable {
 	private ArrayList<Listener> listeners = new ArrayList<INetManager.Listener>();
 	private int nStateIdx = 0;
 	private NetState[] sequence;
+	private long delay = 10000;
 
-	public MockNetworkManager() {
+	public MockNetworkManager() {		
 		sequence = new NetState[] { //
 		NetState.DEACTIVATED, NetState.CONNECTING, NetState.CONNECTING_VPN, NetState.CONNECTED_BY_VPN, //
 				NetState.DEACTIVATED, NetState.CONNECTING, NetState.CONNECTED_DIRECT };
+	}
+	public MockNetworkManager( NetState[] seq, long delay) {
+		sequence = seq;
+		this.delay = delay;
+		
 	}
 
 	@Override
@@ -50,7 +56,7 @@ public class MockNetworkManager implements INetManager, Runnable {
 	public void run() {
 		while (true) {
 			try {
-				Thread.sleep(10000);
+				Thread.sleep(delay);
 				NetState old = getState();
 				nStateIdx = (nStateIdx + 1) % sequence.length;
 				NetState sta = getState();
