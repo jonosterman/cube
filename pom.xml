@@ -1,31 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>ch.admin.vbs.cube</groupId>
-  <artifactId>cube</artifactId>
-  <version>4.0</version>
-  <packaging>pom</packaging>
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>net.cube</groupId>
+	<artifactId>cube</artifactId>
+	<version>5.0</version>
+	<packaging>pom</packaging>
 
-  <name>cube</name>
-  <url>http://maven.apache.org</url>
+	<name>cube</name>
+	<url>http://maven.apache.org</url>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<slf4j.version>1.6.2</slf4j.version>
-		<logback.version>0.9.30</logback.version>
-		<junit.version>4.8.1</junit.version>
-		<cxf.version>2.7.0</cxf.version>
+		<logback.version>1.1.1</logback.version>
+		<junit.version>4.11</junit.version>
+		<cxf.version>2.7.10</cxf.version>
 	</properties>
 
-  <modules>
-   <module>cube-common</module>
-   <module>cube-client-core</module>
-   <module>cube-client-wm</module>
-
-   <module>cube-ws-service</module>
-   <module>cube-ws-war</module>
-   <module>cube-ws-client</module>
-  </modules>
+	<modules>
+		<module>cube-common</module>
+		<!-- <module>cube-client-core</module>
+		<module>cube-client-wm</module>  -->
+	<!-- 	<module>cube-ws-service</module>
+		<module>cube-ws-war</module>
+		<module>cube-ws-client</module>  -->
+	</modules>
 
 	<build>
 		<plugins>
@@ -34,12 +34,12 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<source>1.7</source>
+					<target>1.7</target>
 				</configuration>
 			</plugin>
 			<plugin>
-        <version>2.9</version>
+				<version>2.9</version>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-eclipse-plugin</artifactId>
 				<configuration>
@@ -48,8 +48,8 @@
 					<!--useProjectReferences>false</useProjectReferences -->
 				</configuration>
 			</plugin>
-    </plugins>
-   </build>
+		</plugins>
+	</build>
 
 
 	<dependencies>

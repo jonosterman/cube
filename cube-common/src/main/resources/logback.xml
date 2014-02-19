@@ -43,7 +43,6 @@
 	</appender>
 
 	<logger name="org" level="INFO" />	
-	<logger name="ch.admin.vbs.cube.core.transfer" level="INFO" />
 	
 	<root level="debug">
 		<appender-ref ref="STDOUT" />

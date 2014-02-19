@@ -13,24 +13,21 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<artifactId>cube-common</artifactId>
-	<groupId>ch.admin.vbs.cube</groupId>
-	<version>4.0</version>
 	<packaging>jar</packaging>
 	<name>cube-common</name>
-	<url>http://cube.forge.osor.eu</url>
+	<url>https://github.com/jonosterman/cube</url>
 
-  <parent>
-     <groupId>ch.admin.vbs.cube</groupId>
-     <artifactId>cube</artifactId>
-     <version>4.0</version>
-  </parent>
+	<parent>
+		<groupId>net.cube</groupId>
+		<artifactId>cube</artifactId>
+		<version>5.0</version>
+	</parent>
 
 	<build>
 		<plugins>
 			<plugin>
-        <version>2.4</version>
+				<version>2.4</version>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
@@ -41,65 +38,6 @@
 						</manifest>
 					</archive>
 				</configuration>
-			</plugin>
-			<plugin>
-        <version>2.4</version>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>package</phase>
-						<configuration>
-							<outputDirectory>${project.build.directory}/lib</outputDirectory>
-							<excludeGroupIds>junit</excludeGroupIds>
-						</configuration>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-        <version>1.10.b1</version>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<configuration>
-					<basedir>${basedir}</basedir>
-					<header>${basedir}/src/etc/header.txt</header>
-					<quiet>false</quiet>
-					<strictCheck>true</strictCheck>
-					<failIfMissing>true</failIfMissing>
-					<aggregate>false</aggregate>
-					<includes>
-						<include>src/**</include>
-						<include>**/test/**</include>
-					</includes>
-					<excludes>
-						<exclude>target/**</exclude>
-						<exclude>**/*.p12</exclude>
-						<exclude>src/main/**/Base64.java</exclude>
-						<exclude>src/main/**/Sha4J.java</exclude>
-					</excludes>
-					<useDefaultExcludes>true</useDefaultExcludes>
-					<mapping>
-						<jwc>XML_STYLE</jwc>
-						<application>XML_STYLE</application>
-						<myFileExtension>JAVADOC_STYLE</myFileExtension>
-					</mapping>
-					<useDefaultMapping>true</useDefaultMapping>
-					<properties>
-						<year>2011</year>
-						<email>https://cube.forge.osor.eu</email>
-					</properties>
-					<encoding>UTF-8</encoding>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>format</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 		</plugins>
 	</build>
