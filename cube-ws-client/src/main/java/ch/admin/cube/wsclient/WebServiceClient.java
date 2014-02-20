@@ -14,12 +14,17 @@ import java.security.cert.CertificateException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import javax.activation.DataHandler;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.KeyStoreBuilderParameters;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.ws.BindingProvider;
+
+import net.cube.cubemanage.CubeManage;
+import net.cube.cubemanage.CubeManagePortType;
+import net.cube.token.IIdentityToken;
 
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.security.FiltersType;
@@ -28,11 +33,6 @@ import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import ch.admin.vbs.cube.common.keyring.IIdentityToken;
-import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
-import ch.admin.vbs.cube.cubemanage.CubeManage;
-import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
 public class WebServiceClient implements Runnable {
 	private static final Logger LOG = LoggerFactory.getLogger(WebServiceClient.class);
@@ -97,12 +97,17 @@ public class WebServiceClient implements Runnable {
 			if (port == null) {
 				LOG.error("Failed to list VMs since webservice is not connected.");
 			} else {
-				port.listVMs();
+				DataHandler dh = port.listVMs();
+				
 				// TODO decrypt VMs list and return arraylist
 			}
 		} finally {
 			portLock.unlock();
 		}
+	}
+	
+	public boolean isConnected() {
+		return connected;
 	}
 
 	// ===============================================
@@ -134,8 +139,8 @@ public class WebServiceClient implements Runnable {
 
 	private void openHttps() throws NoSuchAlgorithmException, KeyStoreException, CertificateException, FileNotFoundException, IOException,
 			InvalidAlgorithmParameterException, KeyManagementException {
-		String truststoreFile = CubeWsClientProperties.getProperty("cube.ws.truststore.JKS.file");
-		char[] truststorePwd = CubeWsClientProperties.getProperty("cube.ws.truststore.JKS.password").toCharArray();
+		String truststoreFile = CubeWSClientConfig.getProperty("cube.ws.truststore.JKS.file");
+		char[] truststorePwd = CubeWSClientConfig.getProperty("cube.ws.truststore.JKS.password").toCharArray();
 		// TrustStore & TrustManagerFactory
 		TrustManagerFactory tmf = TrustManagerFactory.getInstance("SunX509");
 		KeyStore ts = KeyStore.getInstance("JKS");
@@ -174,7 +179,7 @@ public class WebServiceClient implements Runnable {
 				LOG.debug("Initial public key registration.");
 				// WebService: login command is used to send our public
 				// encryption key
-				port.login(id.getCertificate(KeyType.ENCIPHERMENT).getEncoded());
+				port.login(id.getCertificate(IIdentityToken.KeyType.ENCIPHERMENT).getEncoded());
 				pubkeySent = true;
 			}
 			// WebService: report some message.

@@ -1,10 +1,9 @@
-package client;
+package demo.net.cube.wsclient;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
@@ -12,8 +11,6 @@ import java.io.PrintWriter;
 import java.net.UnknownHostException;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
-import java.security.cert.Certificate;
-import java.security.cert.X509Certificate;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -26,6 +23,11 @@ import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
 import javax.xml.ws.BindingProvider;
 
+import net.cube.cubemanage.CubeManage;
+import net.cube.cubemanage.CubeManagePortType;
+import net.cube.token.IIdentityToken;
+import net.cube.token.IdentityToken;
+
 import org.apache.cxf.configuration.jsse.TLSClientParameters;
 import org.apache.cxf.configuration.security.FiltersType;
 import org.apache.cxf.endpoint.Client;
@@ -33,15 +35,6 @@ import org.apache.cxf.frontend.ClientProxy;
 import org.apache.cxf.transport.http.HTTPConduit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import sun.security.provider.X509Factory;
-
-import ch.admin.vbs.cube.common.crypto.Base64;
-import ch.admin.vbs.cube.common.crypto.PemToolkit;
-import ch.admin.vbs.cube.common.keyring.IIdentityToken.KeyType;
-import ch.admin.vbs.cube.common.keyring.impl.IdentityToken;
-import ch.admin.vbs.cube.cubemanage.CubeManage;
-import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
 public class WSClientDemo {
 	private static final Logger LOG = LoggerFactory.getLogger(WSClientDemo.class);
@@ -72,6 +65,7 @@ public class WSClientDemo {
 		// testHttpsRequest(factory); System.exit(0);
 		// web service (use local wdsl since it will not work online with client
 		// auth)
+		
 		CubeManage service = new CubeManage(getClass().getResource("/CubeManage.wsdl"));
 		CubeManagePortType port = service.getCubeManagePort();
 		// update proxy to enforce ssl client certificate
@@ -86,7 +80,7 @@ public class WSClientDemo {
 		// load all certificates in token object
 		IdentityToken token = new IdentityToken(clientCrtBuilder.getKeyStore(), clientCrtBuilder, "123456".toCharArray());
 		// WebService: login command is used to send our public encryption key
-		port.login(token.getCertificate(KeyType.ENCIPHERMENT).getEncoded());
+		port.login(token.getCertificate(IIdentityToken.KeyType.ENCIPHERMENT).getEncoded());
 		// WebService: report some message.
 		port.report("login", System.currentTimeMillis());
 		// WebService: list user VMs

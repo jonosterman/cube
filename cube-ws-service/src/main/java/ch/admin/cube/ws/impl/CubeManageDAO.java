@@ -3,20 +3,12 @@ package ch.admin.cube.ws.impl;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.security.PublicKey;
-import java.security.cert.CertificateEncodingException;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 import java.util.concurrent.locks.Lock;
@@ -24,25 +16,22 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import net.cube.common.crypto.HashUtil;
+import net.cube.common.crypto.PemToolkit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sun.security.provider.X509Factory;
-import sun.security.util.DerOutputStream;
-import sun.security.x509.X509Key;
-import ch.admin.cube.ws.CubeWsServiceProperties;
+import ch.admin.cube.ws.CubeWSServiceConfig;
 import ch.admin.cube.ws.ICubeManageDAO;
-import ch.admin.vbs.cube.common.crypto.Base64;
-import ch.admin.vbs.cube.common.crypto.HashUtil;
-import ch.admin.vbs.cube.common.crypto.PemToolkit;
 
 public class CubeManageDAO implements ICubeManageDAO {
 	private static final Logger LOG = LoggerFactory.getLogger(CubeManageDAO.class);
-	private File baseDir;
+	private File storeDir;
 	private Lock lock = new ReentrantLock();
 
 	public CubeManageDAO() {
-		baseDir = new File(CubeWsServiceProperties.getProperty("cube.manage.datastore.path"));
+		storeDir = new File(CubeWSServiceConfig.getBaseDir(),"store");
 	}
 
 	private void log(X509Certificate x509, String message) throws IOException {
@@ -81,7 +70,7 @@ public class CubeManageDAO implements ICubeManageDAO {
 		String dn = x509.getSubjectDN().getName();
 		String dnHash = HashUtil.sha512UrlInBase64(dn);
 		// ensure that user directory exists and contains user.txt
-		File userDir = new File(baseDir, dnHash);
+		File userDir = new File(storeDir, dnHash);
 		if (!userDir.exists()) {
 			userDir.mkdirs();
 			File userCfg = new File(userDir, "user.txt");
@@ -103,7 +92,7 @@ public class CubeManageDAO implements ICubeManageDAO {
 			String dn = x509.getSubjectDN().getName();
 			String dnHash = HashUtil.sha512UrlInBase64(dn);
 			// check user directories
-			File userDir = new File(baseDir, dnHash);
+			File userDir = new File(storeDir, dnHash);
 			File dataDir = new File(userDir, "data");
 			if (!dataDir.exists()) {
 				if (!dataDir.mkdirs()) {

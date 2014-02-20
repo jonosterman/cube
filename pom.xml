@@ -8,7 +8,7 @@
 	<packaging>pom</packaging>
 
 	<name>cube</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/jonosterman/cube</url>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -22,9 +22,9 @@
 		<module>cube-common</module>
 		<!-- <module>cube-client-core</module>
 		<module>cube-client-wm</module>  -->
-	<!-- 	<module>cube-ws-service</module>
+	 	<module>cube-ws-service</module>
 		<module>cube-ws-war</module>
-		<module>cube-ws-client</module>  -->
+		<module>cube-ws-client</module> 
 	</modules>
 
 	<build>

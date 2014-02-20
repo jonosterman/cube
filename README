@@ -1,184 +1,34 @@
-#################################################
+###########################################################
 ## Cube
-#################################################
+###########################################################
 
-The aim of project Cube is to provide a secure
-platform to access several environments in a 
-secure manner from the same physical machine.
 
-It relies on the use of virtualization in order
-to provide contained environments. These virtual
-machines are connected to target infrastructures
-though its own secure network tunnel.
 
-Virtual machines are stored in encrypted 
-containers on the client with their configuration
-and network keys. Each containers is kept closed
-until it is actually used. Virtual machines
-run locally (NOT another thin client). Container
-are sealed with a smart-card token (PKCS11). 
-therfore confidential data are kept under user 
-control. Data transfers between virtual machines 
-are regulated and protocoled. 
-
-All encryption and key management is made on the
-host and is not visible from the VM.
-
-Administartor could prepare several virtual 
-machine templates. User will 'stage' (download)
-one or several virtual machine on its client and
-use them.
-
-User has a simple 'kiosk' like interface where he
-only could stage, start and stop its virtual 
-machines.
-
-## Developper environment #######################
-
-## Checkout code from GITHUB
- cd ~/dev
- git config --global user.name "Your Name"
- git config --global user.email Your@Email
- git clone git@github.com:username/cube.git
-
-## Update System (install additional packages)
-##   - openvpn, bridge-utils: used to connect VMs to target netowrks
-##   - dbus-java-bin: used to connect NetworkManager
-##   - maven: used to compile cube
-##   - virtualbox-4.2: ...
-##   - openjdk7-jdk: ...
-
-## Add VirtualBox repository
- wget -q http://download.virtualbox.org/virtualbox/debian/oracle_vbox.asc -O- | sudo apt-key add -
- echo "deb http://download.virtualbox.org/virtualbox/debian precise contrib" | sudo tee /etc/apt/sources.list.d/virtualbox.list
- sudo apt-get update
-
-## Install additional packages
- sudo apt-get install openvpn bridge-utils virtualbox-4.2 dbus-java-bin maven openjdk-7-jdk cryptsetup-luks uml-utilities numlockx whois libwww-perl libx11-dev
-
-## Create some directories to holds scripts and 
-## certificates (thus may be changed through cube's 
-## configuration file. But we used to use the system
-## wide path in order to match deployment environment
-## and the sudoers permission file (see below).
-
- sudo mkdir -p /opt/cube/client/certificates
- sudo mkdir -p /opt/cube/client/var
- sudo mkdir -p /opt/cube/client/scripts
- sudo chown -R $USER:$USER /opt/cube
-
-## link script in /opt/cube/client/scripts. This way you will
-## not have two copies of them.
+## Devloppers Handbook ####################################
  
- for f in `ls $HOME/dev/cube/cube-common/src/main/resources/scripts/*.pl`; do 
-   echo $f
-   ln -s $f /opt/cube/client/scripts/`basename $f`
- done
- for f in `ls $HOME/dev/cube/cube-client-core/src/main/resources/scripts/*.pl`; do
-   echo $f
-   ln -s $f /opt/cube/client/scripts/`basename $f`
- done
+See README-test-PKI in order to generate a test PKI 
+(ca, certificates, etc.). Those are needed since we use 
+server and client certificates to build SSL communication
+and also use them to encrypt client data.
+
+See README-server to setup Tomcat with all generated 
+certificates and keys.
+
+## Deploy cube webservice in tomcat #######################
+
+mvn -Dmaven.test.skip=true install tomcat:deploy
+# OR
+mvn -Dmaven.test.skip=true install tomcat:redeploy
+
+# -> 'install' is needed or WAR will not contains the last
+#    version of local dependencies.
 
 
-##  update /etc/sudoers.d/cube :
- echo '###############
-## CUBE
-###############
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-mount-container.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-create-container.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-unmount-container.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/dmcrypt-delete-container.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/cube-shutdown.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-open.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vpn-close.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tuncreate.pl
-%vboxusers ALL=NOPASSWD: /opt/cube/client/scripts/vbox-tundelete.pl
-' > /tmp/cube
- sudo cp /tmp/cube /etc/sudoers.d/cube
- sudo chmod 440 /etc/sudoers.d/cube
-
-## Link certificate (for smart-card use)
-
- ln -s  /home/<YOUR USERNAME>/xxxxxxxxx/trusted-sdtest-rootca.jks /opt/cube/client/certificates/rootca.jks
-
-## Download and install VirtualBox SDK library
-
-Download VirtualBox SDK from : http://www.virtualbox.org/wiki/Downloads
-## unzip it
-cd ~/Downloads
-
-unzip VirtualBoxSDK-*.zip
-## install it in maven repository
-cd sdk/bindings/webservice/java/jax-ws/
-mvn install:install-file \
-  -Dfile=./vboxjws.jar \
-  -Dsources=./vboxjws-src.jar \
-  -Djavadoc=./vboxjws-doc.jar \
-  -DgroupId=virtualbox \
-  -DartifactId=virtualbox \
-  -Dversion=4.2 \
-  -Dpackaging=jar \
-  -DgeneratePom=true
-
-## Download and install JNA library in maven repository
-Download jna.jar from http://java.net/projects/jna/downloads
-cd ~/Downloads
-mvn install:install-file \
-  -Dfile=./jna.jar \
-  -DgroupId=com.sun.jna \
-  -DartifactId=jna \
-  -Dversion=3.3 \
-  -Dpackaging=jar \
-  -DgeneratePom=true
 
 
-## build cube, update eclipse project 
-##   note: generating project file (eclipse:eclipse) must be run in 
-##         cube directory or maven will fail to include other projects
-##         in classpath and source path.
-##   note: "license:format" should be run on each sub-project
-##         separately.
 
-mvn -Dmaven.test.skip=true clean eclipse:clean eclipse:eclipse install 
-for d in cube-common cube-client-core cube-client-wm; do
- cd $d
- mvn -Dmaven.test.skip=true license:format
- cd ..
-done
 
-## build + test 
 
- mvn clean install 
-
-## Configuration to do manualy in eclipse
-
- add classpath variale: M2_REPO=/home/<YOUR USERNAME>/.m2/repository
-
-## Eclipse: importing cube projects
-After building the cube project from cube top directory using:
-
- mvn -Dmaven.test.skip=true clean eclipse:clean eclipse:eclipse install
-
-Start eclipse (new workspace) and use File->Import->Existing Projects to
-import cube projects (do NOT select 'Copy projects into Workspace').
-
-If M2_REPO is not configured in your eclipse workspace, add it in 'Window->
-Preferneces->Classpath Variables' to point to '/home/your_user/.m2/repository'.
-
-## How you may commit your changes
-
-  git add .
-  git commit -a
-  git push
-
-## Quick deploy on test machine
-
-TESTMACHINE=cube001
-mvn -Dmaven.test.skip=true install \
-&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-wm/4.0/cube-client-wm-4.0.jar $TESTMACHINE:/opt/cube/client/ \
-&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-client-core/4.0/cube-client-core-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
-&& scp $HOME/.m2/repository/ch/admin/vbs/cube/cube-common/4.0/cube-common-4.0.jar $TESTMACHINE:/opt/cube/client/lib/ \
-&& ssh $TESTMACHINE "pkill -f java"
 
 
 

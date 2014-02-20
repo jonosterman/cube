@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wsdl:definitions name="CubeManage"
+   xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+   xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+   xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+   xmlns:di="http://www.example.org/schema/CubeManage"
+   xmlns:tns="http://www.example.org/contract/CubeManage"
+   xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
+   targetNamespace="http://www.example.org/contract/CubeManage">
+
+   <!-- ############## -->
+  <wsdl:types>
+   <xsd:schema targetNamespace="http://www.example.org/schema/CubeManage"> 
+    <xsd:element name="SomeParamComplex">
+     <xsd:complexType>
+      <xsd:sequence>
+       <xsd:element minOccurs="0" name="machine" type="xsd:string"/>
+       <xsd:element minOccurs="0" name="size" type="xsd:int"/>
+      </xsd:sequence>
+     </xsd:complexType>
+    </xsd:element> 
+    <!-- ## real ## -->
+    <!-- report -->
+    <xsd:element name="report" type="di:report"/>
+    <xsd:complexType name="report">
+     <xsd:sequence>
+      <xsd:element minOccurs="0" name="message" type="xsd:string"/>
+      <xsd:element name="timestamp" type="xsd:long"/>
+     </xsd:sequence>
+    </xsd:complexType>
+    <!-- listVMs -->
+    <xsd:element name="listVMs" type="di:listVMs"/>
+    <xsd:complexType name="listVMs">
+     <xsd:sequence/>
+    </xsd:complexType>   
+    <xsd:element name="listVMsResponse" type="di:listVMsResponse"/>
+    <xsd:complexType name="listVMsResponse">
+     <xsd:sequence>
+      <xsd:element name="files" type="xsd:base64Binary" xmime:expectedContentTypes="application/octet-stream"/>
+     </xsd:sequence>
+    </xsd:complexType> 
+    <!-- login -->
+    <xsd:complexType abstract="true" name="x509Certificate">
+      <xsd:complexContent>
+        <xsd:extension base="di:certificate">
+          <xsd:sequence/>
+        </xsd:extension>
+      </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType abstract="true" name="certificate">
+      <xsd:sequence/>
+    </xsd:complexType>
+    <xsd:element name="login" type="di:login"/>
+    <xsd:complexType name="login">
+      <xsd:sequence>
+        <xsd:element minOccurs="0" name="encPubkey" type="di:x509Certificate"/>
+      </xsd:sequence>
+    </xsd:complexType>
+    <xsd:element name="loginResponse" type="di:loginResponse"/>
+    <xsd:complexType name="loginResponse">
+      <xsd:sequence/>
+    </xsd:complexType>    
+   </xsd:schema>
+  </wsdl:types>
+   <!-- ############## -->
+   
+   <wsdl:message name="TripleItRequest">
+      <wsdl:part element="di:SomeParamComplex" name="parameters" />
+   </wsdl:message>
+   <wsdl:message name="TripleItResponse">
+      <wsdl:part type="xsd:int" name="result" />
+   </wsdl:message>
+   
+   <!-- ## real ## -->
+   <wsdl:message name="report"><wsdl:part name="parameters" element="di:report"/></wsdl:message>
+   <wsdl:message name="listVMs"><wsdl:part name="parameters" element="di:listVMs"/></wsdl:message>
+   <wsdl:message name="listVMsResponse"><wsdl:part name="parameters" element="di:listVMsResponse"/></wsdl:message>
+   <wsdl:message name="login"><wsdl:part name="parameters" element="di:login"></wsdl:part></wsdl:message>
+   <wsdl:message name="loginResponse"><wsdl:part name="parameters" element="di:loginResponse"></wsdl:part></wsdl:message>
+   
+   <!-- ############## -->
+
+   <wsdl:portType name="CubeManagePortType">
+      <wsdl:operation name="TripleIt">
+         <wsdl:input message="tns:TripleItRequest" />
+         <wsdl:output message="tns:TripleItResponse" />
+      </wsdl:operation>
+      <!-- ## real ## -->
+      <wsdl:operation name="report"><wsdl:input name="report" message="tns:report"/></wsdl:operation>
+      <wsdl:operation name="listVMs">
+       <wsdl:input name="listVMs" message="tns:listVMs"/>
+       <wsdl:output name="listVMsResponse" message="tns:listVMsResponse"/>
+      </wsdl:operation>
+      <wsdl:operation name="login">
+       <wsdl:input name="login" message="tns:login"/>
+       <wsdl:output name="loginResponse" message="tns:loginResponse"/>
+      </wsdl:operation>
+   </wsdl:portType>
+   
+   <!-- ############## -->
+   
+   <wsdl:binding name="CubeManageBinding" type="tns:CubeManagePortType">
+      <soap:binding style="document"
+         transport="http://schemas.xmlsoap.org/soap/http" />
+      <wsdl:operation name="TripleIt">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input><soap:body use="literal"/></wsdl:input>
+         <wsdl:output><soap:body use="literal"/></wsdl:output>
+      </wsdl:operation>
+      <!-- ## real ## -->
+      <wsdl:operation name="report">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input name="report"><soap:body use="literal"/></wsdl:input>
+      </wsdl:operation>
+      <wsdl:operation name="listVMs">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input  name="listVMs"><soap:body use="literal"/></wsdl:input>
+         <wsdl:output name="listVMsResponse"><soap:body use="literal"/></wsdl:output>
+      </wsdl:operation>
+      <wsdl:operation name="login">
+         <soap:operation soapAction="" style="document"/>
+         <wsdl:input name="login"><soap:body use="literal"/></wsdl:input>
+         <wsdl:output name="loginResponse"><soap:body use="literal"/></wsdl:output>
+      </wsdl:operation>
+
+   </wsdl:binding>
+   <wsdl:service name="CubeManageService">
+      <wsdl:port name="CubeManagePort" binding="tns:CubeManageBinding">
+         <soap:address location="https://server.cube.com:8443/cube-server/services/cubemanage"/>
+      </wsdl:port>
+   </wsdl:service>
+</wsdl:definitions> 
+

@@ -1,9 +1,6 @@
 package ch.vbs.cube.web;
 
 import java.io.IOException;
-import java.security.cert.X509Certificate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

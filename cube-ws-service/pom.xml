@@ -13,18 +13,14 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-
 	<artifactId>cube-ws-service</artifactId>
-	<groupId>ch.admin.vbs.cube</groupId>
-	<version>4.0</version>
 	<packaging>bundle</packaging>
 	<name>cube-ws-service</name>
-	<url>http://cube.forge.osor.eu</url>
-
+	<url>https://github.com/jonosterman/cube</url>
 	<parent>
-		<groupId>ch.admin.vbs.cube</groupId>
+		<groupId>net.cube</groupId>
 		<artifactId>cube</artifactId>
-		<version>4.0</version>
+		<version>5.0</version>
 	</parent>
 	<build>
 		<plugins>
@@ -40,65 +36,6 @@
 						</manifest>
 					</archive>
 				</configuration>
-			</plugin>
-			<plugin>
-				<version>2.4</version>
-				<artifactId>maven-dependency-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>copy-dependencies</id>
-						<phase>package</phase>
-						<configuration>
-							<outputDirectory>${project.build.directory}/lib</outputDirectory>
-							<excludeGroupIds>junit</excludeGroupIds>
-						</configuration>
-						<goals>
-							<goal>copy-dependencies</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<version>1.10.b1</version>
-				<groupId>com.mycila.maven-license-plugin</groupId>
-				<artifactId>maven-license-plugin</artifactId>
-				<configuration>
-					<basedir>${basedir}</basedir>
-					<header>${basedir}/src/etc/header.txt</header>
-					<quiet>false</quiet>
-					<strictCheck>true</strictCheck>
-					<failIfMissing>true</failIfMissing>
-					<aggregate>false</aggregate>
-					<includes>
-						<include>src/**</include>
-						<include>**/test/**</include>
-					</includes>
-					<excludes>
-						<exclude>target/**</exclude>
-						<exclude>**/*.p12</exclude>
-						<exclude>src/main/**/Base64.java</exclude>
-						<exclude>src/main/**/Sha4J.java</exclude>
-					</excludes>
-					<useDefaultExcludes>true</useDefaultExcludes>
-					<mapping>
-						<jwc>XML_STYLE</jwc>
-						<application>XML_STYLE</application>
-						<myFileExtension>JAVADOC_STYLE</myFileExtension>
-					</mapping>
-					<useDefaultMapping>true</useDefaultMapping>
-					<properties>
-						<year>2011</year>
-						<email>https://cube.forge.osor.eu</email>
-					</properties>
-					<encoding>UTF-8</encoding>
-				</configuration>
-				<executions>
-					<execution>
-						<goals>
-							<goal>format</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<!-- Below plugin provides a separate JAR for the JAX-WS artifacts (i.e., 
 				the objects created by running wsdl2java or wsimport), as this JAR will also 
@@ -172,8 +109,6 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-
-
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.cxf</groupId>
@@ -191,9 +126,9 @@
 			<version>${cxf.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>ch.admin.vbs.cube</groupId>
+			<groupId>net.cube</groupId>
 			<artifactId>cube-common</artifactId>
-			<version>4.0</version>
+			<version>5.0</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.servlet</groupId>
@@ -201,7 +136,5 @@
 			<version>2.3</version>
 			<scope>provided</scope>
 		</dependency>
-		
 	</dependencies>
-
 </project>

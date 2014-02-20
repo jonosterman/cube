@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+
+    Copyright (C) 2011 / cube-team <https://cube.forge.osor.eu>
+
+    Licensed under the Apache License, Version 2.0 (the "License").
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+            http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+
+-->
+
+<configuration>
+ 
+  <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+	<encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+		<pattern>{test} %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36}:%L - %msg%n</pattern>
+	</encoder>
+  </appender>
+   
+  <logger name="ch.admin.vbs.cube.core.transfer.TransferMonitor" level="INFO"/>
+  <logger name="org.springframework" level="INFO"/>
+  <logger name="org.apache.cxf" level="INFO"/>
+  
+  <logger name="ch.admin.vbs.cube.common.shell" level="DEBUG"/>
+
+  <logger name="ch.admin.vbs.cube.core.vm.list.WSDescriptorUpdater" level="INFO"/>
+  
+  <logger name="ch.admin.vbs.cube.client.wm.cube" level="DEBUG"/>
+  <logger name="ch.admin.vbs.cube.client.wm.ui" level="DEBUG"/>
+
+  <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
+  <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>  
+  
+  <!-- VirtualBox send infinte # of resize event during tests since mock screen are way too small -->  
+  <logger name="ch.admin.vbs.cube.client.wm.ui.x.imp.XWindowManager" level="INFO"/>
+  
+<!--   <logger name="ch.admin.vbs.cube.common.container" level="INFO"/>
+  <logger name="ch.admin.vbs.cube.common.AbstractProperties" level="INFO"/>
+  <logger name="ch.admin.vbs.cube.core.vm.list" level="INFO"/>
+  <logger name="ch.admin.vbs.cube.common.IdentityToken" level="INFO"/>
+  <logger name="ch.admin.vbs.cube2.core.impl.login.CaValidation" level="INFO"/>
+  <logger name="ch.admin.vbs.cube2.core.impl.login.LoginMachine" level="INFO"/>
+ 
+  -->
+
+  <root level="debug">
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>

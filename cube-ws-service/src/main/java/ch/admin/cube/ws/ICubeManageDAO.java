@@ -1,7 +1,6 @@
 package ch.admin.cube.ws;
 
 import java.io.File;
-import java.security.PublicKey;
 import java.security.cert.X509Certificate;
 
 public interface ICubeManageDAO {

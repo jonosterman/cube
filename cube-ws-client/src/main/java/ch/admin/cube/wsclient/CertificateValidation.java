@@ -27,8 +27,6 @@ import java.util.Enumeration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import ch.admin.cube.ws.CubeWsServiceProperties;
-
 
 /**
  * Validates all keystore's certificate chains against a locally available root
@@ -42,8 +40,8 @@ public class CertificateValidation {
 	private CertificateValidation certVal = new CertificateValidation();
 
 	public CertificateValidation() {
-		String caFile = CubeWsServiceProperties.getProperty("cube.manage.truststore.file");
-		char[] caPwd = CubeWsServiceProperties.getProperty("cube.manage.truststore.password").toCharArray();
+		String caFile = CubeWSClientConfig.getProperty("cube.manage.truststore.file");
+		char[] caPwd = CubeWSClientConfig.getProperty("cube.manage.truststore.password").toCharArray();
 		Builder builder = KeyStore.Builder.newInstance("JKS", null, new File(caFile), new KeyStore.PasswordProtection(caPwd));
 		try {
 			keystore = builder.getKeyStore();

@@ -1,5 +1,6 @@
 package net.cube.token;
 
+import java.io.File;
 import java.security.KeyStore;
 import java.security.KeyStore.Builder;
 import java.security.KeyStore.PasswordProtection;
@@ -38,6 +39,12 @@ public class IdentityToken implements IIdentityToken {
 	private final Builder builder;
 	private static SecureRandom rnd = new SecureRandom();
 
+	public static IIdentityToken create(File jksFile, char[] pwd) throws KeyStoreException {
+		Builder builder = KeyStore.Builder.newInstance("JKS", null, jksFile, new KeyStore.CallbackHandlerProtection(new PwdCallbackHandler(pwd)));
+		KeyStore ks = builder.getKeyStore();
+		return new IdentityToken(ks, builder, pwd);
+	}
+	
 	public IdentityToken(KeyStore keystore, Builder builder, char[] password) {
 		this.keystore = keystore;
 		this.builder = builder;

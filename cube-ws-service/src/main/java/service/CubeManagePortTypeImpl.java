@@ -2,10 +2,7 @@ package service;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.security.PublicKey;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 
@@ -16,22 +13,19 @@ import javax.jws.WebMethod;
 import javax.jws.WebService;
 import javax.xml.ws.WebServiceContext;
 
+import net.cube.cubemanage.CubeManagePortType;
+
 import org.apache.cxf.security.transport.TLSSessionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import sun.security.provider.X509Factory;
-import sun.security.util.DerValue;
-import sun.security.x509.X509Key;
-
 import ch.admin.cube.ws.ICubeManageDAO;
 import ch.admin.cube.ws.impl.CubeManageDAO;
-import ch.admin.vbs.cube.cubemanage.CubeManagePortType;
 
-@WebService(targetNamespace = "http://cubemanage.cube.vbs.admin.ch/", //
+@WebService(targetNamespace = "http://cubemanage.cube.net/", //
 portName = "CubeManagePort", //
 serviceName = "CubeManage", //
-endpointInterface = "ch.admin.vbs.cube.cubemanage.CubeManagePortType")
+endpointInterface = "net.cube.cubemanage.CubeManagePortType")
 public class CubeManagePortTypeImpl implements CubeManagePortType {
 	private static final Logger LOG = LoggerFactory.getLogger(CubeManagePortTypeImpl.class);
 	private ICubeManageDAO dao = new CubeManageDAO();

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <wsdl:definitions name="CubeManage" 
- targetNamespace="http://cubemanage.cube.vbs.admin.ch/" 
+ targetNamespace="http://cubemanage.cube.net/" 
  xmlns:xmime="http://www.w3.org/2005/05/xmlmime"
  xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/" 
- xmlns:tns="http://cubemanage.cube.vbs.admin.ch/" 
+ xmlns:tns="http://cubemanage.cube.net/" 
  xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
  xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/">
   <wsdl:types>
 <xsd:schema 
  xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
- xmlns:tns="http://cubemanage.cube.vbs.admin.ch/" 
+ xmlns:tns="http://cubemanage.cube.net/" 
  attributeFormDefault="unqualified" 
  elementFormDefault="qualified" 
- targetNamespace="http://cubemanage.cube.vbs.admin.ch/">
+ targetNamespace="http://cubemanage.cube.net/">
  
   <xsd:element name="login" type="tns:login"/>
   <xsd:complexType name="login">

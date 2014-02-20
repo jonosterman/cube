@@ -26,7 +26,7 @@
 	</appender>
 	<appender name="FILE"
 		class="ch.qos.logback.core.rolling.RollingFileAppender">
-		<file>/opt/cube/var/log/cube-common.log</file>
+		<file>${user.home}/.cube/cube-common.log</file>
 		<rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
 			<fileNamePattern>cube-common.%i.log.zip</fileNamePattern>
 			<minIndex>1</minIndex>
