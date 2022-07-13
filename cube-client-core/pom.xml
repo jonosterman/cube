@@ -29,7 +29,7 @@
 	<!-- <reporting> <outputDirectory>../../target/site/${pom.artifactId}</outputDirectory> 
 		</reporting> -->
 	<properties>
-		<cxf.version>2.5.2</cxf.version>
+		<cxf.version>2.5.10</cxf.version>
 		<commonslang.version>2.6</commonslang.version>
 		<virtualbox.version>4.2</virtualbox.version>
 		<mainClass>ch.admin.vbs.cube.common.DumpProperties</mainClass>
